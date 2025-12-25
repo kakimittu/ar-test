@@ -1,16 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>テストページ</title>
+  <meta charset="utf-8">
+  <title>印刷物ARテスト</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
-<body>
-  <h1>表示テスト</h1>
-  <p>このページが表示されたら成功です。</p>
 
-<img src="assets/images/hiro.png" style="width:300px;">
+<body style="margin:0; overflow:hidden;">
+  <a-scene embedded arjs>
+    <!-- マーカー -->
+    <a-marker preset="hiro">
+      <!-- ARで出る画像 -->
+      <a-image 
+        src="assets/images/hiro.png"
+        width="1"
+        height="1"
+        position="0 0 0">
+      </a-image>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
 </body>
 </html>
+
+
 
 
 
