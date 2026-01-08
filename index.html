@@ -2,28 +2,43 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>ARテスト</title>
+  <title>名刺AR</title>
+
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
 
 <body style="margin:0; overflow:hidden;">
   <a-scene embedded arjs="debugUIEnabled: false;">
-    
-    <a-marker type="pattern" url="markers/marker4.patt">
-      <a-image 
-        src="images/3.png" 
-        width="1" 
-        height="1" 
-        rotation="-90 0 0" 
-        position="0 0.1 0">
+
+    <a-marker type="pattern" url="assets/markers/pattern-marker3.patt">
+
+      <!-- 名刺上の画像 -->
+      <a-image
+        src="assets/images/3.png"
+        width="1"
+        height="1"
+        rotation="-90 0 0"
+        position="0 0 0">
       </a-image>
+
+      <!-- 紹介動画 -->
+      <a-video
+        src="assets/videos/intro.mp4"
+        width="1.2"
+        height="0.7"
+        rotation="-90 0 0"
+        position="0 0.01 0">
+      </a-video>
+
     </a-marker>
 
     <a-entity camera></a-entity>
   </a-scene>
 </body>
 </html>
+
+
 
 
 
