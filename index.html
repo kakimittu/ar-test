@@ -1,30 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>名刺AR（安定版）</title>
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <meta charset="utf-8">
+  <title>名刺AR（画像修正版）</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </head>
 
 <body style="margin:0; overflow:hidden;">
-    <a-scene 
+  <a-scene 
     embedded 
     arjs="debugUIEnabled: false; smooth: true; smoothCount: 10; smoothTolerance: 0.01; smoothThreshold: 5;">
 
-   <a-marker preset="hiro">
-      <a-image 
-        src="assets/images/tukareta.jpg" 
-        width="1" 
-        height="1" 
-        rotation="-90 0 0" 
-                position="0 0.5 0">
-      </a-image>
-    </a-marker>
+    <a-assets>
+      <img id="landscape" src="assets/images/tukareta.jpg">
+    </a-assets>
 
-    <a-entity camera></a-entity>
+    <a-marker preset="hiro">
+      <a-image 
+        src="#landscape" 
+        width="1.7" 
+        height="1" 
+        rotation="-90 0 0" 
+        position="0 0.5 0">
+      </a-image>
+    </a-marker>
 
-  </a-scene>
+    <a-entity camera></a-entity>
+  </a-scene>
 </body>
 </html>
 
