@@ -3,24 +3,29 @@
 <head>
   <meta charset="utf-8">
   <title>名刺AR</title>
-
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </head>
 
 <body style="margin:0; overflow:hidden;">
   <a-scene embedded arjs="debugUIEnabled: false;">
 
-    <!-- マーカー -->
-<a-marker type="pattern" url="assets/markers/pattern-logoRb.patt">
-  <a-image 
-    src="assets/images/3.png" 
-    width="1" 
-    height="1" 
-    rotation="-90 0 0" 
-    position="0 0.1 0">
-  </a-image>
-</a-marker>
+    <a-marker type="pattern" url="assets/markers/pattern-logoRb.patt">
+      <a-image 
+        src="assets/images/3.png" 
+        width="1" 
+        height="1" 
+        rotation="-90 0 0" 
+        position="0 0.1 0">
+      </a-image>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+
+  </a-scene>
+</body>
+</html>
+
 
 
 
