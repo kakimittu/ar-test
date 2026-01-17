@@ -2,35 +2,67 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>オリジナル名刺AR</title>
+  <title>印刷物ARテスト</title>
+
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <!-- AR.js -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
 
 <body style="margin:0; overflow:hidden;">
-  <a-scene 
-    embedded 
-    arjs="debugUIEnabled: false; smooth: true; smoothCount: 10; smoothTolerance: 0.01; smoothThreshold: 5;">
 
-    <a-assets>
-      <img id="landscape" src="assets/images/tukareta.jpg">
-    </a-assets>
+<a-scene embedded arjs="sourceType: webcam;">
 
+  <!-- マーカー -->
   <a-marker type="pattern" url="assets/markers/pattern-marker3.patt">
 
-  <a-entity
-    gltf-model="assets/models/model.glb"
-    scale="0.5 0.5 0.5"
-    rotation="0 180 0"
-    position="0 0 0">
-  </a-entity>
+    <!-- 画像（最初に表示） -->
+    <a-image
+      id="image"
+      src="assets/images/3.png"
+      width="1"
+      height="1"
+      rotation="-90 0 0"
+      position="0 0 0.01">
+    </a-image>
 
-</a-marker>
+    <!-- 3Dモデル（最初は非表示） -->
+    <a-entity
+      id="model"
+      gltf-model="assets/models/model.glb"
+      scale="0.5 0.5 0.5"
+      position="0 0.5 0"
+      visible="false">
+    </a-entity>
 
-    <a-entity camera></a-entity>
-  </a-scene>
+  </a-marker>
+
+  <!-- カメラ -->
+  <a-entity camera></a-entity>
+
+</a-scene>
+
+<!-- 動作制御 -->
+<script>
+  const image = document.querySelector('#image');
+  const model = document.querySelector('#model');
+
+  // 画像 → 3D に切り替え
+  image.addEventListener('click', () => {
+    image.setAttribute('visible', false);
+    model.setAttribute('visible', true);
+  });
+
+  // 3D をタップしたら回転
+  model.addEventListener('click', () => {
+    model.object3D.rotation.y += Math.PI / 2;
+  });
+</script>
+
 </body>
 </html>
+
 
 
 
