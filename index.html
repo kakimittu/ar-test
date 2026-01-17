@@ -15,28 +15,29 @@
 <a-scene embedded arjs="sourceType: webcam;">
 
   <!-- マーカー -->
-  <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
+ <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
 
-    <!-- 画像（最初に表示） -->
-    <a-image
-      id="image"
-      src="assets/images/3.png"
-      width="1"
-      height="1"
-      rotation="-90 0 0"
-      position="0 0 0.01">
-    </a-image>
+  <a-entity light="type: ambient; intensity: 1"></a-entity>
+  <a-entity light="type: directional; intensity: 0.8" position="1 2 1"></a-entity>
 
-    <!-- 3Dモデル（最初は非表示） -->
-    <a-entity
-      id="model"
-      gltf-model="assets/models/Pumpkin.glb"
-      scale="0.5 0.5 0.5"
-      position="0 0.5 0"
-      visible="false">
-    </a-entity>
+  <a-image
+    id="image"
+    src="assets/images/3.png"
+    width="1"
+    height="1"
+    rotation="-90 0 0"
+    position="0 0 0.01">
+  </a-image>
 
-  </a-marker>
+  <a-entity
+    id="model"
+    gltf-model="assets/models/Pumpkin.glb"
+    scale="1 1 1"
+    position="0 1 0"
+    visible="false">
+  </a-entity>
+
+</a-marker>
 
   <!-- カメラ -->
   <a-entity camera></a-entity>
@@ -62,6 +63,7 @@
 
 </body>
 </html>
+
 
 
 
