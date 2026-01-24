@@ -6,93 +6,61 @@
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
   <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
-    body { margin:0; overflow:hidden; }
+    body { margin: 0; overflow: hidden; }
 
-    /* 切り替えUI */
+    /* 上部切り替えボタン */
     #ui {
       position: fixed;
       top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 0;
+      right: 0;
+      text-align: center;
       z-index: 999;
     }
+
     #ui button {
-      padding: 8px 14px;
-      margin: 0 4px;
-      font-size: 14px;
+      font-size: 16px;
+      padding: 8px 16px;
+      margin: 0 6px;
     }
 
     /* デバッグUI */
-    #debug {
+    #debugUI {
       position: fixed;
       bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
+      left: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
       padding: 10px;
       border-radius: 10px;
-      color: #fff;
       font-size: 12px;
       z-index: 999;
-      width: 95%;
-      max-width: 420px;
     }
-    #debug label {
-      display: block;
-      margin-top: 6px;
+
+    #debugUI input {
+      width: 100%;
     }
   </style>
 </head>
 
 <body>
 
-<!-- 切り替えUI -->
+<!-- ===== 切り替えUI ===== -->
 <div id="ui">
   <button onclick="showImage()">画像</button>
-  <button onclick="show3D()">3D</button>
+  <button onclick="showModel()">3D</button>
 </div>
 
-<!-- デバッグUI -->
-<div id="debug">
-  <label>X（左右）
-    <input id="posX" type="range" min="-1" max="1" step="0.01" value="0">
-  </label>
-  <label>回転X
-  <input id="rotX" type="range" min="-180" max="180" step="1" value="-90">
-</label>
-  <label>Y（上下）
-    <input id="posY" type="range" min="-1" max="1" step="0.01" value="-0.6">
-  </label>
-  <label>Z（前後）
-    <input id="posZ" type="range" min="-1" max="1" step="0.01" value="0">
-  </label>
-  <label>大きさ
-    <input id="scale" type="range" min="0.05" max="1" step="0.01" value="0.15">
-  </label>
-  <label>回転
-    <input id="rotY" type="range" min="0" max="360" step="1" value="180">
-  </label>
-</div>
-
-<a-scene
-  embedded
-  arjs="sourceType: webcam; debugUIEnabled: false;"
-  vr-mode-ui="enabled: false">
-
+<!-- ===== ARシーン ===== -->
+<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  
   <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
-
-    <!-- デバッグ用床 -->
-    <a-plane
-      width="1"
-      height="1"
-      rotation="-90 0 0"
-      color="#00ff00"
-      opacity="0.3">
-    </a-plane>
 
     <!-- 画像 -->
     <a-image
@@ -100,7 +68,7 @@
       src="assets/images/3.png"
       width="1"
       height="1"
-     rotation="-90 180 0"
+      rotation="-90 0 0"
       position="0 0 0.01"
       visible="true">
     </a-image>
@@ -110,19 +78,9 @@
       id="model"
       gltf-model="assets/models/Pumpkin.glb"
       position="0 -0.6 0"
+      rotation="-95 180 0"
       scale="0.15 0.15 0.15"
-      rotation="0 180 0"
       visible="false">
-
-      <!-- 出現アニメーション -->
-      <a-animation
-        attribute="scale"
-        from="0.01 0.01 0.01"
-        to="0.15 0.15 0.15"
-        dur="800"
-        easing="ease-out">
-      </a-animation>
-
     </a-entity>
 
   </a-marker>
@@ -130,55 +88,73 @@
   <a-entity camera></a-entity>
 </a-scene>
 
+<!-- ===== デバッグUI ===== -->
+<div id="debugUI">
+  X（左右）
+  <input type="range" id="posX" min="-1" max="1" step="0.01" value="0">
+
+  Y（上下）
+  <input type="range" id="posY" min="-1" max="1" step="0.01" value="-0.6">
+
+  Z（前後）
+  <input type="range" id="posZ" min="-1" max="1" step="0.01" value="0">
+
+  回転Y
+  <input type="range" id="rotY" min="0" max="360" value="180">
+
+  大きさ
+  <input type="range" id="scale" min="0.05" max="1" step="0.01" value="0.15">
+</div>
+
+<!-- ===== 制御スクリプト ===== -->
 <script>
   const image = document.querySelector('#image');
   const model = document.querySelector('#model');
-
-  const posX = document.querySelector('#posX');
-  const posY = document.querySelector('#posY');
-  const posZ = document.querySelector('#posZ');
-  const scale = document.querySelector('#scale');
-  const rotY = document.querySelector('#rotY');
-
-  function update() {
-    model.setAttribute(
-      'position',
-      `${posX.value} ${posY.value} ${posZ.value}`
-    );
-    model.setAttribute(
-      'scale',
-      `${scale.value} ${scale.value} ${scale.value}`
-    );
-    model.setAttribute(
-      'rotation',
-      `0 ${rotY.value} 0`
-    );
-  }
-
-  posX.oninput = update;
-  posY.oninput = update;
-  posZ.oninput = update;
-  scale.oninput = update;
-  rotY.oninput = update;
 
   function showImage() {
     image.setAttribute('visible', true);
     model.setAttribute('visible', false);
   }
 
-  function show3D() {
+  function showModel() {
     image.setAttribute('visible', false);
     model.setAttribute('visible', true);
   }
 
-  // 3Dタップで回転
-  model.addEventListener('click', () => {
-    model.object3D.rotation.y += Math.PI / 4;
-  });
+  const posX = document.querySelector('#posX');
+  const posY = document.querySelector('#posY');
+  const posZ = document.querySelector('#posZ');
+  const rotY = document.querySelector('#rotY');
+  const scale = document.querySelector('#scale');
+
+  function updateModel() {
+    model.setAttribute(
+      'position',
+      `${posX.value} ${posY.value} ${posZ.value}`
+    );
+
+    model.setAttribute(
+      'rotation',
+      `-95 ${rotY.value} 0`
+    );
+
+    model.setAttribute(
+      'scale',
+      `${scale.value} ${scale.value} ${scale.value}`
+    );
+  }
+
+  posX.oninput = updateModel;
+  posY.oninput = updateModel;
+  posZ.oninput = updateModel;
+  rotY.oninput = updateModel;
+  scale.oninput = updateModel;
 </script>
 
 </body>
 </html>
+
+
 
 
 
