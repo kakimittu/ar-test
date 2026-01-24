@@ -12,56 +12,58 @@
 
 <body style="margin:0; overflow:hidden;">
 
-<a-scene embedded arjs="sourceType: webcam;">
+<a-scene
+  embedded
+  arjs="sourceType: webcam; debugUIEnabled: false;"
+  vr-mode-ui="enabled: false">
 
   <!-- マーカー -->
-<a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
+  <a-marker
+    type="pattern"
+    url="assets/markers/pattern-ROBOTA.patt">
 
-  <!-- ライト -->
-  <a-entity light="type: ambient; intensity: 1"></a-entity>
-  <a-entity light="type: directional; intensity: 1" position="1 2 1"></a-entity>
+    <!-- 画像（最初に表示） -->
+    <a-image
+      id="image"
+      src="assets/images/3.png"
+      width="1"
+      height="1"
+      rotation="-90 0 0"
+      position="0 0 0.01"
+      cursor="rayOrigin: mouse">
+    </a-image>
 
-  <!-- 画像 -->
-  <a-image
-    id="image"
-    src="assets/images/3.png"
-    width="1"
-    height="1"
-    rotation="-90 0 0"
-    position="0 0 0.01">
-  </a-image>
+    <!-- 3Dモデル（最初は非表示） -->
+    <a-entity
+      id="model"
+      gltf-model="assets/models/Pumpkin.glb"
+      scale="0.5 0.5 0.5"
+      position="0 0.5 0"
+      rotation="0 0 0"
+      visible="false"
+      cursor="rayOrigin: mouse">
+    </a-entity>
 
-  <!-- 3D（強制表示テスト） -->
-  <a-entity
-    id="model"
-    gltf-model="assets/models/Pumpkin.glb"
-    scale="1 1 1"
-    position="0 1 0"
-    rotation="-90 0 0"
-    visible="true">
-  </a-entity>
-
-</a-marker>
+  </a-marker>
 
   <!-- カメラ -->
   <a-entity camera></a-entity>
 
 </a-scene>
 
-<!-- 動作制御 -->
 <script>
   const image = document.querySelector('#image');
   const model = document.querySelector('#model');
 
-  // 画像 → 3D に切り替え
+  // 画像をタップ → 3D表示
   image.addEventListener('click', () => {
     image.setAttribute('visible', false);
     model.setAttribute('visible', true);
   });
 
-  // 3D をタップしたら回転
+  // 3Dをタップ → 回転
   model.addEventListener('click', () => {
-    model.object3D.rotation.y += Math.PI / 2;
+    model.object3D.rotation.y += Math.PI / 4;
   });
 </script>
 
