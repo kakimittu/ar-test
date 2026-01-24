@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>印刷物AR 完成版（回転方式2種）</title>
+  <title>印刷物AR 完成版（正面向き調整済）</title>
 
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
   <style>
     body { margin:0; overflow:hidden; font-family:sans-serif; }
@@ -21,39 +21,42 @@
 
     #ui button {
       font-size: 14px;
-      padding: 6px 10px;
+      padding: 8px 12px;
       margin: 4px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
 
     #debugUI {
       position: fixed;
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.6);
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.7);
       color: white;
-      padding: 10px;
+      padding: 15px;
       border-radius: 10px;
-      font-size: 12px;
+      font-size: 14px;
       z-index: 999;
     }
 
-    #debugUI label { display:block; margin-top:6px; }
-    #debugUI input { width:100%; }
+    #debugUI label { display:block; margin-bottom:8px; }
+    #debugUI input { width:100%; cursor: pointer; }
   </style>
 </head>
 
 <body>
 
-<!-- ===== UI ===== -->
 <div id="ui">
-  <button onclick="showImage()">画像</button>
-  <button onclick="showModel()">3D</button>
+  <button onclick="showImage()">画像表示</button>
+  <button onclick="showModel()">3Dモデル</button>
   <button onclick="modeSelf()">その場回転</button>
   <button onclick="modeOrbit()">棒回転</button>
 </div>
 
-<a-scene embedded arjs="sourceType: webcam;">
+<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  
   <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
 
     <a-image
@@ -62,19 +65,17 @@
       width="1"
       height="1"
       rotation="-90 0 0"
-      position="0 0 0.01"
+      position="0 0.05 0"
       visible="true">
     </a-image>
 
-    <!-- ===== 回転用ピボット（棒） ===== -->
     <a-entity id="pivot" rotation="0 0 0">
 
-      <!-- 3Dモデル本体 -->
       <a-entity
         id="model"
         gltf-model="assets/models/Pumpkin.glb"
-        position="0 -0.6 0.4"
-        rotation="-95 180 0"
+        position="0 0 0" 
+        rotation="-90 0 0" 
         scale="0.15 0.15 0.15"
         visible="false">
       </a-entity>
@@ -87,9 +88,8 @@
 </a-scene>
 
 <div id="debugUI">
-  <label>回転Y
-    <input type="range" id="rotY" min="0" max="360" value="180">
-  </label>
+  <label id="rotLabel">回転角度: 0°</label>
+  <input type="range" id="rotY" min="0" max="360" value="0">
 </div>
 
 <script>
@@ -97,10 +97,12 @@
   const model = document.querySelector('#model');
   const pivot = document.querySelector('#pivot');
   const rotY = document.querySelector('#rotY');
+  const rotLabel = document.querySelector('#rotLabel');
 
-  let currentRotY = 180;
+  let currentRotY = 0; // 初期値を0（正面）に変更
   let rotationMode = 'self'; // self | orbit
 
+  // コンテンツの切り替え
   function showImage() {
     image.setAttribute('visible', true);
     model.setAttribute('visible', false);
@@ -111,36 +113,39 @@
     model.setAttribute('visible', true);
   }
 
-  function modeSelf() {
-    rotationMode = 'self';
-  }
+  // 回転モードの切り替え
+  function modeSelf() { rotationMode = 'self'; updateRotation(); }
+  function modeOrbit() { rotationMode = 'orbit'; updateRotation(); }
 
-  function modeOrbit() {
-    rotationMode = 'orbit';
-  }
-
+  // 回転の反映
   function updateRotation() {
+    rotLabel.innerText = `回転角度: ${Math.floor(currentRotY % 360)}°`;
+    
     if (rotationMode === 'self') {
-      model.setAttribute('rotation', `-95 ${currentRotY} 0`);
+      // モデル自体を回転（軸は動かさない）
+      model.setAttribute('rotation', `-90 ${currentRotY} 0`);
       pivot.setAttribute('rotation', '0 0 0');
     } else {
+      // 軸（ピボット）を回転（モデル自体は正面固定）
       pivot.setAttribute('rotation', `0 ${currentRotY} 0`);
-      model.setAttribute('rotation', '-95 180 0');
+      model.setAttribute('rotation', '-90 0 0');
     }
   }
 
+  // スライダー操作時
   rotY.oninput = () => {
     currentRotY = Number(rotY.value);
     updateRotation();
   };
 
-  /* ===== ドラッグ＋慣性 ===== */
+  /* ===== ドラッグ＋慣性（モーメンタム）の実装 ===== */
   let isDragging = false;
   let lastX = 0;
   let velocity = 0;
-  const friction = 0.94;
+  const friction = 0.94; // 摩擦（小さいほどすぐ止まる）
 
   function start(x) {
+    if (!model.getAttribute('visible')) return;
     isDragging = true;
     lastX = x;
     velocity = 0;
@@ -150,36 +155,43 @@
     if (!isDragging) return;
     const dx = x - lastX;
     lastX = x;
-    velocity = dx * 0.6;
+    velocity = dx * 0.5; // 回転の感度調整
     currentRotY += velocity;
-    rotY.value = currentRotY;
+    
+    // スライダーの値も同期させる
+    rotY.value = currentRotY % 360;
     updateRotation();
   }
 
   function end() { isDragging = false; }
 
+  // 慣性アニメーション
   function inertia() {
     if (!isDragging && Math.abs(velocity) > 0.1) {
       velocity *= friction;
       currentRotY += velocity;
-      rotY.value = currentRotY;
+      rotY.value = currentRotY % 360;
       updateRotation();
     }
     requestAnimationFrame(inertia);
   }
   inertia();
 
-  window.addEventListener('mousedown', e => model.getAttribute('visible') && start(e.clientX));
+  // マウスイベント
+  window.addEventListener('mousedown', e => start(e.clientX));
   window.addEventListener('mousemove', e => move(e.clientX));
   window.addEventListener('mouseup', end);
 
-  window.addEventListener('touchstart', e => model.getAttribute('visible') && start(e.touches[0].clientX));
+  // タッチイベント（スマホ用）
+  window.addEventListener('touchstart', e => start(e.touches[0].clientX));
   window.addEventListener('touchmove', e => move(e.touches[0].clientX));
   window.addEventListener('touchend', end);
+
 </script>
 
 </body>
 </html>
+
 
 
 
