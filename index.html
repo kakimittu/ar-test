@@ -11,9 +11,13 @@
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
-    body { margin: 0; overflow: hidden; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
 
-    /* 上部切り替えボタン */
+    /* 切り替えボタン */
     #ui {
       position: fixed;
       top: 10px;
@@ -41,6 +45,11 @@
       border-radius: 10px;
       font-size: 12px;
       z-index: 999;
+    }
+
+    #debugUI label {
+      display: block;
+      margin-top: 6px;
     }
 
     #debugUI input {
@@ -90,23 +99,28 @@
 
 <!-- ===== デバッグUI ===== -->
 <div id="debugUI">
-  X（左右）
-  <input type="range" id="posX" min="-1" max="1" step="0.01" value="0">
+  <label>X（左右）
+    <input type="range" id="posX" min="-1" max="1" step="0.01" value="0">
+  </label>
 
-  Y（上下）
-  <input type="range" id="posY" min="-1" max="1" step="0.01" value="-0.6">
+  <label>Y（上下）
+    <input type="range" id="posY" min="-1" max="1" step="0.01" value="-0.6">
+  </label>
 
-  Z（前後）
-  <input type="range" id="posZ" min="-1" max="1" step="0.01" value="0">
+  <label>Z（前後）
+    <input type="range" id="posZ" min="-1" max="1" step="0.01" value="0">
+  </label>
 
-  回転Y
-  <input type="range" id="rotY" min="0" max="360" value="180">
+  <label>回転Y
+    <input type="range" id="rotY" min="0" max="360" value="180">
+  </label>
 
-  大きさ
-  <input type="range" id="scale" min="0.05" max="1" step="0.01" value="0.15">
+  <label>大きさ
+    <input type="range" id="scale" min="0.05" max="1" step="0.01" value="0.15">
+  </label>
 </div>
 
-<!-- ===== 制御スクリプト ===== -->
+<!-- ===== 制御スクリプト（これ1つだけ） ===== -->
 <script>
   const image = document.querySelector('#image');
   const model = document.querySelector('#model');
@@ -127,6 +141,9 @@
   const rotY = document.querySelector('#rotY');
   const scale = document.querySelector('#scale');
 
+  /* 回転Yを一元管理 */
+  let currentRotY = Number(rotY.value);
+
   function updateModel() {
     model.setAttribute(
       'position',
@@ -135,7 +152,7 @@
 
     model.setAttribute(
       'rotation',
-      `-95 ${rotY.value} 0`
+      `-95 ${currentRotY} 0`
     );
 
     model.setAttribute(
@@ -144,63 +161,28 @@
     );
   }
 
+  /* スライダー操作 */
   posX.oninput = updateModel;
   posY.oninput = updateModel;
   posZ.oninput = updateModel;
-  rotY.oninput = updateModel;
   scale.oninput = updateModel;
-</script
-  <script>
-  const image = document.querySelector('#image');
-  const model = document.querySelector('#model');
 
-  /* 画像 / 3D 切り替え */
-  function showImage() {
-    image.setAttribute('visible', true);
-    model.setAttribute('visible', false);
-  }
+  rotY.oninput = () => {
+    currentRotY = Number(rotY.value);
+    updateModel();
+  };
 
-  function showModel() {
-    image.setAttribute('visible', false);
-    model.setAttribute('visible', true);
-  }
-
-  /* ===== ここから追加 ===== */
-
-  // 3Dモデルをタップしたら回転
+  /* 3Dモデルをタップで回転 */
   model.addEventListener('click', () => {
-    const currentRotation = model.getAttribute('rotation');
-    model.setAttribute(
-      'rotation',
-      `${currentRotation.x} ${currentRotation.y + 45} ${currentRotation.z}`
-    );
+    currentRotY += 45;
+    rotY.value = currentRotY;
+    updateModel();
   });
-
-  /* ===== ここまで ===== */
-
-  /* デバッグUI連動 */
-  const posX = document.querySelector('#posX');
-  const posY = document.querySelector('#posY');
-  const posZ = document.querySelector('#posZ');
-  const rotY = document.querySelector('#rotY');
-  const scale = document.querySelector('#scale');
-
-  function updateModel() {
-    model.setAttribute('position', `${posX.value} ${posY.value} ${posZ.value}`);
-    model.setAttribute('rotation', `-95 ${rotY.value} 0`);
-    model.setAttribute('scale', `${scale.value} ${scale.value} ${scale.value}`);
-  }
-
-  posX.oninput = updateModel;
-  posY.oninput = updateModel;
-  posZ.oninput = updateModel;
-  rotY.oninput = updateModel;
-  scale.oninput = updateModel;
 </script>
-
 
 </body>
 </html>
+
 
 
 
