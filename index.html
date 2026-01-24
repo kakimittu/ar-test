@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>印刷物AR 完成版</title>
+  <title>印刷物AR 完成版（慣性あり）</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -17,7 +17,6 @@
       font-family: sans-serif;
     }
 
-    /* 切り替えボタン */
     #ui {
       position: fixed;
       top: 10px;
@@ -33,7 +32,6 @@
       margin: 0 6px;
     }
 
-    /* デバッグUI */
     #debugUI {
       position: fixed;
       bottom: 10px;
@@ -60,18 +58,15 @@
 
 <body>
 
-<!-- ===== 切り替えUI ===== -->
+<!-- UI -->
 <div id="ui">
   <button onclick="showImage()">画像</button>
   <button onclick="showModel()">3D</button>
 </div>
 
-<!-- ===== ARシーン ===== -->
 <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-  
   <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
 
-    <!-- 画像 -->
     <a-image
       id="image"
       src="assets/images/3.png"
@@ -82,7 +77,6 @@
       visible="true">
     </a-image>
 
-    <!-- 3Dモデル -->
     <a-entity
       id="model"
       gltf-model="assets/models/Pumpkin.glb"
@@ -97,17 +91,17 @@
   <a-entity camera></a-entity>
 </a-scene>
 
-<!-- ===== デバッグUI ===== -->
+<!-- Debug UI -->
 <div id="debugUI">
-  <label>X（左右）
+  <label>X
     <input type="range" id="posX" min="-1" max="1" step="0.01" value="0">
   </label>
 
-  <label>Y（上下）
+  <label>Y
     <input type="range" id="posY" min="-1" max="1" step="0.01" value="-0.6">
   </label>
 
-  <label>Z（前後）
+  <label>Z
     <input type="range" id="posZ" min="-1" max="1" step="0.01" value="0">
   </label>
 
@@ -120,7 +114,6 @@
   </label>
 </div>
 
-<!-- ===== 制御スクリプト（これ1つだけ） ===== -->
 <script>
   const image = document.querySelector('#image');
   const model = document.querySelector('#model');
@@ -141,27 +134,14 @@
   const rotY = document.querySelector('#rotY');
   const scale = document.querySelector('#scale');
 
-  /* 回転Yを一元管理 */
   let currentRotY = Number(rotY.value);
 
   function updateModel() {
-    model.setAttribute(
-      'position',
-      `${posX.value} ${posY.value} ${posZ.value}`
-    );
-
-    model.setAttribute(
-      'rotation',
-      `-95 ${currentRotY} 0`
-    );
-
-    model.setAttribute(
-      'scale',
-      `${scale.value} ${scale.value} ${scale.value}`
-    );
+    model.setAttribute('position', `${posX.value} ${posY.value} ${posZ.value}`);
+    model.setAttribute('rotation', `-95 ${currentRotY} 0`);
+    model.setAttribute('scale', `${scale.value} ${scale.value} ${scale.value}`);
   }
 
-  /* スライダー操作 */
   posX.oninput = updateModel;
   posY.oninput = updateModel;
   posZ.oninput = updateModel;
@@ -172,66 +152,67 @@
     updateModel();
   };
 
-  /* 3Dモデルをタップで回転 */
   model.addEventListener('click', () => {
     currentRotY += 45;
     rotY.value = currentRotY;
     updateModel();
   });
-</script>
+
+  /* ===== 慣性付きドラッグ回転 ===== */
+
   let isDragging = false;
   let lastX = 0;
+  let velocityY = 0;
+  const friction = 0.95;
 
-  // 画面を押したとき
-  window.addEventListener('mousedown', (e) => {
-    if (!model.getAttribute('visible')) return;
+  function startDrag(x) {
     isDragging = true;
-    lastX = e.clientX;
-  });
+    lastX = x;
+    velocityY = 0;
+  }
 
-  // 指（マウス）を動かしたとき
-  window.addEventListener('mousemove', (e) => {
+  function dragMove(x) {
     if (!isDragging) return;
-
-    const deltaX = e.clientX - lastX;
-    lastX = e.clientX;
-
-    // 回転Yに加算（感度は 0.5 くらいがちょうどいい）
-    currentRotY += deltaX * 0.5;
+    const delta = x - lastX;
+    lastX = x;
+    velocityY = delta * 0.6;
+    currentRotY += velocityY;
     rotY.value = currentRotY;
     updateModel();
-  });
+  }
 
-  // 離したとき
-  window.addEventListener('mouseup', () => {
+  function endDrag() {
     isDragging = false;
+  }
+
+  function inertiaLoop() {
+    if (!isDragging && Math.abs(velocityY) > 0.1) {
+      velocityY *= friction;
+      currentRotY += velocityY;
+      rotY.value = currentRotY;
+      updateModel();
+    }
+    requestAnimationFrame(inertiaLoop);
+  }
+  inertiaLoop();
+
+  window.addEventListener('mousedown', e => {
+    if (model.getAttribute('visible')) startDrag(e.clientX);
   });
+  window.addEventListener('mousemove', e => dragMove(e.clientX));
+  window.addEventListener('mouseup', endDrag);
 
-  // スマホ対応（タッチ）
-  window.addEventListener('touchstart', (e) => {
-    if (!model.getAttribute('visible')) return;
-    isDragging = true;
-    lastX = e.touches[0].clientX;
+  window.addEventListener('touchstart', e => {
+    if (model.getAttribute('visible')) startDrag(e.touches[0].clientX);
   });
-
-  window.addEventListener('touchmove', (e) => {
-    if (!isDragging) return;
-
-    const deltaX = e.touches[0].clientX - lastX;
-    lastX = e.touches[0].clientX;
-
-    currentRotY += deltaX * 0.5;
-    rotY.value = currentRotY;
-    updateModel();
-  });
-
-  window.addEventListener('touchend', () => {
-    isDragging = false;
-  });
+  window.addEventListener('touchmove', e => dragMove(e.touches[0].clientX));
+  window.addEventListener('touchend', endDrag);
 </script>
 
 </body>
 </html>
+
+
 
 
 
