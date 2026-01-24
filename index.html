@@ -2,20 +2,13 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>印刷物AR 完成版（慣性あり）</title>
+  <title>印刷物AR 完成版（回転方式2種）</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-
-  <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
+    body { margin:0; overflow:hidden; font-family:sans-serif; }
 
     #ui {
       position: fixed;
@@ -27,9 +20,9 @@
     }
 
     #ui button {
-      font-size: 16px;
-      padding: 8px 16px;
-      margin: 0 6px;
+      font-size: 14px;
+      padding: 6px 10px;
+      margin: 4px;
     }
 
     #debugUI {
@@ -45,26 +38,22 @@
       z-index: 999;
     }
 
-    #debugUI label {
-      display: block;
-      margin-top: 6px;
-    }
-
-    #debugUI input {
-      width: 100%;
-    }
+    #debugUI label { display:block; margin-top:6px; }
+    #debugUI input { width:100%; }
   </style>
 </head>
 
 <body>
 
-<!-- UI -->
+<!-- ===== UI ===== -->
 <div id="ui">
   <button onclick="showImage()">画像</button>
   <button onclick="showModel()">3D</button>
+  <button onclick="modeSelf()">その場回転</button>
+  <button onclick="modeOrbit()">棒回転</button>
 </div>
 
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+<a-scene embedded arjs="sourceType: webcam;">
   <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
 
     <a-image
@@ -77,13 +66,19 @@
       visible="true">
     </a-image>
 
-    <a-entity
-      id="model"
-      gltf-model="assets/models/Pumpkin.glb"
-      position="0 -0.6 0"
-      rotation="-95 180 0"
-      scale="0.15 0.15 0.15"
-      visible="false">
+    <!-- ===== 回転用ピボット（棒） ===== -->
+    <a-entity id="pivot" rotation="0 0 0">
+
+      <!-- 3Dモデル本体 -->
+      <a-entity
+        id="model"
+        gltf-model="assets/models/Pumpkin.glb"
+        position="0 -0.6 0.4"
+        rotation="-95 180 0"
+        scale="0.15 0.15 0.15"
+        visible="false">
+      </a-entity>
+
     </a-entity>
 
   </a-marker>
@@ -91,32 +86,20 @@
   <a-entity camera></a-entity>
 </a-scene>
 
-<!-- Debug UI -->
 <div id="debugUI">
-  <label>X
-    <input type="range" id="posX" min="-1" max="1" step="0.01" value="0">
-  </label>
-
-  <label>Y
-    <input type="range" id="posY" min="-1" max="1" step="0.01" value="-0.6">
-  </label>
-
-  <label>Z
-    <input type="range" id="posZ" min="-1" max="1" step="0.01" value="0">
-  </label>
-
   <label>回転Y
     <input type="range" id="rotY" min="0" max="360" value="180">
-  </label>
-
-  <label>大きさ
-    <input type="range" id="scale" min="0.05" max="1" step="0.01" value="0.15">
   </label>
 </div>
 
 <script>
   const image = document.querySelector('#image');
   const model = document.querySelector('#model');
+  const pivot = document.querySelector('#pivot');
+  const rotY = document.querySelector('#rotY');
+
+  let currentRotY = 180;
+  let rotationMode = 'self'; // self | orbit
 
   function showImage() {
     image.setAttribute('visible', true);
@@ -128,89 +111,77 @@
     model.setAttribute('visible', true);
   }
 
-  const posX = document.querySelector('#posX');
-  const posY = document.querySelector('#posY');
-  const posZ = document.querySelector('#posZ');
-  const rotY = document.querySelector('#rotY');
-  const scale = document.querySelector('#scale');
-
-  let currentRotY = Number(rotY.value);
-
-  function updateModel() {
-    model.setAttribute('position', `${posX.value} ${posY.value} ${posZ.value}`);
-    model.setAttribute('rotation', `-95 ${currentRotY} 0`);
-    model.setAttribute('scale', `${scale.value} ${scale.value} ${scale.value}`);
+  function modeSelf() {
+    rotationMode = 'self';
   }
 
-  posX.oninput = updateModel;
-  posY.oninput = updateModel;
-  posZ.oninput = updateModel;
-  scale.oninput = updateModel;
+  function modeOrbit() {
+    rotationMode = 'orbit';
+  }
+
+  function updateRotation() {
+    if (rotationMode === 'self') {
+      model.setAttribute('rotation', `-95 ${currentRotY} 0`);
+      pivot.setAttribute('rotation', '0 0 0');
+    } else {
+      pivot.setAttribute('rotation', `0 ${currentRotY} 0`);
+      model.setAttribute('rotation', '-95 180 0');
+    }
+  }
 
   rotY.oninput = () => {
     currentRotY = Number(rotY.value);
-    updateModel();
+    updateRotation();
   };
 
-  model.addEventListener('click', () => {
-    currentRotY += 45;
-    rotY.value = currentRotY;
-    updateModel();
-  });
-
-  /* ===== 慣性付きドラッグ回転 ===== */
-
+  /* ===== ドラッグ＋慣性 ===== */
   let isDragging = false;
   let lastX = 0;
-  let velocityY = 0;
-  const friction = 0.95;
+  let velocity = 0;
+  const friction = 0.94;
 
-  function startDrag(x) {
+  function start(x) {
     isDragging = true;
     lastX = x;
-    velocityY = 0;
+    velocity = 0;
   }
 
-  function dragMove(x) {
+  function move(x) {
     if (!isDragging) return;
-    const delta = x - lastX;
+    const dx = x - lastX;
     lastX = x;
-    velocityY = delta * 0.6;
-    currentRotY += velocityY;
+    velocity = dx * 0.6;
+    currentRotY += velocity;
     rotY.value = currentRotY;
-    updateModel();
+    updateRotation();
   }
 
-  function endDrag() {
-    isDragging = false;
-  }
+  function end() { isDragging = false; }
 
-  function inertiaLoop() {
-    if (!isDragging && Math.abs(velocityY) > 0.1) {
-      velocityY *= friction;
-      currentRotY += velocityY;
+  function inertia() {
+    if (!isDragging && Math.abs(velocity) > 0.1) {
+      velocity *= friction;
+      currentRotY += velocity;
       rotY.value = currentRotY;
-      updateModel();
+      updateRotation();
     }
-    requestAnimationFrame(inertiaLoop);
+    requestAnimationFrame(inertia);
   }
-  inertiaLoop();
+  inertia();
 
-  window.addEventListener('mousedown', e => {
-    if (model.getAttribute('visible')) startDrag(e.clientX);
-  });
-  window.addEventListener('mousemove', e => dragMove(e.clientX));
-  window.addEventListener('mouseup', endDrag);
+  window.addEventListener('mousedown', e => model.getAttribute('visible') && start(e.clientX));
+  window.addEventListener('mousemove', e => move(e.clientX));
+  window.addEventListener('mouseup', end);
 
-  window.addEventListener('touchstart', e => {
-    if (model.getAttribute('visible')) startDrag(e.touches[0].clientX);
-  });
-  window.addEventListener('touchmove', e => dragMove(e.touches[0].clientX));
-  window.addEventListener('touchend', endDrag);
+  window.addEventListener('touchstart', e => model.getAttribute('visible') && start(e.touches[0].clientX));
+  window.addEventListener('touchmove', e => move(e.touches[0].clientX));
+  window.addEventListener('touchend', end);
 </script>
 
 </body>
 </html>
+
+
 
 
 
