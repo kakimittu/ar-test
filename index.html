@@ -4,13 +4,10 @@
   <meta charset="utf-8">
   <title>印刷物ARテスト</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
-    /* ボタンUI */
     #ui {
       position: fixed;
       bottom: 20px;
@@ -34,7 +31,6 @@
 
 <body style="margin:0; overflow:hidden;">
 
-<!-- ボタンUI -->
 <div id="ui">
   <button id="showImage">画像</button>
   <button id="show3D">3D</button>
@@ -48,10 +44,7 @@
   cursor="rayOrigin: mouse"
   raycaster="objects: .clickable">
 
-  <!-- マーカー -->
-  <a-marker
-    type="pattern"
-    url="assets/markers/pattern-ROBOTA.patt">
+  <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
 
     <!-- 画像 -->
     <a-image
@@ -69,9 +62,9 @@
       id="model"
       class="clickable"
       gltf-model="assets/models/Pumpkin.glb"
-      scale="0.5 0.5 0.5"
-      position="0 0.25 0"
-      rotation="0 0 0"
+      scale="0.3 0.3 0.3"
+      position="0 -0.3 0"
+      rotation="0 180 0"
       visible="false">
     </a-entity>
 
@@ -86,24 +79,20 @@
 
   // 画像表示
   document.querySelector('#showImage').addEventListener('click', () => {
-    if (!image.parentNode) {
-      model.parentNode.appendChild(image);
-    }
+    image.setAttribute('position', '0 0 0.01');
     image.setAttribute('visible', true);
     model.setAttribute('visible', false);
   });
 
-  // 3D表示（画像は完全削除）
+  // 3D表示
   document.querySelector('#show3D').addEventListener('click', () => {
-    if (image.parentNode) {
-      image.parentNode.removeChild(image);
-    }
+    image.setAttribute('visible', false);
     model.setAttribute('visible', true);
   });
 
   // 回転
   document.querySelector('#rotate').addEventListener('click', () => {
-    model.object3D.rotation.y += Math.PI / 4;
+    model.object3D.rotation.y += Math.PI / 6;
   });
 </script>
 
