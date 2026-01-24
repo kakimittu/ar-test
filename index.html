@@ -1,19 +1,218 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
   <meta charset="utf-8">
-  <title>Three.js</title>
+  <title>印刷物AR 完成版（慣性あり）</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+  <!-- AR.js -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
   <style>
-    body { margin: 0; overflow: hidden; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    #ui {
+      position: fixed;
+      top: 10px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 999;
+    }
+
+    #ui button {
+      font-size: 16px;
+      padding: 8px 16px;
+      margin: 0 6px;
+    }
+
+    #debugUI {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      z-index: 999;
+    }
+
+    #debugUI label {
+      display: block;
+      margin-top: 6px;
+    }
+
+    #debugUI input {
+      width: 100%;
+    }
   </style>
 </head>
+
 <body>
 
-  <!-- bodyの一番下 -->
-  <script type="module" src="./main.js"></script>
+<!-- UI -->
+<div id="ui">
+  <button onclick="showImage()">画像</button>
+  <button onclick="showModel()">3D</button>
+</div>
+
+<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
+
+    <a-image
+      id="image"
+      src="assets/images/3.png"
+      width="1"
+      height="1"
+      rotation="-90 0 0"
+      position="0 0 0.01"
+      visible="true">
+    </a-image>
+
+    <a-entity
+      id="model"
+      gltf-model="assets/models/Pumpkin.glb"
+      position="0 -0.6 0"
+      rotation="90 -180 0"
+      scale="0.15 0.15 0.15"
+      visible="false">
+    </a-entity>
+
+  </a-marker>
+
+  <a-entity camera></a-entity>
+</a-scene>
+
+<!-- Debug UI -->
+<div id="debugUI">
+  <label>X
+    <input type="range" id="posX" min="-1" max="1" step="0.01" value="0">
+  </label>
+
+  <label>Y
+    <input type="range" id="posY" min="-1" max="1" step="0.01" value="-0.6">
+  </label>
+
+  <label>Z
+    <input type="range" id="posZ" min="-1" max="1" step="0.01" value="0">
+  </label>
+
+  <label>回転Y
+    <input type="range" id="rotY" min="0" max="360" value="180">
+  </label>
+
+  <label>大きさ
+    <input type="range" id="scale" min="0.05" max="1" step="0.01" value="0.15">
+  </label>
+</div>
+
+<script>
+  const image = document.querySelector('#image');
+  const model = document.querySelector('#model');
+
+  function showImage() {
+    image.setAttribute('visible', true);
+    model.setAttribute('visible', false);
+  }
+
+  function showModel() {
+    image.setAttribute('visible', false);
+    model.setAttribute('visible', true);
+  }
+
+  const posX = document.querySelector('#posX');
+  const posY = document.querySelector('#posY');
+  const posZ = document.querySelector('#posZ');
+  const rotY = document.querySelector('#rotY');
+  const scale = document.querySelector('#scale');
+
+  let currentRotY = Number(rotY.value);
+
+  function updateModel() {
+    model.setAttribute('position', `${posX.value} ${posY.value} ${posZ.value}`);
+    model.setAttribute('rotation', `-95 ${currentRotY} 0`);
+    model.setAttribute('scale', `${scale.value} ${scale.value} ${scale.value}`);
+  }
+
+  posX.oninput = updateModel;
+  posY.oninput = updateModel;
+  posZ.oninput = updateModel;
+  scale.oninput = updateModel;
+
+  rotY.oninput = () => {
+    currentRotY = Number(rotY.value);
+    updateModel();
+  };
+
+  model.addEventListener('click', () => {
+    currentRotY += 45;
+    rotY.value = currentRotY;
+    updateModel();
+  });
+
+  /* ===== 慣性付きドラッグ回転 ===== */
+
+  let isDragging = false;
+  let lastX = 0;
+  let velocityY = 0;
+  const friction = 0.95;
+
+  function startDrag(x) {
+    isDragging = true;
+    lastX = x;
+    velocityY = 0;
+  }
+
+  function dragMove(x) {
+    if (!isDragging) return;
+    const delta = x - lastX;
+    lastX = x;
+    velocityY = delta * 0.6;
+    currentRotY += velocityY;
+    rotY.value = currentRotY;
+    updateModel();
+  }
+
+  function endDrag() {
+    isDragging = false;
+  }
+
+  function inertiaLoop() {
+    if (!isDragging && Math.abs(velocityY) > 0.1) {
+      velocityY *= friction;
+      currentRotY += velocityY;
+      rotY.value = currentRotY;
+      updateModel();
+    }
+    requestAnimationFrame(inertiaLoop);
+  }
+  inertiaLoop();
+
+  window.addEventListener('mousedown', e => {
+    if (model.getAttribute('visible')) startDrag(e.clientX);
+  });
+  window.addEventListener('mousemove', e => dragMove(e.clientX));
+  window.addEventListener('mouseup', endDrag);
+
+  window.addEventListener('touchstart', e => {
+    if (model.getAttribute('visible')) startDrag(e.touches[0].clientX);
+  });
+  window.addEventListener('touchmove', e => dragMove(e.touches[0].clientX));
+  window.addEventListener('touchend', endDrag);
+</script>
 
 </body>
 </html>
+
+
 
 
 
