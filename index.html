@@ -2,83 +2,77 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>印刷物AR 完成版（回転方式2種）</title>
+  <title>印刷物ARテスト</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
-    body { margin:0; overflow:hidden; font-family:sans-serif; }
-
+    /* ボタンUI */
     #ui {
       position: fixed;
-      top: 10px;
-      left: 0;
-      right: 0;
-      text-align: center;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
       z-index: 999;
     }
-
     #ui button {
+      padding: 10px 16px;
       font-size: 14px;
-      padding: 6px 10px;
-      margin: 4px;
+      border-radius: 8px;
+      border: none;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
     }
-
-    #debugUI {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      z-index: 999;
-    }
-
-    #debugUI label { display:block; margin-top:6px; }
-    #debugUI input { width:100%; }
   </style>
 </head>
 
-<body>
+<body style="margin:0; overflow:hidden;">
 
-<!-- ===== UI ===== -->
+<!-- ボタンUI -->
 <div id="ui">
-  <button onclick="showImage()">画像</button>
-  <button onclick="showModel()">3D</button>
-  <button onclick="modeSelf()">その場回転</button>
-  <button onclick="modeOrbit()">棒回転</button>
+  <button id="showImage">画像</button>
+  <button id="show3D">3D</button>
+  <button id="rotate">回転</button>
 </div>
 
-<a-scene embedded arjs="sourceType: webcam;">
-  <a-marker type="pattern" url="assets/markers/pattern-ROBOTA.patt">
+<a-scene
+  embedded
+  arjs="sourceType: webcam; debugUIEnabled: false;"
+  vr-mode-ui="enabled: false"
+  cursor="rayOrigin: mouse"
+  raycaster="objects: .clickable">
 
+  <!-- マーカー -->
+  <a-marker
+    type="pattern"
+    url="assets/markers/pattern-ROBOTA.patt">
+
+    <!-- 画像 -->
     <a-image
       id="image"
+      class="clickable"
       src="assets/images/3.png"
       width="1"
       height="1"
       rotation="-90 0 0"
-      position="0 0 0.01"
-      visible="true">
+      position="0 0 0.01">
     </a-image>
 
-    <!-- ===== 回転用ピボット（棒） ===== -->
-    <a-entity id="pivot" rotation="0 0 0">
-
-      <!-- 3Dモデル本体 -->
-      <a-entity
-        id="model"
-        gltf-model="assets/models/Pumpkin.glb"
-        position="0 -0.6 0.4"
-        rotation="-95 180 0"
-        scale="0.15 0.15 0.15"
-        visible="false">
-      </a-entity>
-
+    <!-- 3Dモデル -->
+    <a-entity
+      id="model"
+      class="clickable"
+      gltf-model="assets/models/Pumpkin.glb"
+      scale="0.5 0.5 0.5"
+      position="0 0.25 0"
+      rotation="0 0 0"
+      visible="false">
     </a-entity>
 
   </a-marker>
@@ -86,100 +80,37 @@
   <a-entity camera></a-entity>
 </a-scene>
 
-<div id="debugUI">
-  <label>回転Y
-    <input type="range" id="rotY" min="0" max="360" value="180">
-  </label>
-</div>
-
 <script>
   const image = document.querySelector('#image');
   const model = document.querySelector('#model');
-  const pivot = document.querySelector('#pivot');
-  const rotY = document.querySelector('#rotY');
 
-  let currentRotY = 180;
-  let rotationMode = 'self'; // self | orbit
-
-  function showImage() {
+  // 画像表示
+  document.querySelector('#showImage').addEventListener('click', () => {
+    if (!image.parentNode) {
+      model.parentNode.appendChild(image);
+    }
     image.setAttribute('visible', true);
     model.setAttribute('visible', false);
-  }
+  });
 
-  function showModel() {
-    image.setAttribute('visible', false);
+  // 3D表示（画像は完全削除）
+  document.querySelector('#show3D').addEventListener('click', () => {
+    if (image.parentNode) {
+      image.parentNode.removeChild(image);
+    }
     model.setAttribute('visible', true);
-  }
+  });
 
-  function modeSelf() {
-    rotationMode = 'self';
-  }
-
-  function modeOrbit() {
-    rotationMode = 'orbit';
-  }
-
-  function updateRotation() {
-    if (rotationMode === 'self') {
-      model.setAttribute('rotation', `-95 ${currentRotY} 0`);
-      pivot.setAttribute('rotation', '0 0 0');
-    } else {
-      pivot.setAttribute('rotation', `0 ${currentRotY} 0`);
-      model.setAttribute('rotation', '-95 180 0');
-    }
-  }
-
-  rotY.oninput = () => {
-    currentRotY = Number(rotY.value);
-    updateRotation();
-  };
-
-  /* ===== ドラッグ＋慣性 ===== */
-  let isDragging = false;
-  let lastX = 0;
-  let velocity = 0;
-  const friction = 0.94;
-
-  function start(x) {
-    isDragging = true;
-    lastX = x;
-    velocity = 0;
-  }
-
-  function move(x) {
-    if (!isDragging) return;
-    const dx = x - lastX;
-    lastX = x;
-    velocity = dx * 0.6;
-    currentRotY += velocity;
-    rotY.value = currentRotY;
-    updateRotation();
-  }
-
-  function end() { isDragging = false; }
-
-  function inertia() {
-    if (!isDragging && Math.abs(velocity) > 0.1) {
-      velocity *= friction;
-      currentRotY += velocity;
-      rotY.value = currentRotY;
-      updateRotation();
-    }
-    requestAnimationFrame(inertia);
-  }
-  inertia();
-
-  window.addEventListener('mousedown', e => model.getAttribute('visible') && start(e.clientX));
-  window.addEventListener('mousemove', e => move(e.clientX));
-  window.addEventListener('mouseup', end);
-
-  window.addEventListener('touchstart', e => model.getAttribute('visible') && start(e.touches[0].clientX));
-  window.addEventListener('touchmove', e => move(e.touches[0].clientX));
-  window.addEventListener('touchend', end);
+  // 回転
+  document.querySelector('#rotate').addEventListener('click', () => {
+    model.object3D.rotation.y += Math.PI / 4;
+  });
 </script>
 
 </body>
 </html>
+
+
 
 
 
