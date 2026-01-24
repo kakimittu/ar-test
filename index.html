@@ -179,9 +179,60 @@
     updateModel();
   });
 </script>
+  let isDragging = false;
+  let lastX = 0;
+
+  // 画面を押したとき
+  window.addEventListener('mousedown', (e) => {
+    if (!model.getAttribute('visible')) return;
+    isDragging = true;
+    lastX = e.clientX;
+  });
+
+  // 指（マウス）を動かしたとき
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - lastX;
+    lastX = e.clientX;
+
+    // 回転Yに加算（感度は 0.5 くらいがちょうどいい）
+    currentRotY += deltaX * 0.5;
+    rotY.value = currentRotY;
+    updateModel();
+  });
+
+  // 離したとき
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  // スマホ対応（タッチ）
+  window.addEventListener('touchstart', (e) => {
+    if (!model.getAttribute('visible')) return;
+    isDragging = true;
+    lastX = e.touches[0].clientX;
+  });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+
+    const deltaX = e.touches[0].clientX - lastX;
+    lastX = e.touches[0].clientX;
+
+    currentRotY += deltaX * 0.5;
+    rotY.value = currentRotY;
+    updateModel();
+  });
+
+  window.addEventListener('touchend', () => {
+    isDragging = false;
+  });
+</script>
 
 </body>
 </html>
+
 
 
 
