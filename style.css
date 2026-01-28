@@ -1,1 +1,36 @@
+body {
+  text-align: center;
+  font-family: sans-serif;
+  background: #f5f5f5;
+}
+
+#viewer {
+  width: 80%;
+  max-width: 600px;
+  margin: 30px auto;
+}
+
+img, video {
+  width: 100%;
+  border-radius: 12px;
+  display: none;
+}
+
+/* ===== ボタン本体（指定されたもの） ===== */
+.btn {
+  display: inline-block;
+  padding: 0.8em 3em;
+  background-color: #e3364a;
+  box-shadow: 0 5px 0 #ca1c30;
+  border-radius: 60px;
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  margin: 10px;
+}
+
+.btn:active {
+  box-shadow: none;
+  transform: translateY(5px);
+}
 
