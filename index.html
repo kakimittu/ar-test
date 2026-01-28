@@ -2,21 +2,27 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>メディア編集ページ</title>
+  <title>画像・動画ビューア</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>画像・動画 編集ページ</h1>
+  <h1>メディア表示ページ</h1>
 
-  <div id="viewer"></div>
+  <!-- 表示エリア -->
+  <div id="viewer">
+    <img id="image" />
+    <video id="video" controls></video>
+  </div>
 
-  <div class="controls">
-    <button onclick="showImage(0)">画像1</button>
-    <button onclick="showImage(1)">画像2</button>
-    <button onclick="showVideo(0)">動画</button>
+  <!-- 操作ボタン -->
+  <div class="buttons">
+    <a href="#" class="btn" id="prevBtn">PREV</a>
+    <a href="#" class="btn" id="nextBtn">NEXT</a>
   </div>
 
   <script src="script.js"></script>
 </body>
 </html>
+
+
