@@ -2,27 +2,49 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>画像・動画ビューア</title>
+  <title>AR View</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- AR.js -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
 
-  <h1>メディア表示ページ</h1>
+<body style="margin:0; overflow:hidden;">
 
-  <!-- 表示エリア -->
-  <div id="viewer">
-    <img id="image" />
-    <video id="video" controls></video>
-  </div>
+<a-scene
+  embedded
+  arjs="sourceType: webcam; debugUIEnabled: false;"
+>
+  <!-- マーカー -->
+  <a-marker preset="hiro">
 
-  <!-- 操作ボタン -->
-  <div class="buttons">
-    <a href="#" class="btn" id="prevBtn">PREV</a>
-    <a href="#" class="btn" id="nextBtn">NEXT</a>
-  </div>
+    <!-- 表示したい画像 -->
+    <a-image
+      src="assets/images/sample.png"
+      position="0 0 0"
+      rotation="-90 0 0"
+      width="1"
+      height="1"
+    ></a-image>
 
-  <script src="script.js"></script>
+  </a-marker>
+
+  <!-- カメラ -->
+  <a-entity camera></a-entity>
+</a-scene>
+
+<!-- 戻るボタン -->
+<a href="editor.html" class="btn" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%);">
+  編集に戻る
+</a>
+
 </body>
 </html>
+
+
 
 
