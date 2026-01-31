@@ -2,10 +2,12 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>AR Image → Video Slide</title>
+  <title>Custom Marker AR</title>
 
-  <!-- A-Frame & AR.js -->
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+  <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
@@ -23,29 +25,23 @@
   vr-mode-ui="enabled: false"
 >
 
-  <!-- アセット定義 -->
+  <!-- assets -->
   <a-assets>
     <img id="img1" src="assets/images/tukareta.jpg">
-    <img id="img2" src="assets/images/sasanooaikon.png">
-    <video id="vid1"
-      src="assets/videos/video1.mp4"
-      loop
-      muted
-      playsinline
-      webkit-playsinline>
-    </video>
   </a-assets>
 
-  <!-- マーカー -->
-  <a-marker preset="hiro">
+  <!-- 自作マーカー -->
+  <a-marker
+    type="pattern"
+    url="assets/pattern-AKAZAWA.patt"
+  >
 
-    <!-- 表示用プレーン -->
+    <!-- 表示する画像 -->
     <a-plane
-      id="content"
       position="0 0 0"
       rotation="-90 0 0"
       width="1.2"
-      height="0.7"
+      height="1.2"
       material="src: #img1"
     ></a-plane>
 
@@ -55,38 +51,10 @@
   <a-entity camera></a-entity>
 
 </a-scene>
-
-<script>
-  const contents = [
-    { type: "image", src: "#img1" },
-    { type: "image", src: "#img2" },
-    { type: "video", src: "#vid1" }
-  ];
-
-  let index = 0;
-  const plane = document.querySelector("#content");
-  const video = document.querySelector("#vid1");
-
-  function showContent() {
-    const item = contents[index];
-
-    if (item.type === "video") {
-      plane.setAttribute("material", "src", item.src);
-      video.play();
-    } else {
-      video.pause();
-      plane.setAttribute("material", "src", item.src);
-    }
-
-    index = (index + 1) % contents.length;
-  }
-
-  // 5秒ごとに自動スライド
-  setInterval(showContent, 5000);
-</script>
-
 </body>
 </html>
+
+
 
 
 
