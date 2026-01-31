@@ -1,49 +1,94 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>AR View</title>
+  <meta charset="UTF-8" />
+  <title>AR Image → Video Slide</title>
 
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-
-  <!-- AR.js -->
+  <!-- A-Frame & AR.js -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
 </head>
 
-<body style="margin:0; overflow:hidden;">
-
+<body>
 <a-scene
   embedded
   arjs="sourceType: webcam; debugUIEnabled: false;"
+  vr-mode-ui="enabled: false"
 >
+
+  <!-- アセット定義 -->
+  <a-assets>
+    <img id="img1" src="assets/images/tukareta.jpg">
+    <img id="img2" src="assets/images/image2.jpg">
+    <video id="vid1"
+      src="assets/video1.mp4"
+      loop
+      muted
+      playsinline
+      webkit-playsinline>
+    </video>
+  </a-assets>
+
   <!-- マーカー -->
   <a-marker preset="hiro">
 
-    <!-- 表示したい画像 -->
-    <a-image
-      src="assets/images/sample.png"
+    <!-- 表示用プレーン -->
+    <a-plane
+      id="content"
       position="0 0 0"
       rotation="-90 0 0"
-      width="1"
-      height="1"
-    ></a-image>
+      width="1.2"
+      height="0.7"
+      material="src: #img1"
+    ></a-plane>
 
   </a-marker>
 
   <!-- カメラ -->
   <a-entity camera></a-entity>
+
 </a-scene>
 
-<!-- 戻るボタン -->
-<a href="editor.html" class="btn" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%);">
-  編集に戻る
-</a>
+<script>
+  const contents = [
+    { type: "image", src: "#img1" },
+    { type: "image", src: "#img2" },
+    { type: "video", src: "#vid1" }
+  ];
+
+  let index = 0;
+  const plane = document.querySelector("#content");
+  const video = document.querySelector("#vid1");
+
+  function showContent() {
+    const item = contents[index];
+
+    if (item.type === "video") {
+      plane.setAttribute("material", "src", item.src);
+      video.play();
+    } else {
+      video.pause();
+      plane.setAttribute("material", "src", item.src);
+    }
+
+    index = (index + 1) % contents.length;
+  }
+
+  // 5秒ごとに自動スライド
+  setInterval(showContent, 5000);
+</script>
 
 </body>
 </html>
+
+
 
 
 
