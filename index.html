@@ -86,44 +86,71 @@
   const images = ["img1", "img2", "img3"];
   const marker = document.getElementById("marker");
 
-  function updateImages() {
+  function updateImages(animate = false) {
     images.forEach((id, index) => {
       const el = document.getElementById(id);
 
+      let pos, scale;
+
       if (index === currentIndex) {
-        el.setAttribute("visible", true);
-        el.setAttribute("position", "0 0 0");
-        el.setAttribute("scale", "1.2 1.2 1.2");
+        pos = "0 0 0";
+        scale = "1.2 1.2 1.2";
       } else if (index < currentIndex) {
-        el.setAttribute("visible", true);
-        el.setAttribute("position", "-1 0 0");
-        el.setAttribute("scale", "0.6 0.6 0.6");
+        pos = "-1 0 0";
+        scale = "0.6 0.6 0.6";
       } else {
-        el.setAttribute("visible", true);
-        el.setAttribute("position", "1 0 0");
-        el.setAttribute("scale", "0.6 0.6 0.6");
+        pos = "1 0 0";
+        scale = "0.6 0.6 0.6";
+      }
+
+      el.setAttribute("visible", true);
+
+      if (animate) {
+        el.setAttribute("animation__pos", {
+          property: "position",
+          to: pos,
+          dur: 300,
+          easing: "easeOutQuad"
+        });
+        el.setAttribute("animation__scale", {
+          property: "scale",
+          to: scale,
+          dur: 300,
+          easing: "easeOutQuad"
+        });
+      } else {
+        el.setAttribute("position", pos);
+        el.setAttribute("scale", scale);
       }
     });
   }
 
   marker.addEventListener("markerFound", () => {
-    if (isMarkerVisible) return;
     isMarkerVisible = true;
-
-    currentIndex = (currentIndex + 1) % images.length;
-    updateImages();
   });
 
   marker.addEventListener("markerLost", () => {
     isMarkerVisible = false;
   });
 
-  window.addEventListener("load", updateImages);
+  // 🔽 画面タップで切り替え
+  document.body.addEventListener("click", () => {
+    if (!isMarkerVisible) return;
+
+    currentIndex = (currentIndex + 1) % images.length;
+    updateImages(true);
+  });
+
+  window.addEventListener("load", () => {
+    updateImages(false);
+  });
 </script>
+
 
 
 </body>
 </html>
+
 
 
 
