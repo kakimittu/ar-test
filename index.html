@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Custom Marker AR</title>
+  <title>AR Image Switch</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -15,10 +15,30 @@
       margin: 0;
       overflow: hidden;
     }
+
+    /* ボタン */
+    .btn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.8em 3em;
+      background-color: #e3364a;
+      box-shadow: 0 5px 0 #ca1c30;
+      border-radius: 60px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 16px;
+      z-index: 10;
+    }
   </style>
 </head>
 
 <body>
+
+<!-- 切り替えボタン -->
+<a href="#" class="btn" id="changeBtn">画像を切り替える</a>
+
 <a-scene
   embedded
   arjs="sourceType: webcam; debugUIEnabled: false;"
@@ -28,29 +48,48 @@
   <!-- assets -->
   <a-assets>
     <img id="img1" src="assets/images/tukareta.jpg">
+    <img id="img2" src="assets/images/sample2.jpg">
+    <img id="img3" src="assets/images/sample3.jpg">
   </a-assets>
 
-  <!-- 自作マーカー -->
+  <!-- マーカー -->
   <a-marker
     type="pattern"
-    url="assets/markers/pattern-AKA2.patt"
+    url="assets/markers/pattern-AKAZAWA.patt"
   >
-
-    <!-- 表示する画像 -->
     <a-plane
+      id="imagePlane"
       position="0 0 0"
       rotation="-90 0 0"
       width="1.2"
       height="1.2"
       material="src: #img1"
     ></a-plane>
-
   </a-marker>
 
-  <!-- カメラ -->
   <a-entity camera></a-entity>
-
 </a-scene>
+
+<script>
+  // 使う画像の一覧
+  const images = ['#img1', '#img2', '#img3'];
+  let currentIndex = 0;
+
+  const plane = document.getElementById('imagePlane');
+  const btn = document.getElementById('changeBtn');
+
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    currentIndex++;
+    if (currentIndex >= images.length) {
+      currentIndex = 0;
+    }
+
+    plane.setAttribute('material', 'src', images[currentIndex]);
+  });
+</script>
+
 </body>
 </html>
 
