@@ -81,24 +81,60 @@
 
 <script>
   let currentIndex = 0;
-  const imageIds = ["img1", "img2", "img3"];
+
+  const images = [
+    {
+      id: "img1",
+      pos: "-1 0 0",
+      scale: "0.6 0.6 0.6"
+    },
+    {
+      id: "img2",
+      pos: "0 0 0",
+      scale: "1.2 1.2 1.2"
+    },
+    {
+      id: "img3",
+      pos: "1 0 0",
+      scale: "0.6 0.6 0.6"
+    }
+  ];
+
   const marker = document.getElementById("marker");
 
-  marker.addEventListener("markerFound", () => {
-    imageIds.forEach(id => {
-      document.getElementById(id).setAttribute("visible", false);
+  function updateImages() {
+    images.forEach((img, index) => {
+      const el = document.getElementById(img.id);
+
+      if (index === currentIndex) {
+        el.setAttribute("visible", true);
+        el.setAttribute("position", "0 0 0");
+        el.setAttribute("scale", "1.2 1.2 1.2");
+      } else if (index < currentIndex) {
+        el.setAttribute("visible", true);
+        el.setAttribute("position", "-1 0 0");
+        el.setAttribute("scale", "0.6 0.6 0.6");
+      } else {
+        el.setAttribute("visible", true);
+        el.setAttribute("position", "1 0 0");
+        el.setAttribute("scale", "0.6 0.6 0.6");
+      }
     });
+  }
 
-    currentIndex = (currentIndex + 1) % imageIds.length;
-
-    document
-      .getElementById(imageIds[currentIndex])
-      .setAttribute("visible", true);
+  marker.addEventListener("markerFound", () => {
+    currentIndex = (currentIndex + 1) % images.length;
+    updateImages();
   });
+
+  // 初期表示
+  updateImages();
 </script>
+
 
 </body>
 </html>
+
 
 
 
