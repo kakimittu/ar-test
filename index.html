@@ -1,116 +1,106 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>AR Multi Image Tap</title>
+  <meta charset="UTF-8">
+  <title>AR Image Switch</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+  <!-- AR.js -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
   <style>
-    body { margin: 0; overflow: hidden; }
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
   </style>
 </head>
 
 <body>
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+<a-scene
+  embedded
+  arjs="sourceType: webcam; debugUIEnabled: false;"
+  vr-mode-ui="enabled: false"
+>
 
   <!-- assets -->
   <a-assets>
-    <img id="img1" src="assets/images/tukareta.jpg">
-    <img id="img2" src="assets/images/3.jpg">
-    <img id="img3" src="assets/images/tukareta.jpg">
+    <img id="img1-src" src="assets/images/sasanooaikon.png">
+    <img id="img2-src" src="assets/images/tukareta.jpg">
+    <img id="img3-src" src="assets/images/3.png">
   </a-assets>
 
   <!-- マーカー -->
-  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
+  <a-marker
+    id="marker"
+    type="pattern"
+    url="assets/markers/pattern-AKA2.patt"
+  >
 
-    <!-- 画像グループ -->
-    <a-entity id="imageGroup">
+    <!-- 画像1 -->
+    <a-image
+      id="img1"
+      src="#img1-src"
+      position="-1 0 0"
+      rotation="-90 0 0"
+      width="1"
+      height="1"
+      visible="true">
+    </a-image>
 
-      <a-plane class="photo"
-        material="src: #img1"
-        position="-1 0 0"
-        rotation="-90 0 0"
-        width="0.8"
-        height="0.8">
-      </a-plane>
+    <!-- 画像2 -->
+    <a-image
+      id="img2"
+      src="#img2-src"
+      position="0 0 0"
+      rotation="-90 0 0"
+      width="1"
+      height="1"
+      visible="false">
+    </a-image>
 
-      <a-plane class="photo"
-        material="src: #img2"
-        position="0 0 0"
-        rotation="-90 0 0"
-        width="0.8"
-        height="0.8">
-      </a-plane>
+    <!-- 画像3 -->
+    <a-image
+      id="img3"
+      src="#img3-src"
+      position="1 0 0"
+      rotation="-90 0 0"
+      width="1"
+      height="1"
+      visible="false">
+    </a-image>
 
-      <a-plane class="photo"
-        material="src: #img3"
-        position="1 0 0"
-        rotation="-90 0 0"
-        width="0.8"
-        height="0.8">
-      </a-plane>
-
-    </a-entity>
   </a-marker>
 
+  <!-- カメラ -->
   <a-entity camera></a-entity>
+
 </a-scene>
-  
+
 <script>
   let currentIndex = 0;
-  const images = ["img1", "img2", "img3"];
+  const imageIds = ["img1", "img2", "img3"];
+  const marker = document.getElementById("marker");
 
-  document.addEventListener("click", () => {
-    // 全部非表示
-    images.forEach(id => {
+  marker.addEventListener("markerFound", () => {
+    imageIds.forEach(id => {
       document.getElementById(id).setAttribute("visible", false);
     });
 
-    // 次の画像へ
-    currentIndex = (currentIndex + 1) % images.length;
+    currentIndex = (currentIndex + 1) % imageIds.length;
 
-    // 表示
-    document.getElementById(images[currentIndex])
+    document
+      .getElementById(imageIds[currentIndex])
       .setAttribute("visible", true);
-  });
-</script>
-
-<script>
-  const photos = document.querySelectorAll('.photo');
-
-  let activePhoto = null;
-
-  photos.forEach(photo => {
-    photo.addEventListener('click', () => {
-
-      // すべて元に戻す
-      photos.forEach(p => {
-        p.setAttribute('scale', '1 1 1');
-        p.setAttribute('position', `${p.object3D.position.x} 0 0`);
-      });
-
-      // 同じのをもう一度押したら解除
-      if (activePhoto === photo) {
-        activePhoto = null;
-        return;
-      }
-
-      // 押されたものだけ拡大
-      photo.setAttribute('scale', '1.8 1.8 1.8');
-      photo.setAttribute(
-        'position',
-        `${photo.object3D.position.x} 0 0.2`
-      );
-
-      activePhoto = photo;
-    });
   });
 </script>
 
 </body>
 </html>
+
+
 
 
 
