@@ -57,6 +57,25 @@
 
   <a-entity camera></a-entity>
 </a-scene>
+  
+<script>
+  let currentIndex = 0;
+  const images = ["img1", "img2", "img3"];
+
+  document.addEventListener("click", () => {
+    // 全部非表示
+    images.forEach(id => {
+      document.getElementById(id).setAttribute("visible", false);
+    });
+
+    // 次の画像へ
+    currentIndex = (currentIndex + 1) % images.length;
+
+    // 表示
+    document.getElementById(images[currentIndex])
+      .setAttribute("visible", true);
+  });
+</script>
 
 <script>
   const photos = document.querySelectorAll('.photo');
@@ -92,6 +111,7 @@
 
 </body>
 </html>
+
 
 
 
