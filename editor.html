@@ -1,33 +1,40 @@
-<a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>AR Editor（配置確認用）</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+    }
 
-  <a-image
-    src="assets/images/sasanooaikon.png"
-    position="-1 0 0"
-    rotation="-90 0 0"
-    width="0.8"
-    height="0.8"
-    visible="true">
-  </a-image>
+    .row {
+      display: flex;
+      gap: 20px;
+    }
 
-  <a-image
-    src="assets/images/tukareta.jpg"
-    position="0 0 0"
-    rotation="-90 0 0"
-    width="0.8"
-    height="0.8"
-    visible="true">
-  </a-image>
+    .row img {
+      width: 200px;
+      border: 2px solid #333;
+      background: white;
+    }
+  </style>
+</head>
 
-  <a-image
-    src="assets/images/3.png"
-    position="1 0 0"
-    rotation="-90 0 0"
-    width="0.8"
-    height="0.8"
-    visible="true">
-  </a-image>
+<body>
 
-</a-marker>
+  <h2>画像配置エディター（横並び確認）</h2>
+
+  <div class="row">
+    <img src="assets/images/sasanooaikon.png">
+    <img src="assets/images/tukareta.jpg">
+    <img src="assets/images/3.png">
+  </div>
+
+</body>
+</html>
 
 
 
