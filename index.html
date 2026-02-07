@@ -81,30 +81,14 @@
 
 <script>
   let currentIndex = 0;
+  let isMarkerVisible = false;
 
-  const images = [
-    {
-      id: "img1",
-      pos: "-1 0 0",
-      scale: "0.6 0.6 0.6"
-    },
-    {
-      id: "img2",
-      pos: "0 0 0",
-      scale: "1.2 1.2 1.2"
-    },
-    {
-      id: "img3",
-      pos: "1 0 0",
-      scale: "0.6 0.6 0.6"
-    }
-  ];
-
+  const images = ["img1", "img2", "img3"];
   const marker = document.getElementById("marker");
 
   function updateImages() {
-    images.forEach((img, index) => {
-      const el = document.getElementById(img.id);
+    images.forEach((id, index) => {
+      const el = document.getElementById(id);
 
       if (index === currentIndex) {
         el.setAttribute("visible", true);
@@ -123,17 +107,24 @@
   }
 
   marker.addEventListener("markerFound", () => {
+    if (isMarkerVisible) return;
+    isMarkerVisible = true;
+
     currentIndex = (currentIndex + 1) % images.length;
     updateImages();
   });
 
-  // 初期表示
-  updateImages();
+  marker.addEventListener("markerLost", () => {
+    isMarkerVisible = false;
+  });
+
+  window.addEventListener("load", updateImages);
 </script>
 
 
 </body>
 </html>
+
 
 
 
