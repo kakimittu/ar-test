@@ -8,15 +8,16 @@
 body {
   font-family: sans-serif;
   padding: 20px;
+  text-align: center;
 }
 
-/* マーカー風背景 */
+/* 背景 */
 #previewArea {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-top: 30px;
-  height: 250px;
+  height: 300px;
   border: 4px solid black;
   background: repeating-linear-gradient(
     45deg,
@@ -25,30 +26,44 @@ body {
     #ddd 10px,
     #ddd 20px
   );
+  perspective: 800px;
 }
 
-/* 画像 */
+/* 共通画像 */
 .previewImg {
   margin: 0 10px;
-  transition: 0.3s;
+  transition: 0.4s;
   cursor: pointer;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
-.small {
-  width: 100px;
-  transform: scale(0.7);
+/* 左右 */
+.smallLeft {
+  width: 130px;
+  transform: rotateY(25deg) scale(0.9);
   opacity: 0.7;
 }
 
+.smallRight {
+  width: 130px;
+  transform: rotateY(-25deg) scale(0.9);
+  opacity: 0.7;
+}
+
+/* 中央 */
 .large {
-  width: 160px;
+  width: 220px;
   transform: scale(1.2);
-  border: 3px solid red;
+  border: 4px solid red;
+  z-index: 10;
 }
 
 button {
   margin-top: 20px;
-  padding: 10px 20px;
+  padding: 12px 25px;
+  font-size: 16px;
+  border-radius: 8px;
 }
 </style>
 </head>
@@ -56,7 +71,7 @@ button {
 <body>
 
 <h2>ARエディター（3枚）</h2>
-<p>✔ 3枚選択 → ドラッグで並び替え → クリックで中央変更</p>
+<p>✔ 3枚選択 → クリックで中央変更</p>
 
 <input type="file" id="fileInput" accept="image/*" multiple>
 
@@ -75,7 +90,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL }
 from "https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+  apiKey: "AIzaSy...",
   authDomain: "armisetai.firebaseapp.com",
   projectId: "armisetai",
   storageBucket: "armisetai.firebasestorage.app",
@@ -85,8 +100,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-/* ===== 既存の画像処理ロジック ===== */
+const storage = getStorage(app);
 
 const fileInput = document.getElementById("fileInput");
 const previewArea = document.getElementById("previewArea");
@@ -94,7 +108,7 @@ const previewArea = document.getElementById("previewArea");
 let imagesBase64 = [];
 let centerIndex = 1;
 
-function resizeImage(file, maxWidth = 800) {
+function resizeImage(file, maxWidth = 1000) {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -106,7 +120,7 @@ function resizeImage(file, maxWidth = 800) {
         canvas.height = img.height * scale;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.8));
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
       };
       img.src = e.target.result;
     };
@@ -120,13 +134,14 @@ function renderPreview() {
   imagesBase64.forEach((src, index) => {
     const img = document.createElement("img");
     img.src = src;
+    img.classList.add("previewImg");
 
     if (index === centerIndex) {
-      img.style.width = "160px";
-      img.style.border = "3px solid red";
+      img.classList.add("large");
+    } else if (index < centerIndex) {
+      img.classList.add("smallLeft");
     } else {
-      img.style.width = "100px";
-      img.style.opacity = "0.6";
+      img.classList.add("smallRight");
     }
 
     img.onclick = () => {
@@ -139,7 +154,22 @@ function renderPreview() {
 }
 
 fileInput.addEventListener("change", async (event) => {
- const storage = getStorage(app);
+  const files = event.target.files;
+
+  if (files.length !== 3) {
+    alert("必ず3枚選択してください");
+    return;
+  }
+
+  imagesBase64 = [];
+
+  for (let file of files) {
+    const resized = await resizeImage(file);
+    imagesBase64.push(resized);
+  }
+
+  renderPreview();
+});
 
 document.getElementById("saveBtn").addEventListener("click", async () => {
   if (imagesBase64.length !== 3) {
@@ -151,13 +181,10 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 
   for (let i = 0; i < imagesBase64.length; i++) {
     const blob = await (await fetch(imagesBase64[i])).blob();
-
     const storageRef = ref(storage, "arImages/image_" + i + "_" + Date.now() + ".jpg");
 
     await uploadBytes(storageRef, blob);
-
     const url = await getDownloadURL(storageRef);
-
     imageUrls.push(url);
   }
 
@@ -170,7 +197,6 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 });
 
 </script>
-
 
 </body>
 </html>
