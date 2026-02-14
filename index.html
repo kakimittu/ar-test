@@ -152,16 +152,22 @@
 
   window.addEventListener("load", updateImages);
   
-  document.getElementById("nextBtn")
-  .addEventListener("click", () => {
-    currentIndex = (currentIndex + 1) % imageElements.length;
-    updateImages();
+ <a-plane
+  id="nextBtn"
+  position="0 0.8 0"
+  rotation="0 0 0"
+  width="0.8"
+  height="0.3"
+  color="blue">
+</a-plane>
+
   });
 
 </script>
 
 </body>
 </html>
+
 
 
 
