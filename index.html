@@ -1,142 +1,137 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>AR Image Switch</title>
+<meta charset="UTF-8">
+<title>AR Image Switch</title>
 
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<!-- A-Frame -->
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
-  <!-- AR.js -->
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+<!-- AR.js -->
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-  </style>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
+
+  /* 2Dボタン */
+  #nextBtn2D {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    font-size: 16px;
+    background: blue;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    z-index: 9999;
+  }
+</style>
 </head>
 
 <body>
+
 <a-scene
   embedded
   arjs="sourceType: webcam; debugUIEnabled: false;"
   vr-mode-ui="enabled: false"
 >
 
-  <!-- assets -->
- <a-assets id="assets"></a-assets>
+  <a-assets id="assets"></a-assets>
 
-  <!-- マーカー -->
-<a-marker
-  id="marker"
-  type="pattern"
-  url="assets/markers/pattern-AKA2.patt"
->
+  <a-marker
+    id="marker"
+    type="pattern"
+    url="assets/markers/pattern-AKA2.patt"
+  >
+    <!-- 画像はJSで生成 -->
+  </a-marker>
 
-  <!-- 画像はJSで生成される -->
-
-  <a-plane
-    id="nextBtn"
-    position="0 0.8 0"
-    rotation="0 0 0"
-    width="0.8"
-    height="0.3"
-    color="blue">
-  </a-plane>
-
-</a-marker>
-
-
-  <!-- カメラ -->
   <a-entity camera></a-entity>
 
 </a-scene>
 
+<!-- 画面上の2Dボタン -->
+<button id="nextBtn2D">次へ ▶</button>
+
 <script>
-  let currentIndex = 0;
-  let isMarkerVisible = false;
+let currentIndex = 0;
+let isMarkerVisible = false;
 
-  const marker = document.getElementById("marker");
-  const assets = document.getElementById("assets");
+const marker = document.getElementById("marker");
+const assets = document.getElementById("assets");
 
-  const savedImages =
-    JSON.parse(localStorage.getItem('arImages')) || [
-      "assets/images/sasanooaikon.png",
-      "assets/images/tukareta.jpg",
-      "assets/images/3.png"
-    ];
+const savedImages =
+  JSON.parse(localStorage.getItem('arImages')) || [
+    "assets/images/sasanooaikon.png",
+    "assets/images/tukareta.jpg",
+    "assets/images/3.png"
+  ];
 
-  const imageElements = [];
+const imageElements = [];
 
-  savedImages.forEach((src, index) => {
-    const assetImg = document.createElement('img');
-    assetImg.setAttribute('id', 'img-src-' + index);
-    assetImg.setAttribute('src', src);
-    assets.appendChild(assetImg);
+// 画像生成
+savedImages.forEach((src, index) => {
+  const assetImg = document.createElement('img');
+  assetImg.setAttribute('id', 'img-src-' + index);
+  assetImg.setAttribute('src', src);
+  assets.appendChild(assetImg);
 
-    const aImg = document.createElement('a-image');
-    aImg.setAttribute('id', 'img' + index);
-    aImg.setAttribute('src', '#img-src-' + index);
-    aImg.setAttribute('rotation', '-90 0 0');
-    aImg.setAttribute('visible', true);
+  const aImg = document.createElement('a-image');
+  aImg.setAttribute('src', '#img-src-' + index);
+  aImg.setAttribute('rotation', '-90 0 0');
+  marker.appendChild(aImg);
 
-    marker.appendChild(aImg);
-    imageElements.push(aImg);
+  imageElements.push(aImg);
+});
+
+// 位置更新
+function updateImages() {
+  imageElements.forEach((el, index) => {
+    let pos, scale;
+
+    if (index === currentIndex) {
+      pos = "0 0 0";
+      scale = "1.2 1.2 1.2";
+    } else if (index < currentIndex) {
+      pos = "-1 0 0";
+      scale = "0.6 0.6 0.6";
+    } else {
+      pos = "1 0 0";
+      scale = "0.6 0.6 0.6";
+    }
+
+    el.setAttribute("position", pos);
+    el.setAttribute("scale", scale);
   });
+}
 
-  function updateImages() {
-    imageElements.forEach((el, index) => {
-      let pos, scale;
+marker.addEventListener("markerFound", () => {
+  isMarkerVisible = true;
+});
 
-      if (index === currentIndex) {
-        pos = "0 0 0";
-        scale = "1.2 1.2 1.2";
-      } else if (index < currentIndex) {
-        pos = "-1 0 0";
-        scale = "0.6 0.6 0.6";
-      } else {
-        pos = "1 0 0";
-        scale = "0.6 0.6 0.6";
-      }
+marker.addEventListener("markerLost", () => {
+  isMarkerVisible = false;
+});
 
-      el.setAttribute("position", pos);
-      el.setAttribute("scale", scale);
-    });
-  }
-
-  marker.addEventListener("markerFound", () => {
-    isMarkerVisible = true;
-  });
-
-  marker.addEventListener("markerLost", () => {
-    isMarkerVisible = false;
-  });
-
-  document.body.addEventListener("click", () => {
+// ✅ 2Dボタンで切り替え
+document.getElementById("nextBtn2D")
+  .addEventListener("click", () => {
     if (!isMarkerVisible) return;
+
     currentIndex = (currentIndex + 1) % imageElements.length;
     updateImages();
   });
 
-  window.addEventListener("load", updateImages);
-  
- <a-plane
-  id="nextBtn"
-  position="0 0.8 0"
-  rotation="0 0 0"
-  width="0.8"
-  height="0.3"
-  color="blue">
-</a-plane>
-
-  });
-
+window.addEventListener("load", updateImages);
 </script>
 
 </body>
 </html>
+
 
 
 
