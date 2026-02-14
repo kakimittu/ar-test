@@ -84,96 +84,84 @@ body {
   const app = initializeApp(firebaseConfig);
 　const db = getFirestore(app);
 
-/* ===== 既存の画像処理ロジック ===== */
+let currentIndex = 1;
+let isMarkerVisible = false;
 
-const fileInput = document.getElementById("fileInput");
-const previewArea = document.getElementById("previewArea");
+const marker = document.getElementById("marker");
+const assets = document.getElementById("assets");
 
-let imagesBase64 = [];
-let centerIndex = 1;
+async function loadData() {
+  const docSnap = await getDoc(doc(db, "arData", "main"));
 
-function resizeImage(file, maxWidth = 800) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement("canvas");
-        const scale = maxWidth / img.width;
-        canvas.width = maxWidth;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.8));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+  if (!docSnap.exists()) return;
+
+  const data = docSnap.data();
+  const images = data.images;
+  currentIndex = data.centerIndex;
+
+  const imageElements = [];
+
+  images.forEach((src, index) => {
+    const assetImg = document.createElement("img");
+    assetImg.setAttribute("id", "img-src-" + index);
+    assetImg.setAttribute("src", src);
+    assets.appendChild(assetImg);
+
+    const aImg = document.createElement("a-image");
+    aImg.setAttribute("src", "#img-src-" + index);
+    aImg.setAttribute("rotation", "-90 0 0");
+    marker.appendChild(aImg);
+
+    imageElements.push(aImg);
   });
+
+  function updateImages() {
+    imageElements.forEach((el, index) => {
+      if (index === currentIndex) {
+        el.setAttribute("position", "0 0 0");
+        el.setAttribute("scale", "1.2 1.2 1.2");
+      } else if (index < currentIndex) {
+        el.setAttribute("position", "-1 0 0");
+        el.setAttribute("scale", "0.6 0.6 0.6");
+      } else {
+        el.setAttribute("position", "1 0 0");
+        el.setAttribute("scale", "0.6 0.6 0.6");
+      }
+    });
+  }
+
+  marker.addEventListener("markerFound", () => {
+    isMarkerVisible = true;
+  });
+
+  marker.addEventListener("markerLost", () => {
+    isMarkerVisible = false;
+  });
+
+  document.getElementById("nextBtn2D").onclick = () => {
+    if (!isMarkerVisible) return;
+    currentIndex = (currentIndex + 1) % imageElements.length;
+    updateImages();
+  };
+
+  document.getElementById("prevBtn2D").onclick = () => {
+    if (!isMarkerVisible) return;
+    currentIndex =
+      (currentIndex - 1 + imageElements.length) %
+      imageElements.length;
+    updateImages();
+  };
+
+  updateImages();
 }
 
-function renderPreview() {
-  previewArea.innerHTML = "";
-
-  imagesBase64.forEach((src, index) => {
-    const img = document.createElement("img");
-    img.src = src;
-    img.draggable = true;
-
-    if (index === centerIndex) {
-      img.style.width = "160px";
-      img.style.border = "3px solid red";
-    } else {
-      img.style.width = "100px";
-      img.style.opacity = "0.6";
-    }
-
-    img.onclick = () => {
-      centerIndex = index;
-      renderPreview();
-    };
-
-    previewArea.appendChild(img);
-  });
-}
-
-fileInput.addEventListener("change", async (event) => {
-  const files = event.target.files;
-
-  if (files.length !== 3) {
-    alert("必ず3枚選択してください");
-    return;
-  }
-
-  imagesBase64 = [];
-
-  for (let file of files) {
-    const resized = await resizeImage(file);
-    imagesBase64.push(resized);
-  }
-
-  renderPreview();
-});
-
-/* ===== Firebase保存 ===== */
-
-document.getElementById("saveBtn").addEventListener("click", async () => {
-  if (imagesBase64.length !== 3) {
-    alert("3枚選択してください");
-    return;
-  }
-
-  await setDoc(doc(db, "arData", "main"), {
-    images: imagesBase64,
-    centerIndex: centerIndex
-  });
-
-  alert("Firebaseに保存しました！");
-});
+loadData();
 
 </script>
 
 
+
 </body>
 </html>
+
 
