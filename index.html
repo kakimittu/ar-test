@@ -79,13 +79,36 @@
   let currentIndex = 0;
   let isMarkerVisible = false;
 
-  const images = ["img1", "img2", "img3"];
   const marker = document.getElementById("marker");
+  const assets = document.getElementById("assets");
 
-  function updateImages(animate = false) {
-    images.forEach((id, index) => {
-      const el = document.getElementById(id);
+  const savedImages =
+    JSON.parse(localStorage.getItem('arImages')) || [
+      "assets/images/sasanooaikon.png",
+      "assets/images/tukareta.jpg",
+      "assets/images/3.png"
+    ];
 
+  const imageElements = [];
+
+  savedImages.forEach((src, index) => {
+    const assetImg = document.createElement('img');
+    assetImg.setAttribute('id', 'img-src-' + index);
+    assetImg.setAttribute('src', src);
+    assets.appendChild(assetImg);
+
+    const aImg = document.createElement('a-image');
+    aImg.setAttribute('id', 'img' + index);
+    aImg.setAttribute('src', '#img-src-' + index);
+    aImg.setAttribute('rotation', '-90 0 0');
+    aImg.setAttribute('visible', true);
+
+    marker.appendChild(aImg);
+    imageElements.push(aImg);
+  });
+
+  function updateImages() {
+    imageElements.forEach((el, index) => {
       let pos, scale;
 
       if (index === currentIndex) {
@@ -99,25 +122,8 @@
         scale = "0.6 0.6 0.6";
       }
 
-      el.setAttribute("visible", true);
-
-      if (animate) {
-        el.setAttribute("animation__pos", {
-          property: "position",
-          to: pos,
-          dur: 300,
-          easing: "easeOutQuad"
-        });
-        el.setAttribute("animation__scale", {
-          property: "scale",
-          to: scale,
-          dur: 300,
-          easing: "easeOutQuad"
-        });
-      } else {
-        el.setAttribute("position", pos);
-        el.setAttribute("scale", scale);
-      }
+      el.setAttribute("position", pos);
+      el.setAttribute("scale", scale);
     });
   }
 
@@ -129,23 +135,20 @@
     isMarkerVisible = false;
   });
 
-  // 🔽 画面タップで切り替え
   document.body.addEventListener("click", () => {
     if (!isMarkerVisible) return;
-
-    currentIndex = (currentIndex + 1) % images.length;
-    updateImages(true);
+    currentIndex = (currentIndex + 1) % imageElements.length;
+    updateImages();
   });
 
-  window.addEventListener("load", () => {
-    updateImages(false);
-  });
+  window.addEventListener("load", updateImages);
 </script>
 
 
 
 </body>
 </html>
+
 
 
 
