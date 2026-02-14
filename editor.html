@@ -1,41 +1,40 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>AR Editor（配置確認用）</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #f0f0f0;
-    }
-
-    .row {
-      display: flex;
-      gap: 20px;
-    }
-
-    .row img {
-  width: 200px;
-  height: 200px;
-  object-fit: contain;
-  background: white;
-}
-  </style>
+<meta charset="UTF-8">
+<title>AR Editor</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  input { width: 100%; margin-bottom: 10px; }
+  button { padding: 10px; }
+</style>
 </head>
-
 <body>
 
-  <h2>画像配置エディター（横並び確認）</h2>
+<h2>画像編集</h2>
 
-  <div class="row">
-    <img src="assets/images/sasanooaikon.png">
-    <img src="assets/images/tukareta.jpg">
-    <img src="assets/images/3.png">
-  </div>
+<input id="img1" placeholder="画像1のパス">
+<input id="img2" placeholder="画像2のパス">
+<input id="img3" placeholder="画像3のパス">
+
+<button onclick="save()">保存</button>
+
+<script>
+  function save() {
+    const images = [
+      document.getElementById('img1').value,
+      document.getElementById('img2').value,
+      document.getElementById('img3').value
+    ];
+
+    localStorage.setItem('arImages', JSON.stringify(images));
+    alert('保存しました');
+  }
+</script>
 
 </body>
 </html>
+
 
 
 
