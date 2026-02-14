@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>AR Editor</title>
+<title>AR Editor Pro</title>
 
 <style>
 body {
@@ -10,19 +10,28 @@ body {
   padding: 20px;
 }
 
-/* 横並びプレビュー */
+/* マーカー風背景 */
 #previewArea {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-top: 30px;
-  height: 200px;
-  border: 2px dashed #ccc;
+  height: 250px;
+  border: 4px solid black;
+  background: repeating-linear-gradient(
+    45deg,
+    #eee,
+    #eee 10px,
+    #ddd 10px,
+    #ddd 20px
+  );
 }
 
+/* 画像 */
 .previewImg {
   margin: 0 10px;
   transition: 0.3s;
+  cursor: pointer;
 }
 
 .small {
@@ -32,8 +41,9 @@ body {
 }
 
 .large {
-  width: 150px;
-  transform: scale(1.1);
+  width: 160px;
+  transform: scale(1.2);
+  border: 3px solid red;
 }
 
 button {
@@ -45,13 +55,14 @@ button {
 
 <body>
 
-<h2>画像を3枚選択してください</h2>
+<h2>ARエディター（3枚）</h2>
+<p>✔ 3枚選択 → ドラッグで並び替え → クリックで中央変更</p>
 
 <input type="file" id="fileInput" accept="image/*" multiple>
 
 <div id="previewArea"></div>
 
-<button id="saveBtn">3枚まとめて保存</button>
+<button id="saveBtn">保存</button>
 
 <br><br>
 <a href="index.html">ARページへ戻る</a>
@@ -61,44 +72,97 @@ const fileInput = document.getElementById("fileInput");
 const previewArea = document.getElementById("previewArea");
 
 let imagesBase64 = [];
+let centerIndex = 1; // 初期中央
 
-fileInput.addEventListener("change", (event) => {
+/* ========= 画像圧縮 ========= */
+function resizeImage(file, maxWidth = 800) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement("canvas");
+        const scale = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * scale;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ========= プレビュー更新 ========= */
+function renderPreview() {
+  previewArea.innerHTML = "";
+
+  imagesBase64.forEach((src, index) => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.classList.add("previewImg");
+    img.draggable = true;
+
+    if (index === centerIndex) {
+      img.classList.add("large");
+    } else {
+      img.classList.add("small");
+    }
+
+    /* 中央変更 */
+    img.addEventListener("click", () => {
+      centerIndex = index;
+      renderPreview();
+    });
+
+    /* ドラッグ並び替え */
+    img.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("index", index);
+    });
+
+    img.addEventListener("dragover", (e) => e.preventDefault());
+
+    img.addEventListener("drop", (e) => {
+      const fromIndex = e.dataTransfer.getData("index");
+      const temp = imagesBase64[fromIndex];
+      imagesBase64.splice(fromIndex, 1);
+      imagesBase64.splice(index, 0, temp);
+      centerIndex = 1;
+      renderPreview();
+    });
+
+    previewArea.appendChild(img);
+  });
+}
+
+/* ========= 画像選択 ========= */
+fileInput.addEventListener("change", async (event) => {
   const files = event.target.files;
 
   if (files.length !== 3) {
     alert("必ず3枚選択してください");
     fileInput.value = "";
-    previewArea.innerHTML = "";
     return;
   }
 
   imagesBase64 = [];
-  previewArea.innerHTML = "";
 
-  Array.from(files).forEach((file, index) => {
-    const reader = new FileReader();
+  for (let file of files) {
+    const resized = await resizeImage(file);
+    imagesBase64.push(resized);
+  }
 
-    reader.onload = function(e) {
-      imagesBase64.push(e.target.result);
-
-      const img = document.createElement("img");
-      img.src = e.target.result;
-      img.classList.add("previewImg");
-
-      if (index === 1) {
-        img.classList.add("large");
-      } else {
-        img.classList.add("small");
-      }
-
-      previewArea.appendChild(img);
-    };
-
-    reader.readAsDataURL(file);
-  });
+  centerIndex = 1;
+  renderPreview();
 });
 
-// 保存
+/* ========= 保存 ========= */
 document.getElementById("saveBtn").addEventListener("click", () => {
   if (imagesBase64.length !== 3) {
     alert("3枚選択してください");
@@ -106,6 +170,8 @@ document.getElementById("saveBtn").addEventListener("click", () => {
   }
 
   localStorage.setItem("arImages", JSON.stringify(imagesBase64));
+  localStorage.setItem("centerIndex", centerIndex);
+
   alert("保存しました！");
 });
 </script>
