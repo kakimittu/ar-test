@@ -10,48 +10,72 @@ body {
   padding: 20px;
 }
 
-input {
-  display: block;
-  margin-bottom: 10px;
+/* 横並びプレビュー */
+#previewArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  height: 200px;
+  border: 2px dashed #ccc;
+}
+
+.previewImg {
+  margin: 0 10px;
+  transition: 0.3s;
+}
+
+.small {
+  width: 100px;
+  transform: scale(0.7);
+  opacity: 0.7;
+}
+
+.large {
+  width: 150px;
+  transform: scale(1.1);
 }
 
 button {
-  padding: 10px 15px;
-  margin-top: 10px;
-}
-
-img {
-  max-width: 150px;
-  display: block;
-  margin-bottom: 10px;
+  margin-top: 20px;
+  padding: 10px 20px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>画像アップロード</h2>
+<h2>画像を3枚選択してください</h2>
 
 <input type="file" id="fileInput" accept="image/*" multiple>
 
-<div id="preview"></div>
+<div id="previewArea"></div>
 
-<button id="saveBtn">保存</button>
+<button id="saveBtn">3枚まとめて保存</button>
+
 <br><br>
-<a href="index.html">ARページに戻る</a>
+<a href="index.html">ARページへ戻る</a>
 
 <script>
 const fileInput = document.getElementById("fileInput");
-const preview = document.getElementById("preview");
+const previewArea = document.getElementById("previewArea");
+
 let imagesBase64 = [];
 
-// 画像選択時
 fileInput.addEventListener("change", (event) => {
   const files = event.target.files;
-  imagesBase64 = [];
-  preview.innerHTML = "";
 
-  Array.from(files).forEach(file => {
+  if (files.length !== 3) {
+    alert("必ず3枚選択してください");
+    fileInput.value = "";
+    previewArea.innerHTML = "";
+    return;
+  }
+
+  imagesBase64 = [];
+  previewArea.innerHTML = "";
+
+  Array.from(files).forEach((file, index) => {
     const reader = new FileReader();
 
     reader.onload = function(e) {
@@ -59,7 +83,15 @@ fileInput.addEventListener("change", (event) => {
 
       const img = document.createElement("img");
       img.src = e.target.result;
-      preview.appendChild(img);
+      img.classList.add("previewImg");
+
+      if (index === 1) {
+        img.classList.add("large");
+      } else {
+        img.classList.add("small");
+      }
+
+      previewArea.appendChild(img);
     };
 
     reader.readAsDataURL(file);
@@ -68,8 +100,8 @@ fileInput.addEventListener("change", (event) => {
 
 // 保存
 document.getElementById("saveBtn").addEventListener("click", () => {
-  if (imagesBase64.length === 0) {
-    alert("画像を選択してください");
+  if (imagesBase64.length !== 3) {
+    alert("3枚選択してください");
     return;
   }
 
@@ -80,7 +112,3 @@ document.getElementById("saveBtn").addEventListener("click", () => {
 
 </body>
 </html>
-
-
-
-
