@@ -71,6 +71,8 @@ button {
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } 
+from "https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
@@ -137,22 +139,7 @@ function renderPreview() {
 }
 
 fileInput.addEventListener("change", async (event) => {
-  const files = event.target.files;
-
-  if (files.length !== 3) {
-    alert("必ず3枚選択してください");
-    return;
-  }
-
-  imagesBase64 = [];
-
-  for (let file of files) {
-    const resized = await resizeImage(file);
-    imagesBase64.push(resized);
-  }
-
-  renderPreview();
-});
+ const storage = getStorage(app);
 
 document.getElementById("saveBtn").addEventListener("click", async () => {
   if (imagesBase64.length !== 3) {
@@ -160,12 +147,26 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     return;
   }
 
+  let imageUrls = [];
+
+  for (let i = 0; i < imagesBase64.length; i++) {
+    const blob = await (await fetch(imagesBase64[i])).blob();
+
+    const storageRef = ref(storage, "arImages/image_" + i + "_" + Date.now() + ".jpg");
+
+    await uploadBytes(storageRef, blob);
+
+    const url = await getDownloadURL(storageRef);
+
+    imageUrls.push(url);
+  }
+
   await setDoc(doc(db, "arData", "main"), {
-    images: imagesBase64,
+    images: imageUrls,
     centerIndex: centerIndex
   });
 
-  alert("Firebaseに保存しました！");
+  alert("Storageに保存しました！");
 });
 
 </script>
