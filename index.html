@@ -29,55 +29,25 @@
  <a-assets id="assets"></a-assets>
 
   <!-- マーカー -->
-  <a-marker
-    id="marker"
-    type="pattern"
-    url="assets/markers/pattern-AKA2.patt"
-  >
+<a-marker
+  id="marker"
+  type="pattern"
+  url="assets/markers/pattern-AKA2.patt"
+>
 
-    <!-- 画像1 -->
-    <a-image
-      id="img1"
-      src="#img1-src"
-      position="-1.5 0 0"
-      rotation="-90 0 0"
-      width="1"
-      height="1"
-      visible="true">
-    </a-image>
+  <!-- 画像はJSで生成される -->
 
-    <!-- 画像2 -->
-    <a-image
-      id="img2"
-      src="#img2-src"
-      position="0 0 0"
-      rotation="-90 0 0"
-      width="1"
-      height="1"
-      visible="false">
-    </a-image>
+  <a-plane
+    id="nextBtn"
+    position="0 0.8 0"
+    rotation="0 0 0"
+    width="0.8"
+    height="0.3"
+    color="blue">
+  </a-plane>
 
-    <!-- 画像3 -->
-    <a-image
-      id="img3"
-      src="#img3-src"
-      position="1.5 0 0"
-      rotation="-90 0 0"
-      width="1"
-      height="1"
-      visible="false">
-    </a-image>
+</a-marker>
 
-    <a-plane
-  id="nextBtn"
-  position="0 -1 0"
-  rotation="-90 0 0"
-  width="0.8"
-  height="0.3"
-  color="blue">
-</a-plane>
-
-  </a-marker>
 
   <!-- カメラ -->
   <a-entity camera></a-entity>
@@ -167,6 +137,7 @@
 
 </body>
 </html>
+
 
 
 
