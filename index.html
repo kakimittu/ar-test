@@ -151,12 +151,20 @@
   });
 
   window.addEventListener("load", updateImages);
+  
+  document.getElementById("nextBtn")
+  .addEventListener("click", () => {
+    currentIndex = (currentIndex + 1) % imageElements.length;
+    updateImages();
+  });
+
 </script>
 
 
 
 </body>
 </html>
+
 
 
 
