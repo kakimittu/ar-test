@@ -2,196 +2,178 @@
 <html lang="ja">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR Cyber Viewer - Realtime Sync</title>
-
+<title>AR Cyber Auto-Viewer</title>
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-
 <style>
   body { margin: 0; overflow: hidden; background: #000; }
-
-  /* サイバーボタン共通スタイル */
+  
+  /* サイバーボタン */
   .cyber-btn {
-    position: fixed;
-    bottom: 30px;
-    padding: 15px 25px;
-    font-family: 'Consolas', monospace;
-    font-size: 14px;
-    font-weight: bold;
-    color: #00f2ff;
-    background: rgba(0, 242, 255, 0.1);
-    backdrop-filter: blur(4px);
-    border: 1px solid #00f2ff;
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
-    cursor: pointer;
-    z-index: 9999;
-    transition: 0.2s;
-    outline: none;
-    text-transform: uppercase;
+    position: fixed; bottom: 30px; padding: 15px 25px;
+    font-family: monospace; font-size: 14px; font-weight: bold;
+    color: #00f2ff; background: rgba(0, 242, 255, 0.1);
+    border: 1px solid #00f2ff; z-index: 9999; cursor: pointer;
+    backdrop-filter: blur(4px); text-transform: uppercase;
   }
+  #prevBtn2D { left: 20px; clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%, 0 30%); }
+  #nextBtn2D { right: 20px; clip-path: polygon(0 0, 85% 0, 100% 30%, 100% 100%, 0 100%); }
 
-  #prevBtn2D {
-    left: 20px;
-    clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%, 0 30%);
+  /* 進捗バー（自動切り替えの残り時間を可視化） */
+  #progressBarContainer {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 4px;
+    background: rgba(0, 242, 255, 0.1); z-index: 10000;
   }
-
-  #nextBtn2D {
-    right: 20px;
-    clip-path: polygon(0 0, 85% 0, 100% 30%, 100% 100%, 0 100%);
-  }
-
-  .cyber-btn:hover { background: rgba(0, 242, 255, 0.3); box-shadow: 0 0 25px #00f2ff; color: #fff; }
-
-  /* 画面上部のステータス表示 */
-  #status {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #00f2ff;
-    font-family: monospace;
-    font-size: 10px;
-    text-shadow: 0 0 5px #00f2ff;
-    z-index: 10000;
-    pointer-events: none;
+  #progressBar {
+    width: 0%; height: 100%; background: #00f2ff;
+    box-shadow: 0 0 15px #00f2ff; transition: width 5s linear;
   }
 </style>
 </head>
-
 <body>
 
-<div id="status">SYSTEM_CHECK: LINKED_TO_FIRESTORE</div>
+<div id="progressBarContainer"><div id="progressBar"></div></div>
 
-<a-scene
-  embedded
-  arjs="sourceType: webcam; debugUIEnabled: false;"
-  vr-mode-ui="enabled: false"
->
+<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
   <a-assets id="assets"></a-assets>
-
-  <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt">
-    </a-marker>
-
+  <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt"></a-marker>
   <a-entity camera></a-entity>
 </a-scene>
 
-<button id="prevBtn2D">◀ PREV</button>
-<button id="nextBtn2D">NEXT ▶</button>
+<button id="prevBtn2D" class="cyber-btn">PREV</button>
+<button id="nextBtn2D" class="cyber-btn">NEXT</button>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {
-   apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-  authDomain: "armisetai.firebaseapp.com",
-  projectId: "armisetai",
-  storageBucket: "armisetai.firebasestorage.app",
-  messagingSenderId: "1006973944547",
-  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-};
-
+const firebaseConfig = { apiKey: "あなたのAPIキー", authDomain: "armisetai.firebaseapp.com", projectId: "armisetai", storageBucket: "armisetai.firebasestorage.app", messagingSenderId: "1006973944547", appId: "1:1006973944547:web:adc5e195039585bbdabbd6" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let currentIndex = 0;
-let isMarkerVisible = false;
 let imageElements = [];
-let baseTransform = { position: "0 0 0", rotation: "-90 0 0", scale: "1 1 1" };
+let baseTransform = {};
+let isMarkerVisible = false;
+let autoTimer = null;
+const INTERVAL_TIME = 5000; // 5秒ごとに切り替え
 
 const marker = document.getElementById("marker");
-const assets = document.getElementById("assets");
+const bar = document.getElementById("progressBar");
 
-// --- Firestoreデータのリアルタイム監視 ---
-// docの第3引数をエディターで保存したマーカー名（例: "main"）に合わせます
+// --- Firestoreから設定を読み込み ---
 onSnapshot(doc(db, "arData", "main"), (docSnap) => {
   if (!docSnap.exists()) return;
-
   const data = docSnap.data();
-  const images = data.images;
-  
-  // エディターから送られてきた位置情報を保存
-  if (data.transform) {
-    baseTransform = data.transform;
-  }
+  baseTransform = data.transform;
 
-  // 初回読み込み時のみ画像要素を作成
   if (imageElements.length === 0) {
-    images.forEach((src, index) => {
+    data.images.forEach((src, i) => {
       const assetImg = document.createElement("img");
-      assetImg.id = "img-src-" + index;
-      assetImg.src = src;
-      assets.appendChild(assetImg);
-
+      assetImg.id = "img-src-" + i; assetImg.src = src;
+      document.getElementById("assets").appendChild(assetImg);
       const aImg = document.createElement("a-image");
-      aImg.setAttribute("src", "#img-src-" + index);
-      aImg.setAttribute("transparent", "true");
+      aImg.setAttribute("src", "#img-src-" + i);
       marker.appendChild(aImg);
       imageElements.push(aImg);
     });
-    currentIndex = data.centerIndex || 0;
-  } else {
-    // 2回目以降（更新時）は画像のsrcのみ更新
-    images.forEach((src, index) => {
-      if (imageElements[index]) {
-        document.getElementById("img-src-" + index).src = src;
-      }
-    });
   }
-
   updateImages();
-  document.getElementById("status").innerText = "SYSTEM_UPDATE: DATA_SYNC_COMPLETE";
 });
 
-// --- 位置・回転・大きさの計算と反映 ---
+// --- 表示の更新とプログレスバーのリセット ---
 function updateImages() {
   if (imageElements.length === 0) return;
+  const gap = baseTransform.gap || 1.5;
+  const scales = baseTransform.scales || [1, 1, 1];
 
-  // 保存された基本の回転・大きさを分解
-  const baseRot = baseTransform.rotation.split(' '); // "-90 0 0" -> ["-90", "0", "0"]
-  const baseScale = baseTransform.scale.split(' ');
+  imageElements.forEach((el, i) => {
+    let offset = (i - currentIndex) * gap;
+    let baseS = parseFloat(scales[i]);
+    let finalS = (i === currentIndex) ? baseS * 1.3 : baseS;
 
-  imageElements.forEach((el, index) => {
-    let posStr, scaleStr;
-    const basePos = baseTransform.position.split(' '); // "0 0.5 0"
-
-    if (index === currentIndex) {
-      // センター：エディターで設定したそのままの値
-      posStr = baseTransform.position;
-      scaleStr = baseTransform.scale;
-    } else if (index < currentIndex) {
-      // 左側：エディターの高さ(Y)を維持しつつ左にずらす
-      posStr = `${parseFloat(basePos[0]) - 1.2} ${basePos[1]} ${basePos[2]}`;
-      scaleStr = `${parseFloat(baseScale[0]) * 0.6} ${parseFloat(baseScale[1]) * 0.6} ${parseFloat(baseScale[2]) * 0.6}`;
-    } else {
-      // 右側：右にずらす
-      posStr = `${parseFloat(basePos[0]) + 1.2} ${basePos[1]} ${basePos[2]}`;
-      scaleStr = `${parseFloat(baseScale[0]) * 0.6} ${parseFloat(baseScale[1]) * 0.6} ${parseFloat(baseScale[2]) * 0.6}`;
-    }
-
-    el.setAttribute("position", posStr);
-    el.setAttribute("rotation", baseTransform.rotation); // 回転は共通
-    el.setAttribute("scale", scaleStr);
-    el.setAttribute("visible", true);
+    el.setAttribute("position", `${offset} ${baseTransform.position.split(' ')[1]} 0`);
+    el.setAttribute("rotation", "0 0 0");
+    el.setAttribute("scale", `${finalS} ${finalS} ${finalS}`);
   });
+
+  resetProgressBar();
+}
+
+// --- 自動切り替えロジック ---
+function startAutoTimer() {
+  stopAutoTimer();
+  autoTimer = setInterval(() => {
+    if (isMarkerVisible) {
+      currentIndex = (currentIndex + 1) % imageElements.length;
+      updateImages();
+    }
+  }, INTERVAL_TIME);
+}
+
+function stopAutoTimer() {
+  clearInterval(autoTimer);
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+}
+
+function resetProgressBar() {
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  if (isMarkerVisible) {
+    setTimeout(() => {
+      bar.style.transition = `width ${INTERVAL_TIME}ms linear`;
+      bar.style.width = '100%';
+    }, 50);
+  }
 }
 
 // --- イベント制御 ---
-marker.addEventListener("markerFound", () => { isMarkerVisible = true; });
-marker.addEventListener("markerLost", () => { isMarkerVisible = false; });
+marker.addEventListener("markerFound", () => {
+  isMarkerVisible = true;
+  startAutoTimer();
+  updateImages();
+});
 
+marker.addEventListener("markerLost", () => {
+  isMarkerVisible = false;
+  stopAutoTimer();
+});
+
+// 次へボタン
 document.getElementById("nextBtn2D").onclick = () => {
-  if (!isMarkerVisible || imageElements.length === 0) return;
+  if (!isMarkerVisible) return;
   currentIndex = (currentIndex + 1) % imageElements.length;
   updateImages();
+  startAutoTimer(); // タイマーをリセットして5秒数え直し
 };
 
+// 前へボタン
 document.getElementById("prevBtn2D").onclick = () => {
-  if (!isMarkerVisible || imageElements.length === 0) return;
+  if (!isMarkerVisible) return;
   currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length;
   updateImages();
+  startAutoTimer(); // タイマーをリセット
 };
 </script>
-
 </body>
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+    authDomain: "armisetai.firebaseapp.com",
+    projectId: "armisetai",
+    storageBucket: "armisetai.firebasestorage.app",
+    messagingSenderId: "1006973944547",
+    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
 </html>
