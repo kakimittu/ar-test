@@ -1,134 +1,124 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR Editor Multi Marker - Advanced</title>
+<meta charset="UTF-8">
+<title>AR Multi-Editor Pro</title>
 <style>
-  /* 前回のサイバースタイルを継承 */
-  body { font-family: 'Consolas', monospace; background: #000a14; color: #00f2ff; padding: 20px; text-align: center; }
-  #previewArea { 
-    display: flex; justify-content: center; align-items: center; margin-top: 20px; 
-    height: 300px; border: 2px solid #00f2ff; background: rgba(0, 242, 255, 0.05); 
-    perspective: 1000px; overflow: hidden;
-  }
-  .previewImg { width: 150px; transition: 0.1s; border: 1px solid #00f2ff; }
+  body { font-family: 'Consolas', monospace; background: #000a14; color: #00f2ff; text-align: center; margin: 0; padding: 20px; }
   
-  /* スライダーエリア */
-  .control-panel { 
-    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
-    background: rgba(0, 20, 40, 0.8); padding: 20px; border-radius: 10px; margin-top: 20px;
+  /* プレビューエリアを3D空間っぽく */
+  #previewArea { 
+    position: relative; height: 350px; border: 2px solid #00f2ff; 
+    background: radial-gradient(circle at center, #001a33 0%, #000a14 100%);
+    perspective: 1000px; display: flex; justify-content: center; align-items: center;
+    overflow: hidden;
   }
-  .slider-group { text-align: left; }
-  label { font-size: 12px; display: block; margin-bottom: 5px; }
-  input[type="range"] { width: 100%; accent-color: #00f2ff; }
-  input[type="text"] { background: #000; border: 1px solid #00f2ff; color: #fff; padding: 10px; width: 80%; }
-  button { 
-    background: #00f2ff; color: #000; border: none; padding: 15px 40px; 
-    font-weight: bold; cursor: pointer; margin-top: 20px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+
+  /* 地面（グリッド）を表示して上下移動を分かりやすくする */
+  .grid-floor {
+    position: absolute; bottom: 50px; width: 200%; height: 200px;
+    background-image: linear-gradient(#00f2ff33 1px, transparent 1px), linear-gradient(90deg, #00f2ff33 1px, transparent 1px);
+    background-size: 40px 40px; transform: rotateX(80deg); z-index: 0;
   }
+
+  /* 画像コンテナ */
+  #imgGroup { display: flex; gap: 20px; transition: 0.1s; position: relative; z-index: 1; }
+  .previewImg { width: 100px; border: 2px solid #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+  .active { border-color: #00f2ff; box-shadow: 0 0 20px #00f2ff; }
+
+  .control-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(0,20,40,0.9); padding: 20px; }
+  input[type="range"] { width: 100%; }
+  label { font-size: 11px; display: block; margin-top: 10px; color: #aaa; }
 </style>
 </head>
 <body>
 
-<h2>AR DATA CONFIGURATOR</h2>
+<h3>AR ASSET CONFIGURATOR</h3>
 
-<input type="text" id="markerName" placeholder="マーカー名 (例: marker1)">
+<input type="text" id="markerName" placeholder="マーカー名(mainなど)" value="main">
 <input type="file" id="fileInput" accept="image/*" multiple>
 
 <div id="previewArea">
-  <div id="transformWrapper">
-    <div id="imgContainer"></div>
-  </div>
+  <div class="grid-floor"></div>
+  <div id="imgGroup">
+    </div>
 </div>
 
 <div class="control-panel">
-  <div class="slider-group">
-    <label>POSITION Y (上下)</label>
-    <input type="range" id="posY" min="-3" max="3" step="0.1" value="0">
+  <div>
+    <label>HEIGHT (上下移動)</label>
+    <input type="range" id="posY" min="-2" max="5" step="0.1" value="0.5">
     <label>SCALE (大きさ)</label>
-    <input type="range" id="scale" min="0.1" max="3" step="0.1" value="1.2">
+    <input type="range" id="scale" min="0.1" max="5" step="0.1" value="1.0">
   </div>
-  <div class="slider-group">
-    <label>ROTATION X (横倒れ)</label>
-    <input type="range" id="rotX" min="-180" max="180" step="1" value="-90">
-    <label>ROTATION Y (回転)</label>
-    <input type="range" id="rotY" min="-180" max="180" step="1" value="0">
+  <div>
+    <label>TILT (前後の倒れ)</label>
+    <input type="range" id="rotX" min="-180" max="0" step="1" value="-90">
+    <label>GAP (画像間の距離)</label>
+    <input type="range" id="gap" min="10" max="200" step="1" value="20">
   </div>
 </div>
 
-<button id="saveBtn">UPLOAD TO FIRESTORE</button>
+<button id="saveBtn" style="width:100%; padding:15px; background:#00f2ff; font-weight:bold; margin-top:10px;">SAVE TO FIRESTORE</button>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-  authDomain: "armisetai.firebaseapp.com",
-  projectId: "armisetai",
-  storageBucket: "armisetai.firebasestorage.app",
-  messagingSenderId: "1006973944547",
-  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-};
-
+const firebaseConfig = { apiKey: "あなたのキー", projectId: "armisetai", /* ... */ };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let imagesBase64 = [];
-const imgContainer = document.getElementById("imgContainer");
-
-// スライダー要素の取得
-const sliders = ['posY', 'scale', 'rotX', 'rotY'].reduce((acc, id) => {
+const imgGroup = document.getElementById("imgGroup");
+const sliders = ['posY', 'scale', 'rotX', 'gap'].reduce((acc, id) => {
   acc[id] = document.getElementById(id);
-  acc[id].addEventListener('input', updatePreview);
+  acc[id].oninput = updatePreview;
   return acc;
 }, {});
 
 function updatePreview() {
-  // プレビューの見た目をスライダーに合わせる（AR.jsの座標系を模倣）
+  // 3枚の画像グループ全体を動かす
+  const y = sliders.posY.value * 50; // 視覚的に分かりやすく倍率調整
   const s = sliders.scale.value;
-  const ry = sliders.rotY.value;
-  imgContainer.style.transform = `scale(${s}) rotateY(${ry}deg)`;
+  const rx = sliders.rotX.value;
+  const g = sliders.gap.value;
+
+  imgGroup.style.transform = `translateY(${-y}px) scale(${s}) rotateX(${rx + 90}deg)`;
+  imgGroup.style.gap = `${g}px`;
 }
 
-// 画像リサイズ＆選択処理（提示コードを流用）
-fileInput.addEventListener("change", async (e) => {
-  const files = e.target.files;
-  if (files.length !== 3) return alert("3枚選択してください");
+fileInput.onchange = async (e) => {
+  const files = Array.from(e.target.files).slice(0, 3);
   imagesBase64 = [];
-  imgContainer.innerHTML = "";
-  for (let file of files) {
+  imgGroup.innerHTML = "";
+  
+  for (const file of files) {
     const reader = new FileReader();
-    reader.onload = (event) => {
-      imagesBase64.push(event.target.result);
-      if(imagesBase64.length === 1) { // 1枚目だけをプレビューに表示
-        const img = document.createElement("img");
-        img.src = event.target.result;
-        img.className = "previewImg";
-        imgContainer.appendChild(img);
-      }
+    reader.onload = (ev) => {
+      imagesBase64.push(ev.target.result);
+      const img = document.createElement("img");
+      img.src = ev.target.result;
+      img.className = "previewImg";
+      imgGroup.appendChild(img);
     };
     reader.readAsDataURL(file);
   }
-});
+};
 
-/* 保存処理 */
-document.getElementById("saveBtn").addEventListener("click", async () => {
-  const markerName = document.getElementById("markerName").value.trim();
-  if (!markerName || imagesBase64.length < 3) return alert("入力不備があります");
-
-  await setDoc(doc(db, "arData", markerName), {
+document.getElementById("saveBtn").onclick = async () => {
+  const name = document.getElementById("markerName").value;
+  await setDoc(doc(db, "arData", name), {
     images: imagesBase64,
     transform: {
       position: `0 ${sliders.posY.value} 0`,
-      rotation: `${sliders.rotX.value} ${sliders.rotY.value} 0`,
-      scale: `${sliders.scale.value} ${sliders.scale.value} ${sliders.scale.value}`
-    },
-    updatedAt: new Date()
+      rotation: `${sliders.rotX.value} 0 0`,
+      scale: `${sliders.scale.value} ${sliders.scale.value} ${sliders.scale.value}`,
+      gap: sliders.gap.value / 100 // index側で使用
+    }
   });
-
-  alert(markerName + " の設定をFirestoreに保存しました！");
-});
+  alert("保存完了！");
+};
 </script>
 </body>
 </html>
