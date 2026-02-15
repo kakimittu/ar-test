@@ -2,75 +2,88 @@
 <html lang="ja">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR Image Switch</title>
+<title>AR Cyber Viewer - Realtime Sync</title>
 
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-}
+  body { margin: 0; overflow: hidden; background: #000; }
 
-#nextBtn2D {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 15px 20px;
-  font-size: 16px;
-  background: blue;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  z-index: 9999;
-}
+  /* サイバーボタン共通スタイル */
+  .cyber-btn {
+    position: fixed;
+    bottom: 30px;
+    padding: 15px 25px;
+    font-family: 'Consolas', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    color: #00f2ff;
+    background: rgba(0, 242, 255, 0.1);
+    backdrop-filter: blur(4px);
+    border: 1px solid #00f2ff;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    cursor: pointer;
+    z-index: 9999;
+    transition: 0.2s;
+    outline: none;
+    text-transform: uppercase;
+  }
 
-#prevBtn2D {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  padding: 15px 20px;
-  font-size: 16px;
-  background: gray;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  z-index: 9999;
-}
+  #prevBtn2D {
+    left: 20px;
+    clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%, 0 30%);
+  }
+
+  #nextBtn2D {
+    right: 20px;
+    clip-path: polygon(0 0, 85% 0, 100% 30%, 100% 100%, 0 100%);
+  }
+
+  .cyber-btn:hover { background: rgba(0, 242, 255, 0.3); box-shadow: 0 0 25px #00f2ff; color: #fff; }
+
+  /* 画面上部のステータス表示 */
+  #status {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #00f2ff;
+    font-family: monospace;
+    font-size: 10px;
+    text-shadow: 0 0 5px #00f2ff;
+    z-index: 10000;
+    pointer-events: none;
+  }
 </style>
 </head>
 
 <body>
+
+<div id="status">SYSTEM_CHECK: LINKED_TO_FIRESTORE</div>
 
 <a-scene
   embedded
   arjs="sourceType: webcam; debugUIEnabled: false;"
   vr-mode-ui="enabled: false"
 >
-
   <a-assets id="assets"></a-assets>
 
-  <a-marker
-    id="marker"
-    type="pattern"
-    url="assets/markers/pattern-AKA2.patt"
-  ></a-marker>
+  <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt">
+    </a-marker>
 
   <a-entity camera></a-entity>
-
 </a-scene>
 
-<button id="prevBtn2D">◀ 前へ</button>
-<button id="nextBtn2D">次へ ▶</button>
+<button id="prevBtn2D">◀ PREV</button>
+<button id="nextBtn2D">NEXT ▶</button>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+   apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
   authDomain: "armisetai.firebaseapp.com",
   projectId: "armisetai",
   storageBucket: "armisetai.firebasestorage.app",
@@ -81,89 +94,104 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let currentIndex = 1;
+let currentIndex = 0;
 let isMarkerVisible = false;
+let imageElements = [];
+let baseTransform = { position: "0 0 0", rotation: "-90 0 0", scale: "1 1 1" };
 
 const marker = document.getElementById("marker");
 const assets = document.getElementById("assets");
 
-async function loadData() {
-  const docSnap = await getDoc(doc(db, "arData", "main"));
-
-  if (!docSnap.exists()) {
-    console.log("データがまだありません");
-    return;
-  }
+// --- Firestoreデータのリアルタイム監視 ---
+// docの第3引数をエディターで保存したマーカー名（例: "main"）に合わせます
+onSnapshot(doc(db, "arData", "main"), (docSnap) => {
+  if (!docSnap.exists()) return;
 
   const data = docSnap.data();
   const images = data.images;
-  currentIndex = data.centerIndex;
+  
+  // エディターから送られてきた位置情報を保存
+  if (data.transform) {
+    baseTransform = data.transform;
+  }
 
-  const imageElements = [];
+  // 初回読み込み時のみ画像要素を作成
+  if (imageElements.length === 0) {
+    images.forEach((src, index) => {
+      const assetImg = document.createElement("img");
+      assetImg.id = "img-src-" + index;
+      assetImg.src = src;
+      assets.appendChild(assetImg);
 
-  images.forEach((src, index) => {
-    const assetImg = document.createElement("img");
-    assetImg.id = "img-src-" + index;
-    assetImg.src = src;
-    assets.appendChild(assetImg);
-
-    const aImg = document.createElement("a-image");
-    aImg.setAttribute("src", "#img-src-" + index);
-    aImg.setAttribute("rotation", "-90 0 0");
-    marker.appendChild(aImg);
-
-    imageElements.push(aImg);
-  });
-
-  function updateImages() {
-    imageElements.forEach((el, index) => {
-      if (index === currentIndex) {
-        el.setAttribute("position", "0 0 0");
-        el.setAttribute("scale", "1.2 1.2 1.2");
-      } else if (index < currentIndex) {
-        el.setAttribute("position", "-1 0 0");
-        el.setAttribute("scale", "0.6 0.6 0.6");
-      } else {
-        el.setAttribute("position", "1 0 0");
-        el.setAttribute("scale", "0.6 0.6 0.6");
+      const aImg = document.createElement("a-image");
+      aImg.setAttribute("src", "#img-src-" + index);
+      aImg.setAttribute("transparent", "true");
+      marker.appendChild(aImg);
+      imageElements.push(aImg);
+    });
+    currentIndex = data.centerIndex || 0;
+  } else {
+    // 2回目以降（更新時）は画像のsrcのみ更新
+    images.forEach((src, index) => {
+      if (imageElements[index]) {
+        document.getElementById("img-src-" + index).src = src;
       }
     });
   }
 
-  marker.addEventListener("markerFound", () => {
-    isMarkerVisible = true;
-  });
-
-  marker.addEventListener("markerLost", () => {
-    isMarkerVisible = false;
-  });
-
-  document.getElementById("nextBtn2D").onclick = () => {
-    if (!isMarkerVisible) return;
-    currentIndex = (currentIndex + 1) % imageElements.length;
-    updateImages();
-  };
-
-  document.getElementById("prevBtn2D").onclick = () => {
-    if (!isMarkerVisible) return;
-    currentIndex =
-      (currentIndex - 1 + imageElements.length) %
-      imageElements.length;
-    updateImages();
-  };
-
   updateImages();
+  document.getElementById("status").innerText = "SYSTEM_UPDATE: DATA_SYNC_COMPLETE";
+});
+
+// --- 位置・回転・大きさの計算と反映 ---
+function updateImages() {
+  if (imageElements.length === 0) return;
+
+  // 保存された基本の回転・大きさを分解
+  const baseRot = baseTransform.rotation.split(' '); // "-90 0 0" -> ["-90", "0", "0"]
+  const baseScale = baseTransform.scale.split(' ');
+
+  imageElements.forEach((el, index) => {
+    let posStr, scaleStr;
+    const basePos = baseTransform.position.split(' '); // "0 0.5 0"
+
+    if (index === currentIndex) {
+      // センター：エディターで設定したそのままの値
+      posStr = baseTransform.position;
+      scaleStr = baseTransform.scale;
+    } else if (index < currentIndex) {
+      // 左側：エディターの高さ(Y)を維持しつつ左にずらす
+      posStr = `${parseFloat(basePos[0]) - 1.2} ${basePos[1]} ${basePos[2]}`;
+      scaleStr = `${parseFloat(baseScale[0]) * 0.6} ${parseFloat(baseScale[1]) * 0.6} ${parseFloat(baseScale[2]) * 0.6}`;
+    } else {
+      // 右側：右にずらす
+      posStr = `${parseFloat(basePos[0]) + 1.2} ${basePos[1]} ${basePos[2]}`;
+      scaleStr = `${parseFloat(baseScale[0]) * 0.6} ${parseFloat(baseScale[1]) * 0.6} ${parseFloat(baseScale[2]) * 0.6}`;
+    }
+
+    el.setAttribute("position", posStr);
+    el.setAttribute("rotation", baseTransform.rotation); // 回転は共通
+    el.setAttribute("scale", scaleStr);
+    el.setAttribute("visible", true);
+  });
 }
 
-loadData();
+// --- イベント制御 ---
+marker.addEventListener("markerFound", () => { isMarkerVisible = true; });
+marker.addEventListener("markerLost", () => { isMarkerVisible = false; });
 
+document.getElementById("nextBtn2D").onclick = () => {
+  if (!isMarkerVisible || imageElements.length === 0) return;
+  currentIndex = (currentIndex + 1) % imageElements.length;
+  updateImages();
+};
+
+document.getElementById("prevBtn2D").onclick = () => {
+  if (!isMarkerVisible || imageElements.length === 0) return;
+  currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length;
+  updateImages();
+};
 </script>
-
-
 
 </body>
 </html>
-
-
-
-
