@@ -47,9 +47,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = { apiKey: "あなたのAPIキー", authDomain: "armisetai.firebaseapp.com", projectId: "armisetai", storageBucket: "armisetai.firebasestorage.app", messagingSenderId: "1006973944547", appId: "1:1006973944547:web:adc5e195039585bbdabbd6" };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const firebaseConfig = {    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+    authDomain: "armisetai.firebaseapp.com",
+    projectId: "armisetai",
+    storageBucket: "armisetai.firebasestorage.app",
+    messagingSenderId: "1006973944547",
+    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+  };
 
 let currentIndex = 0;
 let imageElements = [];
@@ -177,3 +181,4 @@ document.getElementById("prevBtn2D").onclick = () => {
   const app = initializeApp(firebaseConfig);
 </script>
 </html>
+
