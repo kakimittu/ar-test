@@ -2,183 +2,102 @@
 <html lang="ja">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AR Cyber Auto-Viewer</title>
+<title>AR Portfolio Viewer</title>
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 <style>
-  body { margin: 0; overflow: hidden; background: #000; }
-  
-  /* サイバーボタン */
-  .cyber-btn {
-    position: fixed; bottom: 30px; padding: 15px 25px;
-    font-family: monospace; font-size: 14px; font-weight: bold;
-    color: #00f2ff; background: rgba(0, 242, 255, 0.1);
-    border: 1px solid #00f2ff; z-index: 9999; cursor: pointer;
-    backdrop-filter: blur(4px); text-transform: uppercase;
-  }
-  #prevBtn2D { left: 20px; clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%, 0 30%); }
-  #nextBtn2D { right: 20px; clip-path: polygon(0 0, 85% 0, 100% 30%, 100% 100%, 0 100%); }
-
-  /* 進捗バー（自動切り替えの残り時間を可視化） */
-  #progressBarContainer {
-    position: fixed; bottom: 0; left: 0; width: 100%; height: 4px;
-    background: rgba(0, 242, 255, 0.1); z-index: 10000;
-  }
-  #progressBar {
-    width: 0%; height: 100%; background: #00f2ff;
-    box-shadow: 0 0 15px #00f2ff; transition: width 5s linear;
-  }
+  body { margin: 0; overflow: hidden; }
+  .sns-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 1000; visibility: hidden; }
+  .sns-btn { width: 50px; height: 50px; background: rgba(0,0,0,0.7); border: 2px solid #00f2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .sns-btn img { width: 25px; height: 25px; }
+  .nav-btn { position: fixed; bottom: 30px; padding: 15px 25px; background: rgba(0,0,0,0.8); color: #00f2ff; border: 1px solid #00f2ff; border-radius: 10px; z-index: 1000; cursor: pointer; }
 </style>
 </head>
 <body>
 
-<div id="progressBarContainer"><div id="progressBar"></div></div>
+<div id="sns-container" class="sns-container">
+  <div class="sns-btn" onclick="window.open('https://instagram.com/あなたのID', '_blank')"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png"></div>
+  <div class="sns-btn" onclick="window.open('https://line.me/R/ti/p/あなたのID', '_blank')"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968771.png"></div>
+</div>
+
+<button id="prevBtn" class="nav-btn" style="left: 20px;">PREV</button>
+<button id="nextBtn" class="nav-btn" style="right: 20px;">NEXT</button>
 
 <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
   <a-assets id="assets"></a-assets>
-  <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt"></a-marker>
+  <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt">
+    <a-ring color="#00f2ff" radius-inner="0.6" radius-outer="0.7" rotation="-90 0 0" animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true"></a-ring>
+  </a-marker>
   <a-entity camera></a-entity>
 </a-scene>
-
-<button id="prevBtn2D" class="cyber-btn">PREV</button>
-<button id="nextBtn2D" class="cyber-btn">NEXT</button>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-    authDomain: "armisetai.firebaseapp.com",
-    projectId: "armisetai",
-    storageBucket: "armisetai.firebasestorage.app",
-    messagingSenderId: "1006973944547",
-    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-  };
+const firebaseConfig = {  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+  authDomain: "armisetai.firebaseapp.com",
+  projectId: "armisetai",
+  storageBucket: "armisetai.firebasestorage.app",
+  messagingSenderId: "1006973944547",
+  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+}; // ここを自分のものに
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 let currentIndex = 0;
 let imageElements = [];
 let baseTransform = {};
-let isMarkerVisible = false;
-let autoTimer = null;
-const INTERVAL_TIME = 5000; // 5秒ごとに切り替え
 
-const marker = document.getElementById("marker");
-const bar = document.getElementById("progressBar");
-
-// --- Firestoreから設定を読み込み ---
 onSnapshot(doc(db, "arData", "main"), (docSnap) => {
   if (!docSnap.exists()) return;
   const data = docSnap.data();
   baseTransform = data.transform;
+  baseTransform.ratios = data.ratios; // 保存された比率データ
 
   if (imageElements.length === 0) {
     data.images.forEach((src, i) => {
       const assetImg = document.createElement("img");
-      assetImg.id = "img-src-" + i; assetImg.src = src;
+      assetImg.id = "img-" + i; assetImg.src = src;
       document.getElementById("assets").appendChild(assetImg);
       const aImg = document.createElement("a-image");
-      aImg.setAttribute("src", "#img-src-" + i);
-      marker.appendChild(aImg);
+      aImg.setAttribute("src", "#img-" + i);
+      document.getElementById("marker").appendChild(aImg);
       imageElements.push(aImg);
     });
   }
   updateImages();
 });
 
-// --- 表示の更新とプログレスバーのリセット ---
 function updateImages() {
-  if (imageElements.length === 0) return;
-  const gap = baseTransform.gap || 1.5;
-  const scales = baseTransform.scales || [1, 1, 1];
+  const ratios = baseTransform.ratios || [];
+  const gap = baseTransform.gap || 1.2;
+  const posY = baseTransform.position.split(' ')[1];
 
   imageElements.forEach((el, i) => {
-    let offset = (i - currentIndex) * gap;
-    let baseS = parseFloat(scales[i]);
-    let finalS = (i === currentIndex) ? baseS * 1.3 : baseS;
+    const ratio = ratios[i] || 1;
+    const isCenter = (i === currentIndex);
+    const offset = (i - currentIndex) * gap;
+    const baseW = isCenter ? 1.4 : 0.8;
 
-    el.setAttribute("position", `${offset} ${baseTransform.position.split(' ')[1]} 0`);
-    el.setAttribute("rotation", "0 0 0");
-    el.setAttribute("scale", `${finalS} ${finalS} ${finalS}`);
+    // 比率に基づいた幅と高さの設定（ここが重要！）
+    el.setAttribute("width", baseW);
+    el.setAttribute("height", baseW * ratio);
+    
+    el.setAttribute("animation__pos", { property: 'position', to: `${offset} ${posY} 0`, dur: 500 });
+    el.setAttribute("material", "opacity", isCenter ? 1 : 0.4);
   });
-
-  resetProgressBar();
 }
 
-// --- 自動切り替えロジック ---
-function startAutoTimer() {
-  stopAutoTimer();
-  autoTimer = setInterval(() => {
-    if (isMarkerVisible) {
-      currentIndex = (currentIndex + 1) % imageElements.length;
-      updateImages();
-    }
-  }, INTERVAL_TIME);
-}
+const marker = document.getElementById("marker");
+marker.addEventListener("markerFound", () => { document.getElementById("sns-container").style.visibility = "visible"; });
+marker.addEventListener("markerLost", () => { document.getElementById("sns-container").style.visibility = "hidden"; });
 
-function stopAutoTimer() {
-  clearInterval(autoTimer);
-  bar.style.transition = 'none';
-  bar.style.width = '0%';
-}
-
-function resetProgressBar() {
-  bar.style.transition = 'none';
-  bar.style.width = '0%';
-  if (isMarkerVisible) {
-    setTimeout(() => {
-      bar.style.transition = `width ${INTERVAL_TIME}ms linear`;
-      bar.style.width = '100%';
-    }, 50);
-  }
-}
-
-// --- イベント制御 ---
-marker.addEventListener("markerFound", () => {
-  isMarkerVisible = true;
-  startAutoTimer();
-  updateImages();
-});
-
-marker.addEventListener("markerLost", () => {
-  isMarkerVisible = false;
-  stopAutoTimer();
-});
-
-// 次へボタン
-document.getElementById("nextBtn2D").onclick = () => {
-  if (!isMarkerVisible) return;
-  currentIndex = (currentIndex + 1) % imageElements.length;
-  updateImages();
-  startAutoTimer(); // タイマーをリセットして5秒数え直し
-};
-
-// 前へボタン
-document.getElementById("prevBtn2D").onclick = () => {
-  if (!isMarkerVisible) return;
-  currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length;
-  updateImages();
-  startAutoTimer(); // タイマーをリセット
-};
+document.getElementById("nextBtn").onclick = () => { currentIndex = (currentIndex + 1) % imageElements.length; updateImages(); };
+document.getElementById("prevBtn").onclick = () => { currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length; updateImages(); };
 </script>
 </body>
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-    authDomain: "armisetai.firebaseapp.com",
-    projectId: "armisetai",
-    storageBucket: "armisetai.firebasestorage.app",
-    messagingSenderId: "1006973944547",
-    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
 </html>
+</html>
+
 
