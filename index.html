@@ -3,31 +3,73 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AR Portfolio Viewer</title>
+
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
 <style>
-  body { margin: 0; overflow: hidden; }
-  .sns-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 1000; visibility: hidden; }
-  .sns-btn { width: 50px; height: 50px; background: rgba(0,0,0,0.7); border: 2px solid #00f2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .sns-btn img { width: 25px; height: 25px; }
-  .nav-btn { position: fixed; bottom: 30px; padding: 15px 25px; background: rgba(0,0,0,0.8); color: #00f2ff; border: 1px solid #00f2ff; border-radius: 10px; z-index: 1000; cursor: pointer; }
+body { margin:0; overflow:hidden; }
+
+.sns-container{
+  position:fixed;
+  bottom:100px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:20px;
+  z-index:1000;
+  visibility:hidden;
+}
+
+.sns-btn{
+  width:50px;
+  height:50px;
+  background:rgba(0,0,0,0.7);
+  border:2px solid #00f2ff;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.sns-btn img{ width:25px; }
+
+.nav-btn{
+  position:fixed;
+  bottom:30px;
+  padding:15px 25px;
+  background:rgba(0,0,0,0.8);
+  color:#00f2ff;
+  border:1px solid #00f2ff;
+  border-radius:10px;
+  z-index:1000;
+  cursor:pointer;
+}
 </style>
 </head>
+
 <body>
 
 <div id="sns-container" class="sns-container">
-  <div class="sns-btn" onclick="window.open('https://instagram.com/あなたのID', '_blank')"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png"></div>
-  <div class="sns-btn" onclick="window.open('https://line.me/R/ti/p/あなたのID', '_blank')"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968771.png"></div>
+  <div class="sns-btn" onclick="window.open('https://instagram.com/あなたのID','_blank')">
+    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png">
+  </div>
+  <div class="sns-btn" onclick="window.open('https://line.me/R/ti/p/あなたのID','_blank')">
+    <img src="https://cdn-icons-png.flaticon.com/512/5968/5968771.png">
+  </div>
 </div>
 
-<button id="prevBtn" class="nav-btn" style="left: 20px;">PREV</button>
-<button id="nextBtn" class="nav-btn" style="right: 20px;">NEXT</button>
+<button id="prevBtn" class="nav-btn" style="left:20px;">PREV</button>
+<button id="nextBtn" class="nav-btn" style="right:20px;">NEXT</button>
 
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+<a-scene embedded arjs="sourceType:webcam; debugUIEnabled:false;" vr-mode-ui="enabled:false">
   <a-assets id="assets"></a-assets>
+
   <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt">
-    <a-ring color="#00f2ff" radius-inner="0.6" radius-outer="0.7" rotation="-90 0 0" animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true"></a-ring>
+    <a-entity id="imageGroup"></a-entity>
   </a-marker>
+
   <a-entity camera></a-entity>
 </a-scene>
 
@@ -35,69 +77,139 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+const firebaseConfig = {
+  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
   authDomain: "armisetai.firebaseapp.com",
   projectId: "armisetai",
   storageBucket: "armisetai.firebasestorage.app",
   messagingSenderId: "1006973944547",
   appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-}; // ここを自分のものに
+};
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let currentIndex = 0;
 let imageElements = [];
-let baseTransform = {};
+let layoutData = {};
+let currentIndex = 0;
+let autoTimer = null;
 
-onSnapshot(doc(db, "arData", "main"), (docSnap) => {
-  if (!docSnap.exists()) return;
+// 🔥 エディターと連携（マーカー名をここに合わせる）
+const markerDocName = "main";
+
+onSnapshot(doc(db,"arData",markerDocName),(docSnap)=>{
+  if(!docSnap.exists()) return;
   const data = docSnap.data();
-  baseTransform = data.transform;
-  baseTransform.ratios = data.ratios; // 保存された比率データ
 
-  if (imageElements.length === 0) {
-    data.images.forEach((src, i) => {
-      const assetImg = document.createElement("img");
-      assetImg.id = "img-" + i; assetImg.src = src;
-      document.getElementById("assets").appendChild(assetImg);
-      const aImg = document.createElement("a-image");
-      aImg.setAttribute("src", "#img-" + i);
-      document.getElementById("marker").appendChild(aImg);
-      imageElements.push(aImg);
-    });
-  }
+  layoutData = data.layout || {};
+  const ratios = data.ratios || [];
+  const images = data.images || [];
+
+  const assets = document.getElementById("assets");
+  const group = document.getElementById("imageGroup");
+  group.innerHTML = "";
+  assets.innerHTML = "";
+  imageElements = [];
+
+  images.forEach((src,i)=>{
+    const assetImg = document.createElement("img");
+    assetImg.id = "img-"+i;
+    assetImg.src = src;
+    assets.appendChild(assetImg);
+
+    const aImg = document.createElement("a-image");
+    aImg.setAttribute("src","#img-"+i);
+    aImg.setAttribute("transparent","true");
+    group.appendChild(aImg);
+
+    imageElements.push({el:aImg, ratio:ratios[i]||1});
+  });
+
+  currentIndex = 0;
   updateImages();
+  startAutoSlide();
 });
 
-function updateImages() {
-  const ratios = baseTransform.ratios || [];
-  const gap = baseTransform.gap || 1.2;
-  const posY = baseTransform.position.split(' ')[1];
+function updateImages(){
 
-  imageElements.forEach((el, i) => {
-    const ratio = ratios[i] || 1;
-    const isCenter = (i === currentIndex);
-    const offset = (i - currentIndex) * gap;
-    const baseW = isCenter ? 1.4 : 0.8;
+  const type = layoutData.type || "line";
+  const radius = parseFloat(layoutData.radius || 1.5);
+  const scale = parseFloat(layoutData.scale || 1);
+  const globalY = parseFloat(layoutData.globalY || 0)/100;
 
-    // 比率に基づいた幅と高さの設定（ここが重要！）
-    el.setAttribute("width", baseW);
-    el.setAttribute("height", baseW * ratio);
-    
-    el.setAttribute("animation__pos", { property: 'position', to: `${offset} ${posY} 0`, dur: 500 });
-    el.setAttribute("material", "opacity", isCenter ? 1 : 0.4);
+  imageElements.forEach((obj,i)=>{
+    const el = obj.el;
+    const ratio = obj.ratio;
+
+    if(type === "circle"){
+
+      const angle = (i/imageElements.length)*Math.PI*2;
+      const x = radius*Math.cos(angle);
+      const z = radius*Math.sin(angle);
+
+      el.setAttribute("position",`${x} ${globalY} ${z}`);
+      el.setAttribute("rotation",`0 ${-angle*57.3} 0`);
+      el.setAttribute("width",scale);
+      el.setAttribute("height",scale*ratio);
+
+      // ふわふわ
+      el.setAttribute("animation__float",{
+        property:"position",
+        dir:"alternate",
+        dur:2000,
+        loop:true,
+        to:`${x} ${globalY+0.2} ${z}`
+      });
+
+    }else{
+
+      const offset = (i-currentIndex)*1.5;
+      el.setAttribute("position",`${offset} ${globalY} 0`);
+      el.setAttribute("width", i===currentIndex?1.4:0.8);
+      el.setAttribute("height",(i===currentIndex?1.4:0.8)*ratio);
+      el.setAttribute("material","opacity", i===currentIndex?1:0.4);
+    }
+
   });
 }
 
-const marker = document.getElementById("marker");
-marker.addEventListener("markerFound", () => { document.getElementById("sns-container").style.visibility = "visible"; });
-marker.addEventListener("markerLost", () => { document.getElementById("sns-container").style.visibility = "hidden"; });
+// 🔁 自動スライド
+function startAutoSlide(){
+  if(autoTimer) clearInterval(autoTimer);
+  autoTimer = setInterval(()=>{
+    currentIndex = (currentIndex+1)%imageElements.length;
+    updateImages();
+  },4000);
+}
 
-document.getElementById("nextBtn").onclick = () => { currentIndex = (currentIndex + 1) % imageElements.length; updateImages(); };
-document.getElementById("prevBtn").onclick = () => { currentIndex = (currentIndex - 1 + imageElements.length) % imageElements.length; updateImages(); };
+// ボタン操作
+document.getElementById("nextBtn").onclick=()=>{
+  currentIndex=(currentIndex+1)%imageElements.length;
+  updateImages();
+};
+
+document.getElementById("prevBtn").onclick=()=>{
+  currentIndex=(currentIndex-1+imageElements.length)%imageElements.length;
+  updateImages();
+};
+
+// マーカー表示時だけSNSボタン表示
+ <button id="snsToggle" 
+        style="position:fixed; bottom:160px; left:50%; transform:translateX(-50%);
+        padding:10px 20px; background:#00f2ff; color:#000; border:none; border-radius:10px; z-index:1000;">
+SNS
+</button>
+<div id="sns-container" class="sns-container" style="visibility:hidden;">
+  document.getElementById("snsToggle").onclick = ()=>{
+  const sns = document.getElementById("sns-container");
+  if(sns.style.visibility === "hidden"){
+    sns.style.visibility = "visible";
+  }else{
+    sns.style.visibility = "hidden";
+  }
+};
+
 </script>
+
 </body>
 </html>
-</html>
-
-
