@@ -86,9 +86,11 @@ body { margin:0; overflow:hidden; }
   vr-mode-ui="enabled: false">
   <a-assets id="assets"></a-assets>
 
-  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
-    <a-entity id="imageGroup"></a-entity>
-  </a-marker>
+  <a-marker
+    id="marker"
+    type="pattern"
+    url="assets/markers/pattern-AKA2.patt">
+    </a-marker>
 
   <a-entity camera></a-entity>
 </a-scene>
@@ -198,5 +200,6 @@ document.getElementById("snsToggle").onclick = ()=>{
 
 </body>
 </html>
+
 
 
