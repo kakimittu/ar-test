@@ -46,10 +46,27 @@ body { margin:0; overflow:hidden; }
   z-index:1000;
   cursor:pointer;
 }
+
+#snsToggle{
+  position:fixed;
+  bottom:160px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:10px 20px;
+  background:#00f2ff;
+  color:#000;
+  border:none;
+  border-radius:10px;
+  z-index:1000;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
+
+<!-- SNSボタン -->
+<button id="snsToggle">SNS</button>
 
 <div id="sns-container" class="sns-container">
   <div class="sns-btn" onclick="window.open('https://instagram.com/あなたのID','_blank')">
@@ -66,7 +83,7 @@ body { margin:0; overflow:hidden; }
 <a-scene embedded arjs="sourceType:webcam; debugUIEnabled:false;" vr-mode-ui="enabled:false">
   <a-assets id="assets"></a-assets>
 
-  <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt">
+  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
     <a-entity id="imageGroup"></a-entity>
   </a-marker>
 
@@ -90,18 +107,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let imageElements = [];
-let layoutData = {};
 let currentIndex = 0;
 let autoTimer = null;
 
-// 🔥 エディターと連携（マーカー名をここに合わせる）
-const markerDocName = "main";
-
-onSnapshot(doc(db,"arData",markerDocName),(docSnap)=>{
+onSnapshot(doc(db,"arData","main"),(docSnap)=>{
   if(!docSnap.exists()) return;
   const data = docSnap.data();
-
-  layoutData = data.layout || {};
   const ratios = data.ratios || [];
   const images = data.images || [];
 
@@ -132,48 +143,32 @@ onSnapshot(doc(db,"arData",markerDocName),(docSnap)=>{
 
 function updateImages(){
 
-  const type = layoutData.type || "line";
-  const radius = parseFloat(layoutData.radius || 1.5);
-  const scale = parseFloat(layoutData.scale || 1);
-  const globalY = parseFloat(layoutData.globalY || 0)/100;
+  const radius = 2.5;  // ← 遠めに設定
+  const scale = 1.2;
 
   imageElements.forEach((obj,i)=>{
     const el = obj.el;
     const ratio = obj.ratio;
 
-    if(type === "circle"){
+    const angle = (i/imageElements.length)*Math.PI*2;
+    const x = radius*Math.cos(angle);
+    const z = -radius*Math.sin(angle); // ← 前向き修正
 
-      const angle = (i/imageElements.length)*Math.PI*2;
-      const x = radius*Math.cos(angle);
-      const z = radius*Math.sin(angle);
+    el.setAttribute("position",`${x} 0 ${z}`);
+    el.setAttribute("rotation",`0 ${-angle*57.3} 0`);
+    el.setAttribute("width",scale);
+    el.setAttribute("height",scale*ratio);
 
-      el.setAttribute("position",`${x} ${globalY} ${z}`);
-      el.setAttribute("rotation",`0 ${-angle*57.3} 0`);
-      el.setAttribute("width",scale);
-      el.setAttribute("height",scale*ratio);
-
-      // ふわふわ
-      el.setAttribute("animation__float",{
-        property:"position",
-        dir:"alternate",
-        dur:2000,
-        loop:true,
-        to:`${x} ${globalY+0.2} ${z}`
-      });
-
-    }else{
-
-      const offset = (i-currentIndex)*1.5;
-      el.setAttribute("position",`${offset} ${globalY} 0`);
-      el.setAttribute("width", i===currentIndex?1.4:0.8);
-      el.setAttribute("height",(i===currentIndex?1.4:0.8)*ratio);
-      el.setAttribute("material","opacity", i===currentIndex?1:0.4);
-    }
-
+    el.setAttribute("animation__float",{
+      property:"position",
+      dir:"alternate",
+      dur:2000,
+      loop:true,
+      to:`${x} 0.3 ${z}`
+    });
   });
 }
 
-// 🔁 自動スライド
 function startAutoSlide(){
   if(autoTimer) clearInterval(autoTimer);
   autoTimer = setInterval(()=>{
@@ -182,7 +177,6 @@ function startAutoSlide(){
   },4000);
 }
 
-// ボタン操作
 document.getElementById("nextBtn").onclick=()=>{
   currentIndex=(currentIndex+1)%imageElements.length;
   updateImages();
@@ -193,22 +187,10 @@ document.getElementById("prevBtn").onclick=()=>{
   updateImages();
 };
 
-// マーカー表示時だけSNSボタン表示
- <button id="snsToggle" 
-        style="position:fixed; bottom:160px; left:50%; transform:translateX(-50%);
-        padding:10px 20px; background:#00f2ff; color:#000; border:none; border-radius:10px; z-index:1000;">
-SNS
-</button>
-<div id="sns-container" class="sns-container" style="visibility:hidden;">
-  document.getElementById("snsToggle").onclick = ()=>{
+document.getElementById("snsToggle").onclick = ()=>{
   const sns = document.getElementById("sns-container");
-  if(sns.style.visibility === "hidden"){
-    sns.style.visibility = "visible";
-  }else{
-    sns.style.visibility = "hidden";
-  }
+  sns.style.visibility = sns.style.visibility === "visible" ? "hidden" : "visible";
 };
-
 </script>
 
 </body>
