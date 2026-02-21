@@ -2,153 +2,103 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Advanced AR Editor</title>
+<title>AR Business Card Editor - Aspect Ratio Pro</title>
 <style>
-  body { font-family: 'Consolas', monospace; background: #000a14; color: #00f2ff; text-align: center; margin: 0; padding: 20px; }
-  
-  /* プレビューエリア */
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #0a0a0a; color: #fff; text-align: center; margin: 0; padding: 20px; }
   #previewArea { 
-    position: relative; height: 350px; border: 2px solid #00f2ff; 
-    background: radial-gradient(circle at center, #001a33 0%, #000a14 100%);
-    display: flex; justify-content: center; align-items: flex-end; padding-bottom: 50px;
-    overflow: hidden;
+    height: 300px; background: #111; border: 1px solid #333; margin: 20px auto; max-width: 500px;
+    position: relative; display: flex; justify-content: center; align-items: center; border-radius: 15px;
   }
-
-  /* マーカーの見た目を表示するエリア */
-  #markerPreview {
-    position: absolute; bottom: 0; width: 150px; height: 150px;
-    border: 5px solid #fff; background: #333; transform: rotateX(60deg);
-    display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff;
-  }
-
-  #imgGroup { display: flex; align-items: flex-end; gap: 20px; position: relative; z-index: 1; }
-  .previewImg { border: 2px solid #fff; transition: 0.3s; object-fit: cover; }
-  /* 中央（2枚目）を自動的に大きく見せる */
-  .previewImg:nth-child(2) { border-color: #00f2ff; transform: scale(1.3); z-index: 2; }
-
-  .control-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: rgba(0,20,40,0.9); padding: 20px; margin-top: 10px; text-align: left;}
-  .full-width { grid-column: span 2; }
-  label { font-size: 11px; color: #aaa; display: block; margin-top: 5px; }
+  #imgGroup { display: flex; gap: 10px; z-index: 10; }
+  .previewImg { width: 80px; height: auto; border: 2px solid #00f2ff; border-radius: 4px; }
+  .panel { background: #1a1a1a; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; text-align: left; }
   input[type="range"] { width: 100%; accent-color: #00f2ff; }
-  .file-section { background: rgba(255,255,255,0.1); padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+  .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+  #saveBtn { background: #00f2ff; color: #000; }
 </style>
 </head>
 <body>
 
-<div class="file-section">
-  <label>【1】反応させるマーカー画像を選んでください（表示用）</label>
-  <input type="file" id="markerInput" accept="image/*">
-  <br>
-  <label>【2】ARで出す画像3枚を選んでください</label>
-  <input type="file" id="fileInput" accept="image/*" multiple>
-</div>
+<h3>AR PORTFOLIO CONFIG</h3>
 
 <div id="previewArea">
-  <div id="markerPreview">ここにマーカー</div>
   <div id="imgGroup"></div>
 </div>
 
-<div class="control-panel">
-  <div class="full-width">
-    <label>HEIGHT (地面からの高さ)</label>
-    <input type="range" id="posY" min="0" max="5" step="0.1" value="1.0">
-  </div>
-  <div>
-    <label>IMG_1 SIZE (左)</label>
-    <input type="range" id="size0" min="0.1" max="3" step="0.1" value="1.0">
-    <label>IMG_2 SIZE (中)</label>
-    <input type="range" id="size1" min="0.1" max="3" step="0.1" value="1.5">
-  </div>
-  <div>
-    <label>IMG_3 SIZE (右)</label>
-    <input type="range" id="size2" min="0.1" max="3" step="0.1" value="1.0">
-    <label>WIDTH (全体の横幅を広げる)</label>
-    <input type="range" id="gap" min="10" max="300" step="1" value="120">
-  </div>
+<div class="panel">
+  <label>1. 画像を選択 (自動比率計算)</label>
+  <input type="file" id="fileInput" accept="image/*" multiple>
+  
+  <label style="display:block; margin-top:15px;">2. 高さ調整</label>
+  <input type="range" id="posY" min="0.5" max="3" step="0.1" value="1.2">
+  
+  <label style="display:block; margin-top:15px;">3. 画像同士の間隔</label>
+  <input type="range" id="gap" min="50" max="300" step="10" value="120">
 </div>
 
-<button id="saveBtn" style="width:100%; padding:15px; background:#00f2ff; font-weight:bold; cursor:pointer;">SAVE CONFIGURATION</button>
+<button id="saveBtn" class="btn">CLOUD SAVE</button>
 
 <script type="module">
-// Firebase設定などはそのまま
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-    authDomain: "armisetai.firebaseapp.com",
-    projectId: "armisetai",
-    storageBucket: "armisetai.firebasestorage.app",
-    messagingSenderId: "1006973944547",
-    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-  };
-
+const firebaseConfig = {  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+  authDomain: "armisetai.firebaseapp.com",
+  projectId: "armisetai",
+  storageBucket: "armisetai.firebasestorage.app",
+  messagingSenderId: "1006973944547",
+  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+};
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let imagesBase64 = [];
-const imgGroup = document.getElementById("imgGroup");
+let imageRatios = []; // 比率を格納する配列
 
-// マーカー画像のプレビュー設定
-document.getElementById("markerInput").onchange = (e) => {
-  const file = e.target.files[0];
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    document.getElementById("markerPreview").innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%;">`;
-  };
-  reader.readAsDataURL(file);
-};
-
-// スライダー連動
-const sliderIds = ['posY', 'size0', 'size1', 'size2', 'gap'];
-sliderIds.forEach(id => {
-  document.getElementById(id).oninput = updatePreview;
-});
-
-function updatePreview() {
-  const y = document.getElementById("posY").value * 30;
-  imgGroup.style.transform = `translateY(${-y}px)`;
-  imgGroup.style.gap = `${document.getElementById("gap").value}px`;
-
-  const imgs = imgGroup.getElementsByTagName("img");
-  for(let i=0; i<imgs.length; i++) {
-    imgs[i].style.width = (document.getElementById("size" + i).value * 80) + "px";
-  }
+async function processImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 800; // 幅を800pxに固定
+        const ratio = img.height / img.width; // 比率計算
+        canvas.width = maxW;
+        canvas.height = maxW * ratio;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve({ data: canvas.toDataURL("image/jpeg", 0.7), ratio: ratio });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
-fileInput.onchange = async (e) => {
-  const files = Array.from(e.target.files).slice(0, 3);
-  imagesBase64 = [];
-  imgGroup.innerHTML = "";
-  for (let i=0; i<files.length; i++) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      imagesBase64.push(ev.target.result);
-      const img = document.createElement("img");
-      img.src = ev.target.result;
-      img.className = "previewImg";
-      imgGroup.appendChild(img);
-      updatePreview();
-    };
-    reader.readAsDataURL(files[i]);
+document.getElementById("fileInput").onchange = async (e) => {
+  imagesBase64 = []; imageRatios = [];
+  document.getElementById("imgGroup").innerHTML = "";
+  for (let file of Array.from(e.target.files).slice(0, 3)) {
+    const result = await processImage(file);
+    imagesBase64.push(result.data);
+    imageRatios.push(result.ratio);
+    const imgEl = document.createElement("img");
+    imgEl.src = result.data; imgEl.className = "previewImg";
+    document.getElementById("imgGroup").appendChild(imgEl);
   }
 };
 
 document.getElementById("saveBtn").onclick = async () => {
-  const name = "main";
-  await setDoc(doc(db, "arData", name), {
+  await setDoc(doc(db, "arData", "main"), {
     images: imagesBase64,
+    ratios: imageRatios, // 比率データ
     transform: {
       position: `0 ${document.getElementById("posY").value} 0`,
-      rotation: `0 0 0`, // 真正面向き
-      scales: [
-        document.getElementById("size0").value,
-        document.getElementById("size1").value,
-        document.getElementById("size2").value
-      ],
       gap: document.getElementById("gap").value / 100
     }
   });
-  alert("Firestoreに保存しました！");
+  alert("保存完了！");
 };
 </script>
 </body>
