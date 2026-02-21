@@ -2,72 +2,65 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>AR Business Card Editor - Complete</title>
+<title>AR Pro Editor</title>
 
 <style>
-body { font-family: Arial; background:#0a0a0a; color:#fff; text-align:center; padding:20px; }
+body{background:#0a0a0a;color:#fff;text-align:center;font-family:Arial;padding:20px;}
 
 #previewArea{
-  height:300px;
+  height:350px;
   background:#111;
-  border:1px solid #333;
-  margin:20px auto;
-  max-width:500px;
-  position:relative;
   border-radius:15px;
+  position:relative;
+  max-width:600px;
+  margin:20px auto;
+  overflow:hidden;
 }
 
 .previewImg{
   position:absolute;
   border:2px solid #00f2ff;
-  border-radius:6px;
+  border-radius:8px;
+  transition:0.3s;
 }
 
 .panel{
   background:#1a1a1a;
   padding:20px;
   border-radius:15px;
-  max-width:500px;
+  max-width:600px;
   margin:0 auto;
   text-align:left;
 }
 
-input[type="range"]{ width:100%; }
-
-.btn{
-  width:100%;
-  padding:15px;
-  border:none;
-  border-radius:8px;
-  font-weight:bold;
-  margin-top:15px;
-  cursor:pointer;
-}
-
-#saveBtn{ background:#00f2ff; color:#000; }
+input[type="range"]{width:100%;}
+.btn{width:100%;padding:15px;border:none;border-radius:8px;margin-top:15px;font-weight:bold;cursor:pointer;}
+#saveBtn{background:#00f2ff;color:#000;}
 </style>
 </head>
 
 <body>
 
-<h3>AR CONFIG EDITOR</h3>
+<h3>AR ADVANCED CONFIG</h3>
 
-<input type="text" id="markerName" placeholder="マーカー名を入力">
+<input type="text" id="markerName" placeholder="マーカー名">
 
 <div id="previewArea"></div>
 
 <div class="panel">
+
 <label>画像選択（最大3枚）</label>
 <input type="file" id="fileInput" accept="image/*" multiple>
 
-<label style="margin-top:15px; display:block;">高さ（Y位置）</label>
-<input type="range" id="posY" min="-150" max="150" step="10" value="0">
+<label style="margin-top:15px;">円の半径</label>
+<input type="range" id="radius" min="50" max="200" step="10" value="120">
 
-<label style="margin-top:15px; display:block;">画像サイズ</label>
+<label style="margin-top:15px;">サイズ</label>
 <input type="range" id="scale" min="0.3" max="2" step="0.1" value="1">
 
-<label style="margin-top:15px; display:block;">画像の間隔</label>
-<input type="range" id="gap" min="80" max="250" step="10" value="120">
+<label style="margin-top:15px;">Y補正（全体上下）</label>
+<input type="range" id="globalY" min="-100" max="100" step="10" value="0">
+
 </div>
 
 <button id="saveBtn" class="btn">保存</button>
@@ -77,7 +70,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+ apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
   authDomain: "armisetai.firebaseapp.com",
   projectId: "armisetai",
   storageBucket: "armisetai.firebasestorage.app",
@@ -88,79 +81,96 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let images = [];
-let ratios = [];
+let images=[];
+let ratios=[];
+let individualData=[];
 
 async function processImage(file){
   return new Promise(resolve=>{
-    const reader = new FileReader();
-    reader.onload = e=>{
-      const img = new Image();
-      img.onload = ()=>{
-        const canvas = document.createElement("canvas");
-        const maxW = 800;
-        const ratio = img.height / img.width;
-        canvas.width = maxW;
-        canvas.height = maxW * ratio;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement("canvas");
+        const maxW=800;
+        const ratio=img.height/img.width;
+        canvas.width=maxW;
+        canvas.height=maxW*ratio;
         canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
-        resolve({data:canvas.toDataURL("image/jpeg",0.7), ratio:ratio});
-      }
-      img.src = e.target.result;
-    }
+        resolve({data:canvas.toDataURL("image/jpeg",0.7),ratio});
+      };
+      img.src=e.target.result;
+    };
     reader.readAsDataURL(file);
   });
 }
 
 function renderPreview(){
-  const area = document.getElementById("previewArea");
-  area.innerHTML = "";
+  const area=document.getElementById("previewArea");
+  area.innerHTML="";
 
-  const gap = parseInt(document.getElementById("gap").value);
-  const posY = parseInt(document.getElementById("posY").value);
-  const scale = parseFloat(document.getElementById("scale").value);
+  const radius=parseInt(document.getElementById("radius").value);
+  const scale=parseFloat(document.getElementById("scale").value);
+  const globalY=parseInt(document.getElementById("globalY").value);
+
+  const centerX=300;
+  const centerY=160+globalY;
 
   images.forEach((src,i)=>{
-    const img = document.createElement("img");
-    img.src = src;
+    const angle=(i/images.length)*Math.PI*2;
+    const x=centerX + radius*Math.cos(angle);
+    const y=centerY + radius*Math.sin(angle);
+
+    const img=document.createElement("img");
+    img.src=src;
     img.className="previewImg";
 
-    const baseWidth = 120 * scale;
-    img.style.width = baseWidth + "px";
-    img.style.height = (baseWidth * ratios[i]) + "px";
+    const baseW=100*scale;
+    img.style.width=baseW+"px";
+    img.style.height=(baseW*ratios[i])+"px";
 
-    img.style.left = (200 + (i-1)*gap) + "px";
-    img.style.top = (120 + posY) + "px";
+    img.style.left=(x)+"px";
+    img.style.top=(y + Math.sin(Date.now()/500 + i)*10)+"px";
 
     area.appendChild(img);
+
+    individualData[i]={
+      angle:angle,
+      radius:radius
+    };
   });
 }
 
-document.getElementById("fileInput").onchange = async (e)=>{
-  images=[]; ratios=[];
+document.getElementById("fileInput").onchange=async(e)=>{
+  images=[];ratios=[];individualData=[];
   for(let file of Array.from(e.target.files).slice(0,3)){
-    const result = await processImage(file);
+    const result=await processImage(file);
     images.push(result.data);
     ratios.push(result.ratio);
   }
   renderPreview();
 };
 
-document.getElementById("posY").oninput = renderPreview;
-document.getElementById("gap").oninput = renderPreview;
-document.getElementById("scale").oninput = renderPreview;
+document.getElementById("radius").oninput=renderPreview;
+document.getElementById("scale").oninput=renderPreview;
+document.getElementById("globalY").oninput=renderPreview;
 
-document.getElementById("saveBtn").onclick = async ()=>{
-  const markerName = document.getElementById("markerName").value.trim();
-  if(!markerName){ alert("マーカー名を入力してください"); return; }
+setInterval(renderPreview,50); // ふわふわアニメーション
+
+document.getElementById("saveBtn").onclick=async()=>{
+  const markerName=document.getElementById("markerName").value.trim();
+  if(!markerName){alert("マーカー名を入力");return;}
 
   await setDoc(doc(db,"arData",markerName),{
-    images: images,
-    ratios: ratios,
-    transform:{
-      posY: document.getElementById("posY").value,
-      scale: document.getElementById("scale").value,
-      gap: document.getElementById("gap").value
-    }
+    images:images,
+    ratios:ratios,
+    layout:{
+      type:"circle",
+      radius:document.getElementById("radius").value,
+      scale:document.getElementById("scale").value,
+      globalY:document.getElementById("globalY").value
+    },
+    individual:individualData
   });
 
   alert("保存完了");
