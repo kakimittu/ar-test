@@ -2,104 +2,170 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>AR Business Card Editor - Aspect Ratio Pro</title>
+<title>AR Business Card Editor - Complete</title>
+
 <style>
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #0a0a0a; color: #fff; text-align: center; margin: 0; padding: 20px; }
-  #previewArea { 
-    height: 300px; background: #111; border: 1px solid #333; margin: 20px auto; max-width: 500px;
-    position: relative; display: flex; justify-content: center; align-items: center; border-radius: 15px;
-  }
-  #imgGroup { display: flex; gap: 10px; z-index: 10; }
-  .previewImg { width: 80px; height: auto; border: 2px solid #00f2ff; border-radius: 4px; }
-  .panel { background: #1a1a1a; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; text-align: left; }
-  input[type="range"] { width: 100%; accent-color: #00f2ff; }
-  .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-  #saveBtn { background: #00f2ff; color: #000; }
+body { font-family: Arial; background:#0a0a0a; color:#fff; text-align:center; padding:20px; }
+
+#previewArea{
+  height:300px;
+  background:#111;
+  border:1px solid #333;
+  margin:20px auto;
+  max-width:500px;
+  position:relative;
+  border-radius:15px;
+}
+
+.previewImg{
+  position:absolute;
+  border:2px solid #00f2ff;
+  border-radius:6px;
+}
+
+.panel{
+  background:#1a1a1a;
+  padding:20px;
+  border-radius:15px;
+  max-width:500px;
+  margin:0 auto;
+  text-align:left;
+}
+
+input[type="range"]{ width:100%; }
+
+.btn{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  margin-top:15px;
+  cursor:pointer;
+}
+
+#saveBtn{ background:#00f2ff; color:#000; }
 </style>
 </head>
+
 <body>
 
-<h3>AR PORTFOLIO CONFIG</h3>
+<h3>AR CONFIG EDITOR</h3>
 
-<div id="previewArea">
-  <div id="imgGroup"></div>
-</div>
+<input type="text" id="markerName" placeholder="マーカー名を入力">
+
+<div id="previewArea"></div>
 
 <div class="panel">
-  <label>1. 画像を選択 (自動比率計算)</label>
-  <input type="file" id="fileInput" accept="image/*" multiple>
-  
-  <label style="display:block; margin-top:15px;">2. 高さ調整</label>
-  <input type="range" id="posY" min="0.5" max="3" step="0.1" value="1.2">
-  
-  <label style="display:block; margin-top:15px;">3. 画像同士の間隔</label>
-  <input type="range" id="gap" min="50" max="300" step="10" value="120">
+<label>画像選択（最大3枚）</label>
+<input type="file" id="fileInput" accept="image/*" multiple>
+
+<label style="margin-top:15px; display:block;">高さ（Y位置）</label>
+<input type="range" id="posY" min="-150" max="150" step="10" value="0">
+
+<label style="margin-top:15px; display:block;">画像サイズ</label>
+<input type="range" id="scale" min="0.3" max="2" step="0.1" value="1">
+
+<label style="margin-top:15px; display:block;">画像の間隔</label>
+<input type="range" id="gap" min="80" max="250" step="10" value="120">
 </div>
 
-<button id="saveBtn" class="btn">CLOUD SAVE</button>
+<button id="saveBtn" class="btn">保存</button>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+const firebaseConfig = {
+  apiKey: apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
   authDomain: "armisetai.firebaseapp.com",
   projectId: "armisetai",
   storageBucket: "armisetai.firebasestorage.app",
   messagingSenderId: "1006973944547",
   appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let imagesBase64 = [];
-let imageRatios = []; // 比率を格納する配列
+let images = [];
+let ratios = [];
 
-async function processImage(file) {
-  return new Promise((resolve) => {
+async function processImage(file){
+  return new Promise(resolve=>{
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e=>{
       const img = new Image();
-      img.onload = () => {
+      img.onload = ()=>{
         const canvas = document.createElement("canvas");
-        const maxW = 800; // 幅を800pxに固定
-        const ratio = img.height / img.width; // 比率計算
+        const maxW = 800;
+        const ratio = img.height / img.width;
         canvas.width = maxW;
         canvas.height = maxW * ratio;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve({ data: canvas.toDataURL("image/jpeg", 0.7), ratio: ratio });
-      };
+        canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+        resolve({data:canvas.toDataURL("image/jpeg",0.7), ratio:ratio});
+      }
       img.src = e.target.result;
-    };
+    }
     reader.readAsDataURL(file);
   });
 }
 
-document.getElementById("fileInput").onchange = async (e) => {
-  imagesBase64 = []; imageRatios = [];
-  document.getElementById("imgGroup").innerHTML = "";
-  for (let file of Array.from(e.target.files).slice(0, 3)) {
+function renderPreview(){
+  const area = document.getElementById("previewArea");
+  area.innerHTML = "";
+
+  const gap = parseInt(document.getElementById("gap").value);
+  const posY = parseInt(document.getElementById("posY").value);
+  const scale = parseFloat(document.getElementById("scale").value);
+
+  images.forEach((src,i)=>{
+    const img = document.createElement("img");
+    img.src = src;
+    img.className="previewImg";
+
+    const baseWidth = 120 * scale;
+    img.style.width = baseWidth + "px";
+    img.style.height = (baseWidth * ratios[i]) + "px";
+
+    img.style.left = (200 + (i-1)*gap) + "px";
+    img.style.top = (120 + posY) + "px";
+
+    area.appendChild(img);
+  });
+}
+
+document.getElementById("fileInput").onchange = async (e)=>{
+  images=[]; ratios=[];
+  for(let file of Array.from(e.target.files).slice(0,3)){
     const result = await processImage(file);
-    imagesBase64.push(result.data);
-    imageRatios.push(result.ratio);
-    const imgEl = document.createElement("img");
-    imgEl.src = result.data; imgEl.className = "previewImg";
-    document.getElementById("imgGroup").appendChild(imgEl);
+    images.push(result.data);
+    ratios.push(result.ratio);
   }
+  renderPreview();
 };
 
-document.getElementById("saveBtn").onclick = async () => {
-  await setDoc(doc(db, "arData", "main"), {
-    images: imagesBase64,
-    ratios: imageRatios, // 比率データ
-    transform: {
-      position: `0 ${document.getElementById("posY").value} 0`,
-      gap: document.getElementById("gap").value / 100
+document.getElementById("posY").oninput = renderPreview;
+document.getElementById("gap").oninput = renderPreview;
+document.getElementById("scale").oninput = renderPreview;
+
+document.getElementById("saveBtn").onclick = async ()=>{
+  const markerName = document.getElementById("markerName").value.trim();
+  if(!markerName){ alert("マーカー名を入力してください"); return; }
+
+  await setDoc(doc(db,"arData",markerName),{
+    images: images,
+    ratios: ratios,
+    transform:{
+      posY: document.getElementById("posY").value,
+      scale: document.getElementById("scale").value,
+      gap: document.getElementById("gap").value
     }
   });
-  alert("保存完了！");
+
+  alert("保存完了");
 };
 </script>
+
 </body>
 </html>
