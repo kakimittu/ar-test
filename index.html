@@ -148,25 +148,30 @@ body { margin: 0; overflow: hidden; }
   animation="property: material.opacity; from: 0.1; to: 0.4; dir: alternate; dur: 2000; loop: true">
 </a-plane>
 
-<a-circle
-  radius="0.03"
-  color="#ffcc00"
-  position="0 0.1 0.2"
+<a-ring
+  position="0 0.12 0"
   rotation="-90 0 0"
-  material="shader: flat; transparent: true; blending: additive"
-  animation="property: position; to: 0 0.8 -0.5; dur: 2500; loop: true; easing: easeInQuad"
-  animation__opacity="property: material.opacity; from: 1; to: 0; dur: 2500; loop: true">
-</a-circle>
-
-<a-circle
-  radius="0.1"
+  radius-inner="0.9"
+  radius-outer="1.1"
   color="#ff4500"
-  position="1.2 0.1 0.5"
-  rotation="-90 0 0"
-  material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-  animation="property: scale; from: 1 1 1; to: 1.5 1.5 1; dir: alternate; dur: 1000; loop: true"
-  animation__pos="property: position; to: 1.2 0.2 0.6; dir: alternate; dur: 1500; loop: true">
-</a-circle>
+  material="opacity: 0.6; transparent: true; emissive: #ff2200;"
+  animation="property: rotation; to: 0 0 360; loop: true; dur: 3000">
+</a-ring>
+
+<a-cylinder
+  position="0 0.18 0"
+  radius="0.01"
+  height="1.2"
+  color="#00eaff"
+  material="opacity:0; transparent:true; emissive:#00eaff;"
+  animation__flash="
+    property: material.opacity;
+    from:0; to:1;
+    dur:100;
+    dir:alternate;
+    loop:true;
+    delay:2000">
+</a-cylinder>
 
 <a-circle
   radius="0.08"
@@ -185,6 +190,7 @@ body { margin: 0; overflow: hidden; }
 
 </body>
 </html>
+
 
 
 
