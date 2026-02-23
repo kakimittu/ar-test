@@ -37,152 +37,101 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // ===== 画像生成 =====
     images.forEach((url) => {
+    images.forEach((url) => {
       const plane = document.createElement("a-plane");
-   plane.setAttribute("rotation", "-90 0 0");
-    plane.setAttribute("visible", "false");
-    plane.setAttribute("position", "0 0.02 0"); // ← 少し浮かせる（安定）
-    plane.setAttribute(
-      "material",
-      "shader: flat; transparent: true; side: double; depthWrite: false;"
-    );
-    plane.setAttribute("src", url);
-
-    // 比率調整
-    const img = new Image();
-    img.onload = function() {
-      const aspect = img.height / img.width;
-      const baseWidth = 1.6;
-      plane.setAttribute("width", baseWidth);
-      plane.setAttribute("height", baseWidth * aspect);
-    };
-    img.src = url;
-
-    marker.appendChild(plane);
-    planes.push(plane);
-  });
-
-  /* ========= 表示更新 ========= */
-  function updateCarousel() {
-
-    planes.forEach((plane, index) => {
-
+      plane.setAttribute("rotation", "-90 0 0");
       plane.setAttribute("visible", "false");
+      plane.setAttribute("material", "shader: flat; transparent: true; side: double; alphaTest: 0.5;");
+      plane.setAttribute("src", url);
 
-      if (index === currentIndex) {
+      // 画像比率の自動調整
+      const img = new Image();
+      img.onload = function() {
+        const aspect = img.height / img.width;
+        const baseWidth = 1.6;
+        plane.setAttribute("width", baseWidth);
+        plane.setAttribute("height", baseWidth * aspect);
+      };
+      img.src = url;
 
-      　plane.setAttribute("position", "0 0.15 0");
-        plane.setAttribute("scale", "1.3 1.3 1.3");
-        plane.setAttribute("visible", "true");
+      marker.appendChild(plane);
+      planes.push(plane);
+    });
 
-      } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
+    // ===== 表示更新関数 =====
+    function updateCarousel() {
+      planes.forEach((plane, index) => {
+        plane.setAttribute("visible", "false");
 
-        plane.setAttribute("position", "-1.8 0.12 0");
-        plane.setAttribute("scale", "0.7 0.7 0.7");
-        plane.setAttribute("visible", "true");
+        if (index === currentIndex) {
+          plane.setAttribute("position", "0 0.15 0");
+          plane.setAttribute("scale", "1.3 1.3 1.3");
+          plane.setAttribute("visible", "true");
+        } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
+          plane.setAttribute("position", "-1.8 0.12 -0.2"); // 少し間隔を調整
+          plane.setAttribute("scale", "0.7 0.7 0.7");
+          plane.setAttribute("visible", "true");
+        } else if (index === (currentIndex + 1) % planes.length) {
+          plane.setAttribute("position", "1.8 0.12 -0.2");
+          plane.setAttribute("scale", "0.7 0.7 0.7");
+          plane.setAttribute("visible", "true");
+        }
+      });
+    }
 
-      } else if (index === (currentIndex + 1) % planes.length) {
+    // 初回表示を実行
+    setTimeout(updateCarousel, 500);
 
-        plane.setAttribute("position", "1.8 0.12 0");
-        plane.setAttribute("scale", "0.7 0.7 0.7");
-        plane.setAttribute("visible", "true");
+    // ===== タップ切替 =====
+    marker.addEventListener("click", () => {
+      currentIndex = (currentIndex + 1) % planes.length;
+      updateCarousel();
+    });
+
+    // ===== スワイプ切替 =====
+    let startX = 0;
+    window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
+    window.addEventListener("touchend", (e) => {
+      let endX = e.changedTouches[0].clientX;
+      let diff = endX - startX;
+      if (Math.abs(diff) > 50) {
+        currentIndex = (diff > 0) ? (currentIndex - 1 + planes.length) % planes.length : (currentIndex + 1) % planes.length;
+        updateCarousel();
       }
     });
   }
-
-  setTimeout(updateCarousel, 500);
-
-  /* ========= タップ切替 ========= */
-  marker.addEventListener("click", () => {
-    currentIndex = (currentIndex + 1) % planes.length;
-    updateCarousel();
-  });
-
-  /* ========= スワイプ切替 ========= */
-  let startX = 0;
-
-  window.addEventListener("touchstart", (e) => {
-    startX = e.touches[0].clientX;
-  });
-
-  window.addEventListener("touchend", (e) => {
-    const diff = e.changedTouches[0].clientX - startX;
-    if (Math.abs(diff) > 50) {
-      currentIndex =
-        diff > 0
-          ? (currentIndex - 1 + planes.length) % planes.length
-          : (currentIndex + 1) % planes.length;
-      updateCarousel();
-    }
-  });
-
 });
 </script>
 
 <style>
-body { margin: 0; overflow: hidden; }
+  body { margin: 0; overflow: hidden; }
 </style>
 </head>
-
 <body>
+<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
+    
+    <a-plane color="#ff9900" width="2" height="1.2" position="0 0.01 0" rotation="-90 0 0"
+      material="shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false"
+      animation="property: material.opacity; from: 0.1; to: 0.4; dir: alternate; dur: 2000; loop: true">
+    </a-plane>
 
-<a-scene
-  embedded
-  vr-mode-ui="enabled: false"
-  renderer="logarithmicDepthBuffer: true;"
-  arjs="
-    sourceType: webcam;
-    debugUIEnabled: false;
-    trackingMethod: best;
-    detectionMode: mono;
-    cameraParametersUrl: https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/data/camera_para.dat;
-  "
->
+    <a-circle radius="0.08" color="#ff8c00" position="-1.2 0.1 0.5" rotation="-90 0 0"
+      material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
+      animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 800; loop: true">
+    </a-circle>
+    
+    <a-circle radius="0.08" color="#ff4500" position="1.2 0.1 0.5" rotation="-90 0 0"
+      material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
+      animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 1000; loop: true">
+    </a-circle>
 
-<a-marker
-  type="pattern"
-  url="assets/markers/pattern-AKA2.patt"
-  smooth="true"
-  smoothCount="20"
-  smoothTolerance="0.005"
-  smoothThreshold="2"
->
-
-  <!-- 背景エフェクト（回転統一） -->
-  <a-plane
-    color="#ff9900"
-    width="2"
-    height="1.2"
-    position="0 0 0"
-    rotation="0 0 0"
-    material="shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false"
-    animation="property: material.opacity; from: 0.1; to: 0.4; dir: alternate; dur: 2000; loop: true">
-  </a-plane>
-
-  <a-circle
-    radius="0.08"
-    color="#ff8c00"
-    position="-1.2 0 0.02"
-    rotation="0 0 0"
-    material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-    animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 800; loop: true">
-  </a-circle>
-
-  <a-circle
-    radius="0.08"
-    color="#ff4500"
-    position="1.2 0 0.02"
-    rotation="0 0 0"
-    material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-    animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 1000; loop: true">
-  </a-circle>
-
-</a-marker>
-
-<a-entity camera></a-entity>
-
+  </a-marker>
+  <a-entity camera></a-entity>
 </a-scene>
 </body>
 </html>
+
 
 
 
