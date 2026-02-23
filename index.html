@@ -35,14 +35,27 @@ window.addEventListener("DOMContentLoaded", async () => {
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
-    const data = docSnap.data();
-    const imageUrl = data.imageUrl;
+  const data = docSnap.data();
+  const imageUrl = data.imageUrl;
 
-    const mainImage = document.getElementById("mainImage");
-    mainImage.setAttribute("src", imageUrl);
-  } else {
-    console.log("ドキュメントが見つかりません");
-  }
+  const mainImage = document.getElementById("mainImage");
+
+  // 画像をセット
+  mainImage.setAttribute("src", imageUrl);
+
+  // 縦横比を自動調整
+  const img = new Image();
+  img.onload = function() {
+    const aspect = img.height / img.width;
+
+    const width = 1.2;  // 基準横幅
+    const height = width * aspect;
+
+    mainImage.setAttribute("width", width);
+    mainImage.setAttribute("height", height);
+  };
+  img.src = imageUrl;
+}
 
 });
 </script>
@@ -112,6 +125,7 @@ body { margin: 0; overflow: hidden; }
 
 </body>
 </html>
+
 
 
 
