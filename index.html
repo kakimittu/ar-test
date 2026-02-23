@@ -107,8 +107,25 @@ window.addEventListener("DOMContentLoaded", async () => {
 </style>
 </head>
 <body>
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
+<a-scene
+  embedded
+  vr-mode-ui="enabled: false"
+  renderer="logarithmicDepthBuffer: true;"
+  arjs="sourceType: webcam;
+    debugUIEnabled: false;
+    trackingMethod: best;
+    detectionMode: mono_and_matrix;
+    matrixCodeType: 3x3;
+  "
+>
+ <a-marker
+  type="pattern"
+  url="assets/markers/pattern-AKA2.patt"
+  smooth="true"
+  smoothCount="10"
+  smoothTolerance="0.01"
+  smoothThreshold="5"
+>
     
     <a-plane color="#ff9900" width="2" height="1.2" position="0 0.01 0" rotation="-90 0 0"
       material="shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false"
@@ -130,3 +147,4 @@ window.addEventListener("DOMContentLoaded", async () => {
 </a-scene>
 </body>
 </html>
+
