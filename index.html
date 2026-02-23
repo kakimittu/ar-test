@@ -2,219 +2,106 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>CYBER AR - AUTO SCAN SYSTEM</title>
+<title>CYBER AR - FIRESTORE EDITION</title>
 
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 
+"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from 
+"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  /* あなたの設定をここに */
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.addEventListener("DOMContentLoaded", async () => {
+
+  const markerId = "tanaka"; // ← FirestoreのドキュメントID
+
+  const docRef = doc(db, "markers", markerId);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    const imageUrl = data.imageUrl;
+
+    const mainImage = document.getElementById("mainImage");
+    mainImage.setAttribute("src", imageUrl);
+  }
+
+});
+</script>
+
 <style>
-  body { margin: 0; overflow: hidden; }
-
-  /* 2Dボタン：サイバーホログラム・スタイル */
-  #nextBtn2D {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 14px;
-    font-weight: bold;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #00f2ff;
-    background: rgba(0, 242, 255, 0.1);
-    backdrop-filter: blur(4px);
-    border: 1px solid #00f2ff;
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4), inset 0 0 10px rgba(0, 242, 255, 0.2);
-    padding: 15px 30px;
-    clip-path: polygon(0% 0%, 100% 0%, 100% 70%, 85% 100%, 0% 100%);
-    cursor: pointer;
-    z-index: 9999;
-    transition: all 0.2s ease;
-    outline: none;
-  }
-
-  #nextBtn2D:hover {
-    background: rgba(0, 242, 255, 0.3);
-    box-shadow: 0 0 25px rgba(0, 242, 255, 0.8);
-    transform: translateY(-2px);
-    color: #fff;
-  }
-
-  /* 自動更新用の進捗バー */
-  #progressBarContainer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: rgba(0, 242, 255, 0.1);
-    z-index: 10000;
-  }
-
-  #progressBar {
-    width: 0%;
-    height: 100%;
-    background: #00f2ff;
-    box-shadow: 0 0 15px #00f2ff;
-    /* transitionの時間はJS側の自動更新秒数と合わせます */
-    transition: width 5s linear;
-  }
-
-  #nextBtn2D::before {
-    content: "SYSTEM_SCAN_MODE";
-    position: absolute;
-    top: -18px;
-    left: 0;
-    font-size: 9px;
-    color: #00f2ff;
-    opacity: 0.7;
-  }
+body { margin: 0; overflow: hidden; }
 </style>
 </head>
 
 <body>
-
-<div id="progressBarContainer">
-  <div id="progressBar"></div>
-</div>
 
 <a-scene
   embedded
   arjs="sourceType: webcam; debugUIEnabled: false;"
   vr-mode-ui="enabled: false"
 >
-  <a-assets id="assets"></a-assets>
+
+  <a-assets>
+    <img id="sparkle" src="assets/sparkle.png">
+  </a-assets>
 
   <a-marker
-    id="marker"
     type="pattern"
     url="assets/markers/pattern-AKA2.patt"
   >
-    </a-marker>
+
+    <!-- メイン画像 -->
+    <a-plane
+      id="mainImage"
+      position="0 0.5 0"
+      width="1.2"
+      height="1.2"
+      animation="property: scale;
+                 dir: alternate;
+                 dur: 2000;
+                 loop: true;
+                 to: 1.05 1.05 1.05">
+    </a-plane>
+
+    <!-- キラキラ① -->
+    <a-image
+      src="#sparkle"
+      position="0.8 1 0"
+      width="0.3"
+      animation="property: position;
+                 dir: alternate;
+                 dur: 1500;
+                 loop: true;
+                 to: 0.8 1.2 0">
+    </a-image>
+
+    <!-- キラキラ② -->
+    <a-image
+      src="#sparkle"
+      position="-0.8 1 0"
+      width="0.25"
+      animation="property: rotation;
+                 to: 0 0 360;
+                 dur: 4000;
+                 loop: true;">
+    </a-image>
+
+  </a-marker>
 
   <a-entity camera></a-entity>
+
 </a-scene>
-
-<button id="nextBtn2D">NEXT_DATA ▶</button>
-
-<script>
-let currentIndex = 0;
-let isMarkerVisible = false;
-let autoTimer = null;
-const INTERVAL_TIME = 5000; // 5秒ごとに更新
-
-const marker = document.getElementById("marker");
-const assets = document.getElementById("assets");
-const bar = document.getElementById("progressBar");
-
-// 保存された画像がない場合のデフォルト
-const savedImages = JSON.parse(localStorage.getItem('arImages')) || [
-    "assets/images/sasanooaikon.png",
-    "assets/images/tukareta.jpg",
-    "assets/images/3.png"
-];
-
-const imageElements = [];
-
-// 1. 画像とアセットの動的生成
-savedImages.forEach((src, index) => {
-  const assetImg = document.createElement('img');
-  assetImg.setAttribute('id', 'img-src-' + index);
-  assetImg.setAttribute('src', src);
-  assets.appendChild(assetImg);
-
-  const aImg = document.createElement('a-image');
-  aImg.setAttribute('src', '#img-src-' + index);
-  aImg.setAttribute('rotation', '-90 0 0');
-  aImg.setAttribute('transparent', 'true');
-  aImg.setAttribute('visible', 'false'); // 最初は全部隠す
-  marker.appendChild(aImg);
-
-  imageElements.push(aImg);
-});
-
-// 2. 表示状態と位置の更新
-function updateImages() {
-  imageElements.forEach((el, index) => {
-    let pos, scale, visible;
-
-    if (index === currentIndex) {
-      pos = "0 0.1 0"; // 少し浮かせてチラつき防止
-      scale = "1.2 1.2 1.2";
-      visible = true;
-    } else if (index < currentIndex) {
-      pos = "-1.5 0.1 0";
-      scale = "0.6 0.6 0.6";
-      visible = true; // 前後の画像も見せる場合はtrue、隠す場合はfalse
-    } else {
-      pos = "1.5 0.1 0";
-      scale = "0.6 0.6 0.6";
-      visible = true;
-    }
-
-    el.setAttribute("position", pos);
-    el.setAttribute("scale", scale);
-    el.setAttribute("visible", visible);
-  });
-  
-  resetProgressBar();
-}
-
-// 3. 自動更新システム
-function startAutoTimer() {
-  stopAutoTimer();
-  autoTimer = setInterval(() => {
-    if (isMarkerVisible) {
-      nextImage();
-    }
-  }, INTERVAL_TIME);
-}
-
-function stopAutoTimer() {
-  clearInterval(autoTimer);
-  bar.style.transition = 'none';
-  bar.style.width = '0%';
-}
-
-function nextImage() {
-  currentIndex = (currentIndex + 1) % imageElements.length;
-  updateImages();
-}
-
-function resetProgressBar() {
-  bar.style.transition = 'none';
-  bar.style.width = '0%';
-  // マーカーが見えている時だけバーを動かす
-  if (isMarkerVisible) {
-    setTimeout(() => {
-      bar.style.transition = `width ${INTERVAL_TIME}ms linear`;
-      bar.style.width = '100%';
-    }, 50);
-  }
-}
-
-// 4. マーカー認識イベント
-marker.addEventListener("markerFound", () => {
-  isMarkerVisible = true;
-  startAutoTimer();
-  updateImages();
-});
-
-marker.addEventListener("markerLost", () => {
-  isMarkerVisible = false;
-  stopAutoTimer();
-});
-
-// 5. ボタン操作
-document.getElementById("nextBtn2D").addEventListener("click", () => {
-  if (!isMarkerVisible) return;
-  nextImage();
-  startAutoTimer(); // 手動で押されたらタイマーをリセット
-});
-
-// 初期化
-window.addEventListener("load", updateImages);
-</script>
 
 </body>
 </html>
