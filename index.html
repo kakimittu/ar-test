@@ -4,60 +4,19 @@
 <meta charset="utf-8">
 <title>AR Card</title>
 
+<!-- A-Frame -->
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/aframe/build/aframe-ar.js"></script>
 
-<style>
-body { margin:0; overflow:hidden; }
-</style>
+<!-- AR.js -->
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
 </head>
+<body style="margin:0; overflow:hidden;">
 
-<body>
+<a-scene embedded arjs>
 
-<a-scene
-  embedded
-  arjs="sourceType: webcam; debugUIEnabled: false;"
-  vr-mode-ui="enabled: false"
->
-
-  <a-assets>
-    <img id="sparkle" src="assets/sparkle.png">
-  </a-assets>
-
-  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
-
-    <!-- 背景 -->
-    <a-plane 
-      color="#111"
-      width="2.5"
-      height="1.5"
-      position="0 0.01 0"
-      rotation="-90 0 0"
-      material="opacity:0.8; transparent:true;">
-    </a-plane>
-
-    <!-- 炎リング -->
-    <a-ring
-      position="0 0.12 0"
-      rotation="-90 0 0"
-      radius-inner="0.9"
-      radius-outer="1.1"
-      color="#ff4500"
-      material="opacity:0.6; transparent:true; emissive:#ff2200;"
-      animation="property: rotation; to: 0 0 360; loop:true; dur:3000">
-    </a-ring>
-
-    <!-- 波動 -->
-    <a-circle
-      position="0 0.11 0"
-      rotation="-90 0 0"
-      radius="0.5"
-      color="#ff8800"
-      material="opacity:0.7; transparent:true;"
-      animation__scale="property: scale; from:1 1 1; to:3 3 3; dur:2000; loop:true"
-      animation__fade="property: material.opacity; from:0.7; to:0; dur:2000; loop:true">
-    </a-circle>
-
+  <a-marker preset="hiro">
+    <!-- ここに画像が自動生成されます -->
   </a-marker>
 
   <a-entity camera></a-entity>
@@ -65,14 +24,15 @@ body { margin:0; overflow:hidden; }
 </a-scene>
 
 <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ===============================
+   🔥 あなたのFirebase設定を入れる
+================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
     authDomain: "armisetai.firebaseapp.com",
     projectId: "armisetai",
     storageBucket: "armisetai.firebasestorage.app",
@@ -80,128 +40,114 @@ body { margin:0; overflow:hidden; }
     appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  
-// 仮の画像配列（動作確認用）
-const images = [
-  "https://picsum.photos/400/600?1",
-  "https://picsum.photos/400/600?2",
-  "https://picsum.photos/400/600?3"
-];
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-const marker = document.querySelector("a-marker");
+/* ===============================
+   Firestore データ取得
+   arUsers / akazawa / images
+================================= */
+const docRef = doc(db, "arUsers", "akazawa");
+const docSnap = await getDoc(docRef);
 
-let currentIndex = 0;
-const planes = [];
+if (!docSnap.exists()) {
+  alert("Firestoreにデータがありません");
+} else {
 
-// ===== 画像生成 =====
-images.forEach((url) => {
+  const data = docSnap.data();
+  const images = data.images;
 
-  const plane = document.createElement("a-plane");
+  const marker = document.querySelector("a-marker");
 
-  plane.setAttribute("rotation", "-90 0 0");
-  plane.setAttribute("visible", "false");
+  let currentIndex = 0;
+  const planes = [];
 
-  plane.setAttribute(
-    "material",
-    "transparent:true; side:double; emissive:#ff6600; emissiveIntensity:0.3; depthTest:false;"
-  );
+  /* ===============================
+     装飾フレーム（カード風）
+  ================================= */
+  const frame = document.createElement("a-plane");
+  frame.setAttribute("width", "1.5");
+  frame.setAttribute("height", "2.1");
+  frame.setAttribute("rotation", "-90 0 0");
+  frame.setAttribute("position", "0 0.01 -0.02");
+  frame.setAttribute("color", "#111");
+  frame.setAttribute("material", "opacity:0.8; side:double;");
+  marker.appendChild(frame);
 
-  const img = new Image();
-  img.onload = function() {
-    const aspect = img.height / img.width;
-    const baseWidth = 1.6;
-    plane.setAttribute("width", baseWidth);
-    plane.setAttribute("height", baseWidth * aspect);
-  };
-  img.src = url;
+  /* ===============================
+     画像生成
+  ================================= */
+  images.forEach((url) => {
 
-  plane.setAttribute("src", url);
-
-  marker.appendChild(plane);
-  planes.push(plane);
-});
-
-// ===== 表示更新 =====
-function updateCarousel() {
-
-  planes.forEach((plane, index) => {
-
+    const plane = document.createElement("a-plane");
+    plane.setAttribute("rotation", "-90 0 0");
+    plane.setAttribute("position", "0 0.02 0");
     plane.setAttribute("visible", "false");
+    plane.setAttribute(
+      "material",
+      "transparent:true; side:double; depthTest:false;"
+    );
 
-    if (index === currentIndex) {
-      plane.setAttribute("position", "0 0.15 0");
-      plane.setAttribute("scale", "1.3 1.3 1.3");
-      plane.setAttribute("visible", "true");
+    const img = new Image();
+    img.onload = function() {
+      const aspect = img.height / img.width;
+      plane.setAttribute("width", "1.2");
+      plane.setAttribute("height", 1.2 * aspect);
+    };
+    img.src = url;
 
-    } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
-      plane.setAttribute("position", "-2 0.12 -0.4");
-      plane.setAttribute("scale", "0.7 0.7 0.7");
-      plane.setAttribute("visible", "true");
+    plane.setAttribute("src", url);
 
-    } else if (index === (currentIndex + 1) % planes.length) {
-      plane.setAttribute("position", "2 0.12 -0.4");
-      plane.setAttribute("scale", "0.7 0.7 0.7");
-      plane.setAttribute("visible", "true");
-    }
+    marker.appendChild(plane);
+    planes.push(plane);
+  });
 
+  /* ===============================
+     表示更新（左右カルーセル）
+  ================================= */
+  function updateCarousel() {
+    planes.forEach((plane, index) => {
+
+      if (index === currentIndex) {
+
+        plane.setAttribute("position", "0 0.15 0");
+        plane.setAttribute("scale", "1.2 1.2 1.2");
+        plane.setAttribute("visible", "true");
+
+      } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
+
+        plane.setAttribute("position", "-1.5 0.12 -0.3");
+        plane.setAttribute("scale", "0.6 0.6 0.6");
+        plane.setAttribute("visible", "true");
+
+      } else if (index === (currentIndex + 1) % planes.length) {
+
+        plane.setAttribute("position", "1.5 0.12 -0.3");
+        plane.setAttribute("scale", "0.6 0.6 0.6");
+        plane.setAttribute("visible", "true");
+
+      } else {
+
+        plane.setAttribute("visible", "false");
+
+      }
+
+    });
+  }
+
+  updateCarousel();
+
+  /* ===============================
+     タップで切替
+  ================================= */
+  marker.addEventListener("click", () => {
+    currentIndex = (currentIndex + 1) % planes.length;
+    updateCarousel();
   });
 
 }
-
-updateCarousel();
-
-// ===== タップ切替 =====
-marker.addEventListener("click", () => {
-  currentIndex = (currentIndex + 1) % planes.length;
-  updateCarousel();
-});
-
-// ===== スワイプ切替 =====
-let startX = 0;
-
-window.addEventListener("touchstart", (e) => {
-  startX = e.touches[0].clientX;
-});
-
-window.addEventListener("touchend", (e) => {
-  let endX = e.changedTouches[0].clientX;
-  let diff = endX - startX;
-
-  if (Math.abs(diff) > 50) {
-    if (diff > 0) {
-      currentIndex =
-        (currentIndex - 1 + planes.length) % planes.length;
-    } else {
-      currentIndex =
-        (currentIndex + 1) % planes.length;
-    }
-    updateCarousel();
-  }
-});
 
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
