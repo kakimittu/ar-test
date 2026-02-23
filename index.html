@@ -11,14 +11,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA", // ここを書き換えてください
-  authDomain: "armisetai.firebaseapp.com",
-  projectId: "armisetai",
-  storageBucket: "armisetai.firebasestorage.app",
-  messagingSenderId: "1006973944547",
-  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-};
-
+  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+    authDomain: "armisetai.firebaseapp.com",
+    projectId: "armisetai",
+    storageBucket: "armisetai.firebasestorage.app",
+    messagingSenderId: "1006973944547",
+    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+  };
+  
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
