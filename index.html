@@ -144,7 +144,7 @@ body { margin: 0; overflow: hidden; }
   width="2" height="1.2" 
   position="0 0.01 0"
   rotation="-90 0 0"
-  material="opacity: 0.2; transparent: true; src: url(https://www.transparenttextures.com/patterns/az-subtle.png);"
+  material= material="color: #ff8c00; opacity: 0.7; transparent: true"
   animation="property: material.opacity; from: 0.1; to: 0.3; dir: alternate; dur: 2000; loop: true">
 </a-plane>
 
@@ -153,7 +153,7 @@ body { margin: 0; overflow: hidden; }
   rotation="-90 0 0"
  position="1 0.08 0.5"
   width="0.8"
-  material="color: #ff4500; opacity: 0.8; transparent: true"
+  material="shader: flat; color: #ff4500; opacity: 0.8; transparent: true; alphaTest: 0.5"
   animation__pos="property: position; to: 1 0.08 0.6; dir: alternate; dur: 1000; loop: true"
   animation__scale="property: scale; from: 1 1 1; to: 1.1 1.2 1; dir: alternate; dur: 800; loop: true">
 </a-image>
@@ -163,7 +163,7 @@ body { margin: 0; overflow: hidden; }
   rotation="-90 0 0"
   position="-1 0.08 0.5"
   width="0.7"
-  material="color: #ff8c00; opacity: 0.7; transparent: true"
+  material="shader: flat; color: #ff8c00; opacity: 0.7; transparent: true; alphaTest: 0.5"
   animation__pos="property: position; to: -1 0.08 0.6; dir: alternate; dur: 1200; loop: true"
   animation__scale="property: scale; from: 1 1 1; to: 1.2 1.1 1; dir: alternate; dur: 900; loop: true">
 </a-image>
@@ -185,6 +185,7 @@ body { margin: 0; overflow: hidden; }
 
 </body>
 </html>
+
 
 
 
