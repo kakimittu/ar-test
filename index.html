@@ -43,19 +43,28 @@ if (docSnap.exists()) {
   let currentIndex = 0;
   const planes = [];
 
-  // 画像生成
-  images.forEach((url, index) => {
+  // ===== 画像生成 =====
+  images.forEach((url) => {
 
     const plane = document.createElement("a-plane");
+
+    // マーカーに寝かせる
     plane.setAttribute("rotation", "-90 0 0");
-    plane.setAttribute("position", "0 0.01 0");
+
+    // 最初は非表示
     plane.setAttribute("visible", "false");
 
+    // 白線防止（透明対応）
+    plane.setAttribute("material", "transparent:true; side:double;");
+
+    // 画像比率調整
     const img = new Image();
     img.onload = function() {
       const aspect = img.height / img.width;
-      plane.setAttribute("width", "1.2");
-      plane.setAttribute("height", 1.2 * aspect);
+
+      const baseWidth = 1.8; // ← 大きさアップ
+      plane.setAttribute("width", baseWidth);
+      plane.setAttribute("height", baseWidth * aspect);
     };
     img.src = url;
 
@@ -65,27 +74,30 @@ if (docSnap.exists()) {
     planes.push(plane);
   });
 
-  // 表示更新関数
+  // ===== 表示更新 =====
   function updateCarousel() {
+
     planes.forEach((plane, index) => {
 
+      plane.setAttribute("visible", "false");
+
+      // 中央
       if (index === currentIndex) {
-        plane.setAttribute("position", "0 0.02 0");
-        plane.setAttribute("scale", "1 1 1");
+        plane.setAttribute("position", "0 0.06 0");
+        plane.setAttribute("scale", "1.3 1.3 1.3");
         plane.setAttribute("visible", "true");
 
-      } else if (index === currentIndex - 1) {
-        plane.setAttribute("position", "-1.5 0.01 0");
-        plane.setAttribute("scale", "0.6 0.6 0.6");
+      // 左
+      } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
+        plane.setAttribute("position", "-2 0.02 -0.4");
+        plane.setAttribute("scale", "0.7 0.7 0.7");
         plane.setAttribute("visible", "true");
 
-      } else if (index === currentIndex + 1) {
-        plane.setAttribute("position", "1.5 0.01 0");
-        plane.setAttribute("scale", "0.6 0.6 0.6");
+      // 右
+      } else if (index === (currentIndex + 1) % planes.length) {
+        plane.setAttribute("position", "2 0.02 -0.4");
+        plane.setAttribute("scale", "0.7 0.7 0.7");
         plane.setAttribute("visible", "true");
-
-      } else {
-        plane.setAttribute("visible", "false");
       }
 
     });
@@ -93,12 +105,13 @@ if (docSnap.exists()) {
 
   updateCarousel();
 
-  // 5秒ごと自動切替
+  // ===== 5秒ごと切替 =====
   setInterval(() => {
     currentIndex = (currentIndex + 1) % planes.length;
     updateCarousel();
   }, 5000);
 }
+
 
 });
 </script>
@@ -168,6 +181,7 @@ body { margin: 0; overflow: hidden; }
 
 </body>
 </html>
+
 
 
 
