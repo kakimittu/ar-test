@@ -1,107 +1,140 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>CYBER AR - FIRESTORE EDITION</title>
+<meta charset="utf-8">
+<title>AR Card</title>
 
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/aframe/build/aframe-ar.js"></script>
 
-<!-- Firebase -->
+<style>
+body { margin:0; overflow:hidden; }
+</style>
+</head>
+
+<body>
+
+<a-scene
+  embedded
+  arjs="sourceType: webcam; debugUIEnabled: false;"
+  vr-mode-ui="enabled: false"
+>
+
+  <a-assets>
+    <img id="sparkle" src="assets/sparkle.png">
+  </a-assets>
+
+  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
+
+    <!-- 背景 -->
+    <a-plane 
+      color="#111"
+      width="2.5"
+      height="1.5"
+      position="0 0.01 0"
+      rotation="-90 0 0"
+      material="opacity:0.8; transparent:true;">
+    </a-plane>
+
+    <!-- 炎リング -->
+    <a-ring
+      position="0 0.12 0"
+      rotation="-90 0 0"
+      radius-inner="0.9"
+      radius-outer="1.1"
+      color="#ff4500"
+      material="opacity:0.6; transparent:true; emissive:#ff2200;"
+      animation="property: rotation; to: 0 0 360; loop:true; dur:3000">
+    </a-ring>
+
+    <!-- 波動 -->
+    <a-circle
+      position="0 0.11 0"
+      rotation="-90 0 0"
+      radius="0.5"
+      color="#ff8800"
+      material="opacity:0.7; transparent:true;"
+      animation__scale="property: scale; from:1 1 1; to:3 3 3; dur:2000; loop:true"
+      animation__fade="property: material.opacity; from:0.7; to:0; dur:2000; loop:true">
+    </a-circle>
+
+  </a-marker>
+
+  <a-entity camera></a-entity>
+
+</a-scene>
+
 <script type="module">
-import { initializeApp } from 
-"https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 
-import { getFirestore, doc, getDoc } from 
-"https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+// ===== ここはあなたのFirestore取得部分を入れる =====
+// 仮の画像配列（動作確認用）
+const images = [
+  "https://picsum.photos/400/600?1",
+  "https://picsum.photos/400/600?2",
+  "https://picsum.photos/400/600?3"
+];
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-  authDomain: "armisetai.firebaseapp.com",
-  projectId: "armisetai",
-  storageBucket: "armisetai.firebasestorage.app",
-  messagingSenderId: "1006973944547",
-  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-};
+const marker = document.querySelector("a-marker");
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+let currentIndex = 0;
+const planes = [];
 
-window.addEventListener("DOMContentLoaded", async () => {
+// ===== 画像生成 =====
+images.forEach((url) => {
 
-  const markerId = "akazawa"; // ← あなたのFirestoreドキュメント名
+  const plane = document.createElement("a-plane");
 
-  const docRef = doc(db, "arUsers", markerId);
-  const docSnap = await getDoc(docRef);
+  plane.setAttribute("rotation", "-90 0 0");
+  plane.setAttribute("visible", "false");
 
-if (docSnap.exists()) {
-  const data = docSnap.data();
-  const images = data.images;
+  plane.setAttribute(
+    "material",
+    "transparent:true; side:double; emissive:#ff6600; emissiveIntensity:0.3; depthTest:false;"
+  );
 
-  const marker = document.querySelector("a-marker");
+  const img = new Image();
+  img.onload = function() {
+    const aspect = img.height / img.width;
+    const baseWidth = 1.6;
+    plane.setAttribute("width", baseWidth);
+    plane.setAttribute("height", baseWidth * aspect);
+  };
+  img.src = url;
 
-  let currentIndex = 0;
-  const planes = [];
+  plane.setAttribute("src", url);
 
-  // ===== 画像生成 =====
-  images.forEach((url) => {
+  marker.appendChild(plane);
+  planes.push(plane);
+});
 
-    const plane = document.createElement("a-plane");
+// ===== 表示更新 =====
+function updateCarousel() {
 
-    // マーカーに寝かせる
-    plane.setAttribute("rotation", "-90 0 0");
+  planes.forEach((plane, index) => {
 
-    // 最初は非表示
     plane.setAttribute("visible", "false");
 
-    // 白線防止（透明対応）
-    plane.setAttribute("material", "transparent:true; side:double;");
+    if (index === currentIndex) {
+      plane.setAttribute("position", "0 0.15 0");
+      plane.setAttribute("scale", "1.3 1.3 1.3");
+      plane.setAttribute("visible", "true");
 
-    // 画像比率調整
-    const img = new Image();
-    img.onload = function() {
-      const aspect = img.height / img.width;
+    } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
+      plane.setAttribute("position", "-2 0.12 -0.4");
+      plane.setAttribute("scale", "0.7 0.7 0.7");
+      plane.setAttribute("visible", "true");
 
-      const baseWidth = 1.6; // ← 大きさアップ
-      plane.setAttribute("width", baseWidth);
-      plane.setAttribute("height", baseWidth * aspect);
-    };
-    img.src = url;
+    } else if (index === (currentIndex + 1) % planes.length) {
+      plane.setAttribute("position", "2 0.12 -0.4");
+      plane.setAttribute("scale", "0.7 0.7 0.7");
+      plane.setAttribute("visible", "true");
+    }
 
-    plane.setAttribute("src", url);
-
-    marker.appendChild(plane);
-    planes.push(plane);
   });
 
-  // ===== 表示更新 =====
-  function updateCarousel() {
+}
 
-    planes.forEach((plane, index) => {
-
-      plane.setAttribute("visible", "false");
-
-      // 中央
-      if (index === currentIndex) {
-       plane.setAttribute("position", "0 0.15 0");
-        plane.setAttribute("scale", "1.3 1.3 1.3");
-        plane.setAttribute("visible", "true");
-
-      // 左
-      } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
-        plane.setAttribute("position", "-2 0.12 -0.4");
-        plane.setAttribute("scale", "0.7 0.7 0.7");
-        plane.setAttribute("visible", "true");
-
-      // 右
-      } else if (index === (currentIndex + 1) % planes.length) {
-        plane.setAttribute("position", "2 0.12 -0.4");
-        plane.setAttribute("scale", "0.7 0.7 0.7");
-        plane.setAttribute("visible", "true");
-      }
-
-    });
-  }
+updateCarousel();
 
 // ===== タップ切替 =====
 marker.addEventListener("click", () => {
@@ -133,57 +166,10 @@ window.addEventListener("touchend", (e) => {
 });
 
 </script>
-</script>
-
-<style>
-body { margin: 0; overflow: hidden; }
-</style>
-</head>
-
-<body>
-
-<a-scene
-  embedded
-  arjs="sourceType: webcam; debugUIEnabled: false;"
-  vr-mode-ui="enabled: false"
->
-
-  <a-assets>
-    <img id="sparkle" src="assets/sparkle.png">
-  </a-assets>
-
-  <a-marker
-    type="pattern"
-    url="assets/markers/pattern-AKA2.patt"
-  >
-
-    <!-- メイン画像 -->
-<a-plane 
-  color="#ff9900" 
-  width="2" height="1.2" 
-  position="0 0.01 0"
-  rotation="-90 0 0"
-  material="shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false"
-  animation="property: material.opacity; from: 0.1; to: 0.4; dir: alternate; dur: 2000; loop: true">
-</a-plane>
-
-<a-circle
-  radius="0.08"
-  color="#ff8c00"
-  position="-1.2 0.1 0.5"
-  rotation="-90 0 0"
-  material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-  animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 800; loop: true"
-  animation__pos="property: position; to: -1.2 0.2 0.4; dir: alternate; dur: 1200; loop: true">
-</a-circle>
-  </a-marker>
-
-  <a-entity camera></a-entity>
-
-</a-scene>
 
 </body>
 </html>
+
 
 
 
