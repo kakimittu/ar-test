@@ -34,27 +34,70 @@ window.addEventListener("DOMContentLoaded", async () => {
   const docRef = doc(db, "arUsers", markerId);
   const docSnap = await getDoc(docRef);
 
-  if (docSnap.exists()) {
+if (docSnap.exists()) {
   const data = docSnap.data();
-  const imageUrl = data.imageUrl;
+  const images = data.images;
 
-  const mainImage = document.getElementById("mainImage");
+  const marker = document.querySelector("a-marker");
 
-  // 画像をセット
-  mainImage.setAttribute("src", imageUrl);
+  let currentIndex = 0;
+  const planes = [];
 
-  // 縦横比を自動調整
-  const img = new Image();
-  img.onload = function() {
-    const aspect = img.height / img.width;
+  // 画像生成
+  images.forEach((url, index) => {
 
-    const width = 1.2;  // 基準横幅
-    const height = width * aspect;
+    const plane = document.createElement("a-plane");
+    plane.setAttribute("rotation", "-90 0 0");
+    plane.setAttribute("position", "0 0.01 0");
+    plane.setAttribute("visible", "false");
 
-    mainImage.setAttribute("width", width);
-    mainImage.setAttribute("height", height);
-  };
-  img.src = imageUrl;
+    const img = new Image();
+    img.onload = function() {
+      const aspect = img.height / img.width;
+      plane.setAttribute("width", "1.2");
+      plane.setAttribute("height", 1.2 * aspect);
+    };
+    img.src = url;
+
+    plane.setAttribute("src", url);
+
+    marker.appendChild(plane);
+    planes.push(plane);
+  });
+
+  // 表示更新関数
+  function updateCarousel() {
+    planes.forEach((plane, index) => {
+
+      if (index === currentIndex) {
+        plane.setAttribute("position", "0 0.02 0");
+        plane.setAttribute("scale", "1 1 1");
+        plane.setAttribute("visible", "true");
+
+      } else if (index === currentIndex - 1) {
+        plane.setAttribute("position", "-1.5 0.01 0");
+        plane.setAttribute("scale", "0.6 0.6 0.6");
+        plane.setAttribute("visible", "true");
+
+      } else if (index === currentIndex + 1) {
+        plane.setAttribute("position", "1.5 0.01 0");
+        plane.setAttribute("scale", "0.6 0.6 0.6");
+        plane.setAttribute("visible", "true");
+
+      } else {
+        plane.setAttribute("visible", "false");
+      }
+
+    });
+  }
+
+  updateCarousel();
+
+  // 5秒ごと自動切替
+  setInterval(() => {
+    currentIndex = (currentIndex + 1) % planes.length;
+    updateCarousel();
+  }, 5000);
 }
 
 });
@@ -125,6 +168,7 @@ body { margin: 0; overflow: hidden; }
 
 </body>
 </html>
+
 
 
 
