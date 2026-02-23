@@ -83,7 +83,7 @@ if (docSnap.exists()) {
 
       // 中央
       if (index === currentIndex) {
-        plane.setAttribute("position", "0 0.08 0");
+        plane.setAttribute("position", "0 0.1 0");
         plane.setAttribute("scale", "1.3 1.3 1.3");
         plane.setAttribute("visible", "true");
 
@@ -139,39 +139,42 @@ body { margin: 0; overflow: hidden; }
   >
 
     <!-- メイン画像 -->
-  <a-plane
-  id="mainImage"
-  position="0 0.01 0"
-  rotation="-90 0 0"
-  width="1.2"
-  height="1.2">
+ <a-plane 
+  color="#ff9900" 
+  width="2" height="1.2" 
+  position="0 0.5 -0.5" 
+  rotation="0 0 0"
+  material="opacity: 0.2; transparent: true; src: url(https://www.transparenttextures.com/patterns/az-subtle.png);"
+  animation="property: material.opacity; from: 0.1; to: 0.3; dir: alternate; dur: 2000; loop: true">
 </a-plane>
 
-
-    <!-- キラキラ① -->
-  <a-image
+<a-image
   src="#sparkle"
-  rotation="-90 0 0"
-  position="0.8 0.02 0.8"
-  width="0.3"
-  animation="property: position;
-             dir: alternate;
-             dur: 1500;
-             loop: true;
-             to: 0.8 0 1.0">
+  rotation="0 0 0" 
+  position="1 0.2 0.2"
+  width="0.8" height="0.8"
+  material="color: #ff4500; opacity: 0.8; transparent: true"
+  animation__pos="property: position; to: 1 0.3 0.2; dir: alternate; dur: 1000; loop: true"
+  animation__scale="property: scale; from: 1 1 1; to: 1.1 1.2 1; dir: alternate; dur: 800; loop: true">
 </a-image>
 
-    <!-- キラキラ② -->
-  <a-image
+<a-image
   src="#sparkle"
-  rotation="-90 0 0"
-  position="-0.8 0.02 0.8"
-  width="0.25"
-  animation="property: rotation;
-             to: -90 0 360;
-             dur: 4000;
-             loop: true;">
+  rotation="0 0 0" 
+  position="-1 0.2 0.2"
+  width="0.7" height="0.7"
+  material="color: #ff8c00; opacity: 0.7; transparent: true"
+  animation__pos="property: position; to: -1 0.3 0.2; dir: alternate; dur: 1200; loop: true"
+  animation__scale="property: scale; from: 1 1 1; to: 1.2 1.1 1; dir: alternate; dur: 900; loop: true">
 </a-image>
+
+<a-circle
+  color="#ffcc00"
+  radius="0.02"
+  position="0 0 0.3"
+  animation="property: position; to: 0 2 -0.5; dur: 3000; loop: true; easing: easeInQuad"
+  animation__fade="property: material.opacity; from: 1; to: 0; dur: 3000; loop: true">
+</a-circle>
 
   </a-marker>
 
@@ -181,6 +184,7 @@ body { margin: 0; overflow: hidden; }
 
 </body>
 </html>
+
 
 
 
