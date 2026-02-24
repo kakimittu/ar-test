@@ -1,174 +1,162 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>AR PORTFOLIO - AKAZAWA YUKO</title>
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CYBER AR - PORTFOLIO</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-  authDomain: "armisetai.firebaseapp.com",
-  projectId: "armisetai",
-  storageBucket: "armisetai.firebasestorage.app",
-  messagingSenderId: "1006973944547",
-  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-};
+    // --- Firebase設定（あなたの設定を貼り付けてください） ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+      authDomain: "armisetai.firebaseapp.com",
+      projectId: "armisetai",
+      storageBucket: "armisetai.firebasestorage.app",
+      messagingSenderId: "1006973944547",
+      appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-let currentIndex = 0;
-let items = [];
-let ratios = [];
+    let currentIndex = 0;
+    let items = [];
 
-window.addEventListener("load", () => {
-  const marker = document.querySelector("a-marker");
+    window.addEventListener("load", () => {
+      const marker = document.querySelector("a-marker");
 
-  // 1. URLからIDを取得する（?id=tanaka など）
-  const urlParams = new URLSearchParams(window.location.search);
-  const markerId = urlParams.get('id') || 'akazawa'; // 指定がなければ akazawa をデフォルトに
+      // 1. URLからIDを取得 (?id=akazawa など)
+      const urlParams = new URLSearchParams(window.location.search);
+      const markerId = urlParams.get('id') || 'akazawa'; 
 
-  // HUDの表示もIDに合わせる（おまけ演出）
-  const hudUser = document.querySelector(".hud");
-  if(hudUser) hudUser.innerHTML = `<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
+      // HUDの更新
+      const hudUser = document.querySelector(".hud");
+      if(hudUser) hudUser.innerHTML = `<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
 
-  // 2. FirestoreからそのIDのデータをリアルタイム取得
-  onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
-    if (!docSnap.exists()) {
-      console.log("No such user data!");
-      return;
-    }
-    
-    const data = docSnap.data();
-    const images = data.images || [];
-    const ratios = data.ratios || [];
-    // エディターで保存した名前と肩書きを使う（なければデフォルト）
-    const nameValue = data.name || "NO NAME";
-    const jobValue = data.job || "NO TITLE";
+      // 2. リアルタイム監視(onSnapshot)
+      onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
+        if (!docSnap.exists()) {
+          console.log("No data found for: " + markerId);
+          return;
+        }
+        
+        const data = docSnap.data();
+        const images = data.images || [];
+        const ratios = data.ratios || [];
+        const nameValue = data.name || "NO NAME";
+        const jobValue = data.job || "NO TITLE";
 
-    // 既存の要素をクリア
-    items.forEach(el => el.parentNode.removeChild(el));
-    items = [];
+        // 既存の要素をリセット
+        while (marker.firstChild) { marker.removeChild(marker.firstChild); }
+        addDecorations(marker); // 装飾（光など）を再配置
+        items = [];
 
-    // 3. 取得したデータに基づいて要素を生成
-    images.forEach((url, i) => {
-      const entity = document.createElement("a-entity");
-      entity.setAttribute("visible", "false");
+        // 3. 画像とテキストの生成
+        images.forEach((url, i) => {
+          const entity = document.createElement("a-entity");
+          entity.setAttribute("visible", "false");
 
-      // メイン画像
-      const aImg = document.createElement("a-image");
-      aImg.setAttribute("src", url);
-      aImg.setAttribute("rotation", "-90 0 0");
-      aImg.setAttribute("material", "shader: flat; transparent: true; alphaTest: 0.5; side: double");
-      
-      const ratio = ratios[i] || 1;
-      const baseW = 1.6;
-      aImg.setAttribute("width", baseW);
-      aImg.setAttribute("height", baseW * ratio);
-      entity.appendChild(aImg);
+          // メイン画像
+          const aImg = document.createElement("a-image");
+          aImg.setAttribute("src", url);
+          aImg.setAttribute("rotation", "-90 0 0");
+          aImg.setAttribute("material", "shader: flat; transparent: true; alphaTest: 0.5; side: double");
+          
+          const ratio = ratios[i] || 1;
+          const baseW = 1.6;
+          aImg.setAttribute("width", baseW);
+          aImg.setAttribute("height", baseW * ratio);
+          entity.appendChild(aImg);
 
-      // 名前 (DBから取得した値を入れる)
-      const nameText = document.createElement("a-text");
-      nameText.setAttribute("value", nameValue);
-      nameText.setAttribute("align", "center");
-      nameText.setAttribute("position", "0 0.1 -1.1");
-      nameText.setAttribute("rotation", "-90 0 0");
-      nameText.setAttribute("width", "3");
-      entity.appendChild(nameText);
+          // 名前
+          const nameText = document.createElement("a-text");
+          nameText.setAttribute("value", nameValue);
+          nameText.setAttribute("align", "center");
+          nameText.setAttribute("position", "0 0.1 -1.1");
+          nameText.setAttribute("rotation", "-90 0 0");
+          nameText.setAttribute("width", "3");
+          entity.appendChild(nameText);
 
-      // 肩書き (DBから取得した値を入れる)
-      const jobText = document.createElement("a-text");
-      jobText.setAttribute("value", jobValue);
-      jobText.setAttribute("align", "center");
-      jobText.setAttribute("position", "0 0.1 1.1");
-      jobText.setAttribute("rotation", "-90 0 0");
-      jobText.setAttribute("width", "2");
-      jobText.setAttribute("color", "#ffcc00");
-      entity.appendChild(jobText);
+          // 肩書き
+          const jobText = document.createElement("a-text");
+          jobText.setAttribute("value", jobValue);
+          jobText.setAttribute("align", "center");
+          jobText.setAttribute("position", "0 0.1 1.1");
+          jobText.setAttribute("rotation", "-90 0 0");
+          jobText.setAttribute("width", "2");
+          jobText.setAttribute("color", "#ffcc00");
+          entity.appendChild(jobText);
 
-      marker.appendChild(entity);
-      items.push(entity);
+          marker.appendChild(entity);
+          items.push(entity);
+        });
+        updateCarousel();
+      });
+
+      // 装飾を配置する関数
+      function addDecorations(target) {
+        const p = document.createElement("a-plane");
+        p.setAttribute("color", "#ff9900"); p.setAttribute("width", "2.2"); p.setAttribute("height", "1.4");
+        p.setAttribute("position", "0 0.01 0"); p.setAttribute("rotation", "-90 0 0");
+        p.setAttribute("material", "shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false");
+        target.appendChild(p);
+
+        const pos = ["-1.4 0.1 0.6", "1.4 0.1 0.6"];
+        pos.forEach(pPos => {
+          const c = document.createElement("a-circle");
+          c.setAttribute("radius", "0.1"); c.setAttribute("color", "#ff8c00");
+          c.setAttribute("position", pPos); c.setAttribute("rotation", "-90 0 0");
+          c.setAttribute("material", "shader: flat; transparent: true; opacity: 0.6; blending: additive");
+          target.appendChild(c);
+        });
+      }
+
+      function updateCarousel() {
+        if (items.length === 0) return;
+        items.forEach((item, index) => {
+          const isCenter = (index === currentIndex);
+          const offset = (index - currentIndex) * 2.2;
+          item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
+          item.setAttribute("position", `${offset} ${isCenter ? 0.2 : 0.15} 0`);
+          item.setAttribute("scale", isCenter ? "1 1 1" : "0.6 0.6 0.6");
+        });
+      }
+
+      // 操作系
+      marker.addEventListener("click", () => {
+        currentIndex = (currentIndex + 1) % items.length;
+        updateCarousel();
+      });
+
+      let startX = 0;
+      window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
+      window.addEventListener("touchend", (e) => {
+        let diff = e.changedTouches[0].clientX - startX;
+        if (Math.abs(diff) > 50) {
+          currentIndex = diff > 0 ? (currentIndex - 1 + items.length) % items.length : (currentIndex + 1) % items.length;
+          updateCarousel();
+        }
+      });
     });
+  </script>
 
-    updateCarousel();
-  });
-
-  // 以下、updateCarousel関数やクリック・スワイプの処理はそのまま繋げてください
-  function updateCarousel() {
-    if (items.length === 0) return;
-    items.forEach((item, index) => {
-      const isCenter = (index === currentIndex);
-      const offset = (index - currentIndex) * 1.8;
-      item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
-      item.setAttribute("position", `${offset} ${isCenter ? 0.2 : 0.15} 0`);
-      item.setAttribute("scale", isCenter ? "1 1 1" : "0.6 0.6 0.6");
-    });
-  }
-
-  marker.addEventListener("click", () => {
-    currentIndex = (currentIndex + 1) % items.length;
-    updateCarousel();
-  });
-
-  let startX = 0;
-  window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
-  window.addEventListener("touchend", (e) => {
-    let diff = e.changedTouches[0].clientX - startX;
-    if (Math.abs(diff) > 50) {
-      currentIndex = diff > 0 ? (currentIndex - 1 + items.length) % items.length : (currentIndex + 1) % items.length;
-      updateCarousel();
-    }
-  });
-});
-</script>
-
-<style>
-.hud {
-  position: fixed; top: 20px; left: 20px; color: #00f2ff;
-  font-family: 'Courier New', monospace; font-size: 12px;
-  pointer-events: none; z-index: 10001;
-  text-shadow: 0 0 5px #00f2ff;
-}
-.rec-dot {
-  display: inline-block; width: 10px; height: 10px;
-  background: red; border-radius: 50%; margin-right: 5px;
-  animation: blink 1s infinite;
-}
-@keyframes blink { 50% { opacity: 0; } }
-body { margin: 0; overflow: hidden; }
-</style>
+  <style>
+    .hud { position: fixed; top: 20px; left: 20px; color: #00f2ff; font-family: monospace; font-size: 12px; pointer-events: none; z-index: 10001; text-shadow: 0 0 5px #00f2ff; }
+    .rec-dot { display: inline-block; width: 10px; height: 10px; background: red; border-radius: 50%; margin-right: 5px; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    body { margin: 0; overflow: hidden; background: #000; }
+  </style>
 </head>
 <body>
-  <div class="hud">
-    <div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>
-    USER: akazawa
-  </div>
-
+  <div class="hud"></div>
   <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-    <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
-      <a-plane color="#ff9900" width="2.2" height="1.4" position="0 0.01 0" rotation="-90 0 0"
-        material="shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false"
-        animation="property: material.opacity; from: 0.1; to: 0.4; dir: alternate; dur: 2000; loop: true">
-      </a-plane>
-
-      <a-circle radius="0.1" color="#ff8c00" position="-1.4 0.1 0.6" rotation="-90 0 0"
-        material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-        animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 800; loop: true">
-      </a-circle>
-      <a-circle radius="0.1" color="#ff4500" position="1.4 0.1 0.6" rotation="-90 0 0"
-        material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-        animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 1000; loop: true">
-      </a-circle>
-    </a-marker>
+    <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt"></a-marker>
     <a-entity camera></a-entity>
   </a-scene>
 </body>
 </html>
-
-
-
