@@ -29,6 +29,27 @@ let ratios = [];
 window.addEventListener("load", () => {
   const marker = document.querySelector("a-marker");
 
+  // ★重要：URLからIDを取得するロジック
+  const urlParams = new URLSearchParams(window.location.search);
+  const markerId = urlParams.get('id') || 'akazawa'; // URLに ?id=xxx がなければ akazawa を表示
+
+  // FirestoreからそのIDのデータを読み込む
+  onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
+    if (!docSnap.exists()) {
+      console.log("No such document!");
+      return;
+    }
+    
+    const data = docSnap.data();
+    const images = data.images;
+    const ratios = data.ratios || [];
+    const nameValue = data.name || "AKAZAWA YUKO"; // DBから名前を取得
+    const jobValue = data.job || "HORSE TRAINER"; // DBから肩書きを取得
+
+    // (以下、前回の画像生成ロジックと同じ。nameText.setAttribute("value", nameValue) のように変数を使う)
+  });
+});
+
   // リアルタイム監視(onSnapshot)にすることで動作を安定化
   onSnapshot(doc(db, "arUsers", "akazawa"), (docSnap) => {
     if (!docSnap.exists()) return;
@@ -156,4 +177,5 @@ body { margin: 0; overflow: hidden; }
   </a-scene>
 </body>
 </html>
+
 
