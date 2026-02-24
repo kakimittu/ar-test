@@ -2,44 +2,105 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>AR PORTFOLIO EDITOR</title>
+<title>AR PORTFOLIO EDITOR - FINAL</title>
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <style>
-  body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #111; color: #fff; }
-  #controls { width: 350px; padding: 20px; background: #1a1a1a; overflow-y: auto; border-right: 1px solid #333; }
-  #preview { flex-grow: 1; position: relative; }
-  .input-group { margin-bottom: 20px; }
-  label { display: block; margin-bottom: 8px; font-size: 14px; color: #aaa; }
-  input[type="text"], input[type="file"] { width: 100%; padding: 10px; background: #333; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
-  .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-  #saveBtn { background: #00f2ff; color: #000; }
-  .img-item { font-size: 12px; background: #333; padding: 5px; margin-top: 5px; border-radius: 3px; }
+  body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #111; color: #fff; overflow: hidden; }
+  
+  /* 左側コントロールパネル */
+  #controls { 
+    width: 380px; 
+    padding: 25px; 
+    background: #1e1e1e; 
+    overflow-y: auto; 
+    border-right: 2px solid #333;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+  
+  /* 右側プレビュー画面 */
+  #preview { flex-grow: 1; position: relative; background: radial-gradient(circle, #333 0%, #000 100%); }
+
+  h2 { margin-top: 0; color: #00f2ff; border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 20px; }
+  
+  .input-group { margin-bottom: 18px; }
+  label { display: block; margin-bottom: 6px; font-size: 13px; color: #00f2ff; font-weight: bold; }
+  
+  input[type="text"], input[type="file"] { 
+    width: 100%; 
+    padding: 12px; 
+    background: #2a2a2a; 
+    border: 1px solid #444; 
+    color: #fff; 
+    border-radius: 6px; 
+    box-sizing: border-box;
+    font-size: 14px;
+  }
+  
+  input[type="text"]:focus { border-color: #00f2ff; outline: none; background: #333; }
+
+  #fileList { 
+    margin-top: 8px; 
+    font-size: 11px; 
+    color: #888; 
+    max-height: 100px; 
+    overflow-y: auto; 
+    background: #151515; 
+    padding: 5px; 
+    border-radius: 4px;
+  }
+
+  .btn { 
+    width: 100%; 
+    padding: 15px; 
+    border: none; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    font-size: 16px;
+    cursor: pointer; 
+    transition: all 0.3s;
+    margin-top: auto; /* 一番下に配置 */
+  }
+  
+  #saveBtn { background: #00f2ff; color: #000; box-shadow: 0 0 15px rgba(0, 242, 255, 0.3); }
+  #saveBtn:hover { background: #00d4e0; transform: translateY(-2px); }
+  #saveBtn:active { transform: translateY(0); }
+
+  .help-text { font-size: 11px; color: #666; margin-top: 4px; }
 </style>
 </head>
 <body>
 
 <div id="controls">
-  <h2>AR EDITOR</h2>
+  <h2>AR DESIGN EDITOR</h2>
   
   <div class="input-group">
-    <label>ドキュメントID (名刺の識別子)</label>
-    <input type="text" id="markerId" placeholder="akazawa" value="akazawa">
+    <label>① ドキュメントID (URLに使用)</label>
+    <input type="text" id="markerId" placeholder="例: akazawa" value="akazawa">
+    <div class="help-text">英数字で入力してください</div>
   </div>
 
   <div class="input-group">
-    <label>画像を選択 (複数可/自動比率計算)</label>
+    <label>② マーカーURL (.pattファイル)</label>
+    <input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt">
+    <div class="help-text">GitHub上のパスを入力</div>
+  </div>
+
+  <div class="input-group">
+    <label>③ 名前 (AR空間の上部)</label>
+    <input type="text" id="nameInput" placeholder="例: AKAZAWA YUKO" value="AKAZAWA YUKO">
+  </div>
+
+  <div class="input-group">
+    <label>④ 肩書き (AR空間の下部)</label>
+    <input type="text" id="jobInput" placeholder="例: HORSE TRAINER" value="HORSE TRAINER">
+  </div>
+
+  <div class="input-group">
+    <label>⑤ 作品画像を選択 (複数可)</label>
     <input type="file" id="fileInput" accept="image/*" multiple>
-    <div id="fileList"></div>
-  </div>
-
-  <div class="input-group">
-    <label>名前 (AKAZAWA YUKO等)</label>
-    <input type="text" id="nameInput" value="AKAZAWA YUKO">
-  </div>
-
-  <div class="input-group">
-    <label>肩書き (HORSE TRAINER等)</label>
-    <input type="text" id="jobInput" value="HORSE TRAINER">
+    <div id="fileList">画像を選択してください...</div>
   </div>
 
   <button id="saveBtn" class="btn">FIRESTOREへ保存</button>
@@ -47,15 +108,18 @@
 
 <div id="preview">
   <a-scene embedded vr-mode-ui="enabled: false">
-    <a-sky color="#222"></a-sky>
-    <a-entity id="ar-root" position="0 0 -3" rotation="20 0 0">
-      <a-plane color="#ff9900" width="2.2" height="1.4" position="0 0 0" rotation="-90 0 0" material="opacity: 0.3; transparent: true;"></a-plane>
-      <a-circle radius="0.1" color="#ff8c00" position="-1.4 0.1 0.6" rotation="-90 0 0"></a-circle>
-      <a-circle radius="0.1" color="#ff4500" position="1.4 0.1 0.6" rotation="-90 0 0"></a-circle>
+    <a-light type="ambient" intensity="0.8"></a-light>
+    <a-light type="directional" position="1 2 1"></a-light>
+
+    <a-entity id="preview-root" position="0 0 -3" rotation="30 -15 0">
+      <a-plane color="#ff9900" width="2.2" height="1.4" position="0 0 0" rotation="-90 0 0" material="shader: flat; opacity: 0.2; transparent: true;"></a-plane>
+      <a-circle radius="0.1" color="#ff8c00" position="-1.4 0.1 0.6" rotation="-90 0 0" material="shader: flat; opacity: 0.6;"></a-circle>
+      <a-circle radius="0.1" color="#ff4500" position="1.4 0.1 0.6" rotation="-90 0 0" material="shader: flat; opacity: 0.6;"></a-circle>
       
-      <a-entity id="preview-container"></a-entity>
+      <a-entity id="dynamic-content"></a-entity>
     </a-entity>
-    <a-entity camera position="0 1.6 0"></a-entity>
+    
+    <a-entity camera position="0 1.5 0"></a-entity>
   </a-scene>
 </div>
 
@@ -63,35 +127,42 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = { apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-    authDomain: "armisetai.firebaseapp.com",
-    projectId: "armisetai",
-    storageBucket: "armisetai.firebasestorage.app",
-    messagingSenderId: "1006973944547",
-    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-  }; // APIキーを貼ってください
-  
+// --- Firebase設定（あなたの設定を貼り付けてください） ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+  authDomain: "armisetai.firebaseapp.com",
+  projectId: "armisetai",
+  storageBucket: "armisetai.firebasestorage.app",
+  messagingSenderId: "1006973944547",
+  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+};
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let imagesBase64 = [];
 let imageRatios = [];
 
-// 画像処理
+// ファイル選択時の処理
 document.getElementById("fileInput").onchange = async (e) => {
-  imagesBase64 = []; imageRatios = [];
+  imagesBase64 = [];
+  imageRatios = [];
   const files = Array.from(e.target.files);
   const listEl = document.getElementById("fileList");
-  listEl.innerHTML = "";
+  listEl.innerHTML = `選択中: ${files.length}枚`;
 
   for (let file of files) {
     const result = await processImage(file);
     imagesBase64.push(result.data);
     imageRatios.push(result.ratio);
-    listEl.innerHTML += `<div class="img-item">${file.name} (比率: ${result.ratio.toFixed(2)})</div>`;
   }
   updatePreview();
 };
+
+// 入力変更時にプレビューを更新
+['nameInput', 'jobInput'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updatePreview);
+});
 
 async function processImage(file) {
   return new Promise((resolve) => {
@@ -102,7 +173,8 @@ async function processImage(file) {
         const canvas = document.createElement("canvas");
         const maxW = 800;
         const ratio = img.height / img.width;
-        canvas.width = maxW; canvas.height = maxW * ratio;
+        canvas.width = maxW; 
+        canvas.height = maxW * ratio;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve({ data: canvas.toDataURL("image/jpeg", 0.7), ratio: ratio });
@@ -114,39 +186,65 @@ async function processImage(file) {
 }
 
 function updatePreview() {
-  const container = document.getElementById("preview-container");
+  const container = document.getElementById("dynamic-content");
   container.innerHTML = "";
-  if(imagesBase64.length === 0) return;
+  
+  if(imagesBase64.length > 0) {
+    // 最初の1枚をプレビュー
+    const aImg = document.createElement("a-image");
+    aImg.setAttribute("src", imagesBase64[0]);
+    aImg.setAttribute("rotation", "-90 0 0");
+    aImg.setAttribute("position", "0 0.2 0");
+    aImg.setAttribute("width", 1.6);
+    aImg.setAttribute("height", 1.6 * imageRatios[0]);
+    container.appendChild(aImg);
+  }
 
-  // プレビュー用に最初の1枚だけ表示
-  const aImg = document.createElement("a-image");
-  aImg.setAttribute("src", imagesBase64[0]);
-  aImg.setAttribute("rotation", "-90 0 0");
-  aImg.setAttribute("position", "0 0.2 0");
-  aImg.setAttribute("width", 1.6);
-  aImg.setAttribute("height", 1.6 * imageRatios[0]);
-  container.appendChild(aImg);
-
+  const nameVal = document.getElementById("nameInput").value;
   const nameText = document.createElement("a-text");
-  nameText.setAttribute("value", document.getElementById("nameInput").value);
+  nameText.setAttribute("value", nameVal);
   nameText.setAttribute("align", "center");
   nameText.setAttribute("position", "0 0.1 -1.1");
   nameText.setAttribute("rotation", "-90 0 0");
   nameText.setAttribute("width", 3);
   container.appendChild(nameText);
+
+  const jobVal = document.getElementById("jobInput").value;
+  const jobText = document.createElement("a-text");
+  jobText.setAttribute("value", jobVal);
+  jobText.setAttribute("align", "center");
+  jobText.setAttribute("position", "0 0.1 1.1");
+  jobText.setAttribute("rotation", "-90 0 0");
+  jobText.setAttribute("width", 2);
+  jobText.setAttribute("color", "#ffcc00");
+  container.appendChild(jobText);
 }
 
+// 保存ボタン
 document.getElementById("saveBtn").onclick = async () => {
   const markerId = document.getElementById("markerId").value;
-  if(!markerId) return alert("IDを入力してください");
+  if(!markerId) return alert("ドキュメントIDを入力してください");
+  if(imagesBase64.length === 0) return alert("画像を選択してください");
 
-  await setDoc(doc(db, "arUsers", markerId), {
-    images: imagesBase64,
-    ratios: imageRatios,
-    name: document.getElementById("nameInput").value,
-    job: document.getElementById("jobInput").value
-  });
-  alert(markerId + " のデータを保存しました！");
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.disabled = true;
+  saveBtn.innerText = "保存中...";
+
+  try {
+    await setDoc(doc(db, "arUsers", markerId), {
+      images: imagesBase64,
+      ratios: imageRatios,
+      name: document.getElementById("nameInput").value,
+      job: document.getElementById("jobInput").value,
+      pattUrl: document.getElementById("pattInput").value
+    });
+    alert("成功！ID: " + markerId + " で保存しました。\nURL: index.html?id=" + markerId);
+  } catch (e) {
+    alert("エラーが発生しました: " + e);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerText = "FIRESTOREへ保存";
+  }
 };
 </script>
 </body>
