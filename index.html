@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>CYBER AR - akazawa Edition</title>
+<title>AR PORTFOLIO - AKAZAWA YUKO</title>
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
@@ -11,20 +11,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-    authDomain: "armisetai.firebaseapp.com",
-    projectId: "armisetai",
-    storageBucket: "armisetai.firebasestorage.app",
-    messagingSenderId: "1006973944547",
-    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-  };
-  
+  apiKey: "あなたのAPIキー",
+  authDomain: "armisetai.firebaseapp.com",
+  projectId: "armisetai",
+  storageBucket: "armisetai.firebasestorage.app",
+  messagingSenderId: "1006973944547",
+  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+};
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 window.addEventListener("DOMContentLoaded", async () => {
   const markerId = "akazawa"; 
-  const docRef = doc(db, "arUsers", markerId); // コレクション名維持
+  const docRef = doc(db, "arUsers", markerId);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
@@ -33,95 +33,88 @@ window.addEventListener("DOMContentLoaded", async () => {
     const marker = document.querySelector("a-marker");
 
     let currentIndex = 0;
-    const planes = [];
+    const items = []; // 画像と文字をセットにした「箱」を入れる配列
 
-    // ===== 画像生成 =====
-   /* --- index.html の画像生成部分にテキストを追加 --- */
-images.forEach((url, i) => {
-  const entity = document.createElement("a-entity"); // 画像と文字をまとめる箱
-  
-  // 1. メイン画像
-  const aImg = document.createElement("a-image");
-  aImg.setAttribute("src", url);
-  aImg.setAttribute("rotation", "-90 0 0");
-  aImg.setAttribute("material", "transparent: true; alphaTest: 0.5; side: double");
-  entity.appendChild(aImg);
+    // ===== 画像とテキストの生成 =====
+    images.forEach((url, i) => {
+      const entity = document.createElement("a-entity");
+      entity.setAttribute("visible", "false");
 
-  // 2. 名前（画像の上側に配置）
-  const nameText = document.createElement("a-text");
-  nameText.setAttribute("value", "AKAZAWA　YUKO"); // ここをあなたの名前に
-  nameText.setAttribute("align", "center");
-  nameText.setAttribute("position", "0 0 -0.8"); // 画像の「上」方向
-  nameText.setAttribute("rotation", "-90 0 0");
-  nameText.setAttribute("width", "3");
-  nameText.setAttribute("color", "#fff");
-  entity.appendChild(nameText);
-
-  // 3. 肩書き（画像の下側に配置）
-  const jobText = documentteElement("a-text");
-  jobText.setAttribute("value", "乗馬調教師"); // ここを肩書きに
-  jobText.setAttribute("align", "center");
-  jobText.setAttribute("position", "0 0 0.8"); // 画像の「下」方向
-  jobText.setAttribute("rotation", "-90 0 0");
-  jobText.setAttribute("width", "2");
-  jobText.setAttribute("color", "#ffcc00"); // アクセントカラー
-  entity.appendChild(jobText);
-
-  marker.appendChild(entity);
-  imageElements.push(entity); // 今後はentityを操作する
-});
+      // 1. メイン画像
+      const aImg = document.createElement("a-image");
+      aImg.setAttribute("src", url);
+      aImg.setAttribute("rotation", "-90 0 0");
+      aImg.setAttribute("material", "shader: flat; transparent: true; alphaTest: 0.5; side: double");
+      
       // 画像比率の自動調整
       const img = new Image();
       img.onload = function() {
         const aspect = img.height / img.width;
         const baseWidth = 1.6;
-        plane.setAttribute("width", baseWidth);
-        plane.setAttribute("height", baseWidth * aspect);
+        aImg.setAttribute("width", baseWidth);
+        aImg.setAttribute("height", baseWidth * aspect);
       };
       img.src = url;
+      entity.appendChild(aImg);
 
-      marker.appendChild(plane);
-      planes.push(plane);
+      // 2. 名前（画像の上側）
+      const nameText = document.createElement("a-text");
+      nameText.setAttribute("value", "AKAZAWA YUKO");
+      nameText.setAttribute("align", "center");
+      nameText.setAttribute("position", "0 0.1 -1.1"); // 高さを少し上げ、奥へ
+      nameText.setAttribute("rotation", "-90 0 0");
+      nameText.setAttribute("width", "3");
+      nameText.setAttribute("color", "#ffffff");
+      entity.appendChild(nameText);
+
+      // 3. 肩書き（画像の下側）
+      const jobText = document.createElement("a-text"); // スペルミス修正
+      jobText.setAttribute("value", "HORSE TRAINER"); // 英語の方がCYBER感が出るので一旦英語にしています
+      jobText.setAttribute("align", "center");
+      jobText.setAttribute("position", "0 0.1 1.1"); // 高さを少し上げ、手前へ
+      jobText.setAttribute("rotation", "-90 0 0");
+      jobText.setAttribute("width", "2");
+      jobText.setAttribute("color", "#ffcc00");
+      entity.appendChild(jobText);
+
+      marker.appendChild(entity);
+      items.push(entity);
     });
 
     // ===== 表示更新関数 =====
     function updateCarousel() {
-      planes.forEach((plane, index) => {
-        plane.setAttribute("visible", "false");
+      items.forEach((item, index) => {
+        item.setAttribute("visible", "false");
 
         if (index === currentIndex) {
-          plane.setAttribute("position", "0 0.15 0");
-          plane.setAttribute("scale", "1.3 1.3 1.3");
-          plane.setAttribute("visible", "true");
-        } else if (index === (currentIndex - 1 + planes.length) % planes.length) {
-          plane.setAttribute("position", "-1.8 0.12 -0.2"); // 少し間隔を調整
-          plane.setAttribute("scale", "0.7 0.7 0.7");
-          plane.setAttribute("visible", "true");
-        } else if (index === (currentIndex + 1) % planes.length) {
-          plane.setAttribute("position", "1.8 0.12 -0.2");
-          plane.setAttribute("scale", "0.7 0.7 0.7");
-          plane.setAttribute("visible", "true");
+          item.setAttribute("position", "0 0.2 0");
+          item.setAttribute("scale", "1.1 1.1 1.1"); // テキストがあるので少し小さめに調整
+          item.setAttribute("visible", "true");
+        } else if (index === (currentIndex - 1 + items.length) % items.length) {
+          item.setAttribute("position", "-2 0.15 -0.2");
+          item.setAttribute("scale", "0.6 0.6 0.6");
+          item.setAttribute("visible", "true");
+        } else if (index === (currentIndex + 1) % items.length) {
+          item.setAttribute("position", "2 0.15 -0.2");
+          item.setAttribute("scale", "0.6 0.6 0.6");
+          item.setAttribute("visible", "true");
         }
       });
     }
 
-    // 初回表示を実行
-    setTimeout(updateCarousel, 500);
+    setTimeout(updateCarousel, 800);
 
-    // ===== タップ切替 =====
     marker.addEventListener("click", () => {
-      currentIndex = (currentIndex + 1) % planes.length;
+      currentIndex = (currentIndex + 1) % items.length;
       updateCarousel();
     });
 
-    // ===== スワイプ切替 =====
     let startX = 0;
     window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
     window.addEventListener("touchend", (e) => {
-      let endX = e.changedTouches[0].clientX;
-      let diff = endX - startX;
+      let diff = e.changedTouches[0].clientX - startX;
       if (Math.abs(diff) > 50) {
-        currentIndex = (diff > 0) ? (currentIndex - 1 + planes.length) % planes.length : (currentIndex + 1) % planes.length;
+        currentIndex = (diff > 0) ? (currentIndex - 1 + items.length) % items.length : (currentIndex + 1) % items.length;
         updateCarousel();
       }
     });
@@ -130,8 +123,6 @@ images.forEach((url, i) => {
 </script>
 
 <style>
-
-  /* 撮影用HUD演出 */
 .hud {
   position: fixed; top: 20px; left: 20px; color: #00f2ff;
   font-family: 'Courier New', monospace; font-size: 12px;
@@ -144,40 +135,33 @@ images.forEach((url, i) => {
   animation: blink 1s infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
-  
-  body { margin: 0; overflow: hidden; }
-
+body { margin: 0; overflow: hidden; }
 </style>
 </head>
 <body>
-  
   <div class="hud">
-  <div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>
-  SCANNING TARGET: pattern-AKA2<br>
-  USER: akazawa
-</div>
-  
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-  <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
-    
-    <a-plane color="#ff9900" width="2" height="1.2" position="0 0.01 0" rotation="-90 0 0"
-      material="shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false"
-      animation="property: material.opacity; from: 0.1; to: 0.4; dir: alternate; dur: 2000; loop: true">
-    </a-plane>
+    <div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>
+    SCANNING TARGET: pattern-AKA2<br>
+    USER: akazawa
+  </div>
 
-    <a-circle radius="0.08" color="#ff8c00" position="-1.2 0.1 0.5" rotation="-90 0 0"
-      material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-      animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 800; loop: true">
-    </a-circle>
-    
-    <a-circle radius="0.08" color="#ff4500" position="1.2 0.1 0.5" rotation="-90 0 0"
-      material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
-      animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 1000; loop: true">
-    </a-circle>
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
+      <a-plane color="#ff9900" width="2.2" height="1.4" position="0 0.01 0" rotation="-90 0 0"
+        material="shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false"
+        animation="property: material.opacity; from: 0.1; to: 0.4; dir: alternate; dur: 2000; loop: true">
+      </a-plane>
 
-  </a-marker>
-  <a-entity camera></a-entity>
-</a-scene>
+      <a-circle radius="0.1" color="#ff8c00" position="-1.4 0.1 0.6" rotation="-90 0 0"
+        material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
+        animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 800; loop: true">
+      </a-circle>
+      <a-circle radius="0.1" color="#ff4500" position="1.4 0.1 0.6" rotation="-90 0 0"
+        material="shader: flat; transparent: true; opacity: 0.6; blending: additive"
+        animation="property: scale; from: 1 1 1; to: 1.3 1.3 1; dir: alternate; dur: 1000; loop: true">
+      </a-circle>
+    </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
 </body>
 </html>
-
