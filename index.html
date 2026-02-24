@@ -36,13 +36,40 @@ window.addEventListener("DOMContentLoaded", async () => {
     const planes = [];
 
     // ===== 画像生成 =====
-    images.forEach((url) => {
-      const plane = document.createElement("a-plane");
-      plane.setAttribute("rotation", "-90 0 0");
-      plane.setAttribute("visible", "false");
-      plane.setAttribute("material", "shader: flat; transparent: true; side: double; alphaTest: 0.5;");
-      plane.setAttribute("src", url);
+   /* --- index.html の画像生成部分にテキストを追加 --- */
+images.forEach((url, i) => {
+  const entity = document.createElement("a-entity"); // 画像と文字をまとめる箱
+  
+  // 1. メイン画像
+  const aImg = document.createElement("a-image");
+  aImg.setAttribute("src", url);
+  aImg.setAttribute("rotation", "-90 0 0");
+  aImg.setAttribute("material", "transparent: true; alphaTest: 0.5; side: double");
+  entity.appendChild(aImg);
 
+  // 2. 名前（画像の上側に配置）
+  const nameText = document.createElement("a-text");
+  nameText.setAttribute("value", "AKAZAWA　YUKO"); // ここをあなたの名前に
+  nameText.setAttribute("align", "center");
+  nameText.setAttribute("position", "0 0 -0.8"); // 画像の「上」方向
+  nameText.setAttribute("rotation", "-90 0 0");
+  nameText.setAttribute("width", "3");
+  nameText.setAttribute("color", "#fff");
+  entity.appendChild(nameText);
+
+  // 3. 肩書き（画像の下側に配置）
+  const jobText = documentteElement("a-text");
+  jobText.setAttribute("value", "乗馬調教師"); // ここを肩書きに
+  jobText.setAttribute("align", "center");
+  jobText.setAttribute("position", "0 0 0.8"); // 画像の「下」方向
+  jobText.setAttribute("rotation", "-90 0 0");
+  jobText.setAttribute("width", "2");
+  jobText.setAttribute("color", "#ffcc00"); // アクセントカラー
+  entity.appendChild(jobText);
+
+  marker.appendChild(entity);
+  imageElements.push(entity); // 今後はentityを操作する
+});
       // 画像比率の自動調整
       const img = new Image();
       img.onload = function() {
@@ -103,10 +130,33 @@ window.addEventListener("DOMContentLoaded", async () => {
 </script>
 
 <style>
+
+  /* 撮影用HUD演出 */
+.hud {
+  position: fixed; top: 20px; left: 20px; color: #00f2ff;
+  font-family: 'Courier New', monospace; font-size: 12px;
+  pointer-events: none; z-index: 10001;
+  text-shadow: 0 0 5px #00f2ff;
+}
+.rec-dot {
+  display: inline-block; width: 10px; height: 10px;
+  background: red; border-radius: 50%; margin-right: 5px;
+  animation: blink 1s infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+  
   body { margin: 0; overflow: hidden; }
+
 </style>
 </head>
 <body>
+  
+  <div class="hud">
+  <div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>
+  SCANNING TARGET: pattern-AKA2<br>
+  USER: akazawa
+</div>
+  
 <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
   <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
     
@@ -130,3 +180,4 @@ window.addEventListener("DOMContentLoaded", async () => {
 </a-scene>
 </body>
 </html>
+
