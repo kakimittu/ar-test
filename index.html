@@ -29,39 +29,33 @@ let ratios = [];
 window.addEventListener("load", () => {
   const marker = document.querySelector("a-marker");
 
-  // ★重要：URLからIDを取得するロジック
+  // 1. URLからIDを取得する（?id=tanaka など）
   const urlParams = new URLSearchParams(window.location.search);
-  const markerId = urlParams.get('id') || 'akazawa'; // URLに ?id=xxx がなければ akazawa を表示
+  const markerId = urlParams.get('id') || 'akazawa'; // 指定がなければ akazawa をデフォルトに
 
-  // FirestoreからそのIDのデータを読み込む
+  // HUDの表示もIDに合わせる（おまけ演出）
+  const hudUser = document.querySelector(".hud");
+  if(hudUser) hudUser.innerHTML = `<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
+
+  // 2. FirestoreからそのIDのデータをリアルタイム取得
   onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
     if (!docSnap.exists()) {
-      console.log("No such document!");
+      console.log("No such user data!");
       return;
     }
     
     const data = docSnap.data();
-    const images = data.images;
+    const images = data.images || [];
     const ratios = data.ratios || [];
-    const nameValue = data.name || "AKAZAWA YUKO"; // DBから名前を取得
-    const jobValue = data.job || "HORSE TRAINER"; // DBから肩書きを取得
+    // エディターで保存した名前と肩書きを使う（なければデフォルト）
+    const nameValue = data.name || "NO NAME";
+    const jobValue = data.job || "NO TITLE";
 
-    // (以下、前回の画像生成ロジックと同じ。nameText.setAttribute("value", nameValue) のように変数を使う)
-  });
-});
-
-  // リアルタイム監視(onSnapshot)にすることで動作を安定化
-  onSnapshot(doc(db, "arUsers", "akazawa"), (docSnap) => {
-    if (!docSnap.exists()) return;
-    
-    const data = docSnap.data();
-    const images = data.images;
-    ratios = data.ratios || [];
-
-    // 既存の要素をクリアして初期化
+    // 既存の要素をクリア
     items.forEach(el => el.parentNode.removeChild(el));
     items = [];
 
+    // 3. 取得したデータに基づいて要素を生成
     images.forEach((url, i) => {
       const entity = document.createElement("a-entity");
       entity.setAttribute("visible", "false");
@@ -78,18 +72,18 @@ window.addEventListener("load", () => {
       aImg.setAttribute("height", baseW * ratio);
       entity.appendChild(aImg);
 
-      // 名前
+      // 名前 (DBから取得した値を入れる)
       const nameText = document.createElement("a-text");
-      nameText.setAttribute("value", "AKAZAWA YUKO");
+      nameText.setAttribute("value", nameValue);
       nameText.setAttribute("align", "center");
-      nameText.setAttribute("position", "0 0.1 1.1");
+      nameText.setAttribute("position", "0 0.1 -1.1");
       nameText.setAttribute("rotation", "-90 0 0");
       nameText.setAttribute("width", "3");
       entity.appendChild(nameText);
 
-      // 肩書き
+      // 肩書き (DBから取得した値を入れる)
       const jobText = document.createElement("a-text");
-      jobText.setAttribute("value", "HORSE TRAINER");
+      jobText.setAttribute("value", jobValue);
       jobText.setAttribute("align", "center");
       jobText.setAttribute("position", "0 0.1 1.1");
       jobText.setAttribute("rotation", "-90 0 0");
@@ -104,17 +98,15 @@ window.addEventListener("load", () => {
     updateCarousel();
   });
 
+  // 以下、updateCarousel関数やクリック・スワイプの処理はそのまま繋げてください
   function updateCarousel() {
     if (items.length === 0) return;
     items.forEach((item, index) => {
       const isCenter = (index === currentIndex);
       const offset = (index - currentIndex) * 1.8;
-
       item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
       item.setAttribute("position", `${offset} ${isCenter ? 0.2 : 0.15} 0`);
       item.setAttribute("scale", isCenter ? "1 1 1" : "0.6 0.6 0.6");
-      // 中央以外は少し透明にする
-      item.setAttribute("opacity", isCenter ? 1 : 0.4);
     });
   }
 
@@ -177,5 +169,6 @@ body { margin: 0; overflow: hidden; }
   </a-scene>
 </body>
 </html>
+
 
 
