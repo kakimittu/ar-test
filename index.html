@@ -45,9 +45,13 @@
           return;
         }
         
-        const data = docSnap.data();
-        const images = data.images || [];
-        const ratios = data.ratios || [];
+       const data = docSnap.data();
+    
+    // ★これを目印のすぐ下に貼り付けてください！
+    if (data.pattUrl) { marker.setAttribute("url", data.pattUrl); }
+
+    const images = data.images || [];
+    const ratios = data.ratios || [];
         const nameValue = data.name || "NO NAME";
         const jobValue = data.job || "NO TITLE";
 
@@ -160,3 +164,4 @@
   </a-scene>
 </body>
 </html>
+
