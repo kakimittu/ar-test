@@ -73,16 +73,14 @@
 
 <div id="preview">
   <a-scene embedded vr-mode-ui="enabled: false">
-    <a-entity id="rig" position="0 2 4" rotation="-25 0 0">
+    <a-entity id="rig" position="0 5 0" rotation="-90 0 0">
       <a-entity camera></a-entity>
     </a-entity>
 
-    <a-light type="ambient" intensity="0.9"></a-light>
+    <a-light type="ambient" intensity="1.0"></a-light>
     
     <a-entity id="ar-stage" position="0 0 0">
-      <a-plane color="#ff9900" width="2.2" height="1.4" rotation="-90 0 0" material="opacity: 0.3; transparent: true; shader: flat;"></a-plane>
-      <a-circle radius="0.1" color="#ff8c00" position="-1.4 0.05 0.6" rotation="-90 0 0" material="shader: flat; opacity: 0.8;"></a-circle>
-      <a-circle radius="0.1" color="#ff4500" position="1.4 0.05 0.6" rotation="-90 0 0" material="shader: flat; opacity: 0.8;"></a-circle>
+      <a-plane color="#ff9900" width="2.2" height="1.4" rotation="0 0 0" material="opacity: 0.2; transparent: true; shader: flat;"></a-plane>
       
       <a-entity id="dynamic-content"></a-entity>
     </a-entity>
@@ -154,49 +152,66 @@ function updatePreview() {
   const nameVal = document.getElementById("nameInput").value || "";
   const jobVal = document.getElementById("jobInput").value || "";
 
-  // 画像がない場合でもテキストを表示するために最低1回は回す
+  // 画像がない場合でもループを1回回してテキストだけ表示
   const loopCount = imagesCount > 0 ? imagesCount : 1;
 
   for (let i = 0; i < loopCount; i++) {
     const entity = document.createElement("a-entity");
-    let posX = 0; let scale = "1 1 1"; let opacity = 1; let isVisible = false;
+    
+    // 配置計算：真上から見た時に重ならないよう、X軸に大きく広げる
+    let posX = 0;
+    let posY = 0.05; // 地面より少し浮かせる
+    let scale = "1 1 1";
+    let opacity = 1;
 
     if (imagesCount > 0) {
-      if (i === 0) { posX = 0; isVisible = true; } 
-      else if (i === 1) { posX = 2.3; scale = "0.6 0.6 0.6"; opacity = 0.4; isVisible = true; } 
-      else if (i === imagesCount - 1 && i !== 0) { posX = -2.3; scale = "0.6 0.6 0.6"; opacity = 0.4; isVisible = true; }
-    } else {
-      isVisible = true; // 画像なしの時はテキストのみ中央表示
+      // 0番目を中央、1番目を右、2番目を左...と横一列に並べる
+      if (i === 0) {
+        posX = 0;
+      } else {
+        // 2枚目以降を重ならないように横へ並べる (2.5mおき)
+        // iが奇数なら右、偶数なら左
+        posX = (i % 2 === 1) ? (Math.ceil(i/2) * 2.5) : (Math.ceil(i/2) * -2.5);
+        scale = "0.8 0.8 0.8"; // サブ画像は少し小さく
+        opacity = 0.6;
+      }
     }
 
-    if (!isVisible) continue;
-
-    entity.setAttribute("position", `${posX} 0.1 0`);
+    entity.setAttribute("position", `${posX} ${posY} 0`);
     entity.setAttribute("scale", scale);
 
-    if (imagesCount > 0) {
+    // 画像の表示
+    if (imagesCount > 0 && imagesBase64[i]) {
       const aImg = document.createElement("a-image");
       aImg.setAttribute("src", imagesBase64[i]);
-      aImg.setAttribute("rotation", "-90 0 0");
+      // カメラが真上にあるので、画像は回転させず水平(0 0 0)で置く
+      aImg.setAttribute("rotation", "0 0 0"); 
       aImg.setAttribute("material", `shader: flat; transparent: true; opacity: ${opacity}; alphaTest: 0.5`);
+      
       const ratio = imageRatios[i] || 1;
-      aImg.setAttribute("width", 1.6);
-      aImg.setAttribute("height", 1.6 * ratio);
+      aImg.setAttribute("width", 1.8); // 少し大きめに表示
+      aImg.setAttribute("height", 1.8 * ratio);
       entity.appendChild(aImg);
     }
 
-    if (i === 0) {
-      const t1 = document.createElement("a-text");
-      t1.setAttribute("value", nameVal); t1.setAttribute("align", "center");
-      t1.setAttribute("position", "0 0.1 -1.2"); t1.setAttribute("rotation", "-90 0 0");
-      t1.setAttribute("width", 3); entity.appendChild(t1);
+    // 各画像の上に名前と肩書きを表示
+    // (ARの仕様に合わせ、各画像の上下にテキストを配置)
+    const t1 = document.createElement("a-text");
+    t1.setAttribute("value", nameVal);
+    t1.setAttribute("align", "center");
+    t1.setAttribute("position", "0 0 -1.3"); // 画像の上
+    t1.setAttribute("width", 4);
+    t1.setAttribute("color", "#ffffff");
+    entity.appendChild(t1);
 
-      const t2 = document.createElement("a-text");
-      t2.setAttribute("value", jobVal); t2.setAttribute("align", "center");
-      t2.setAttribute("position", "0 0.1 1.2"); t2.setAttribute("rotation", "-90 0 0");
-      t2.setAttribute("width", 2.2); t2.setAttribute("color", "#ffcc00");
-      entity.appendChild(t2);
-    }
+    const t2 = document.createElement("a-text");
+    t2.setAttribute("value", jobVal);
+    t2.setAttribute("align", "center");
+    t2.setAttribute("position", "0 0 1.3"); // 画像の下
+    t2.setAttribute("width", 3);
+    t2.setAttribute("color", "#ffcc00");
+    entity.appendChild(t2);
+
     container.appendChild(entity);
   }
 }
