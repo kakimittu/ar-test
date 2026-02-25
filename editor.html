@@ -143,6 +143,8 @@ const db = getFirestore(app);
 let imagesBase64 = [];
 let imageRatios = [];
 
+// --- ここから差し替え ---
+
 // ファイル選択時の処理
 document.getElementById("fileInput").onchange = async (e) => {
   imagesBase64 = [];
@@ -159,9 +161,10 @@ document.getElementById("fileInput").onchange = async (e) => {
   updatePreview();
 };
 
-// 入力変更時にプレビューを更新
-['nameInput', 'jobInput'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updatePreview);
+// 入力変更時にプレビューを更新（ID、名前、肩書き、マーカーURLすべて監視）
+['markerId', 'nameInput', 'jobInput', 'pattInput'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', updatePreview);
 });
 
 async function processImage(file) {
@@ -171,7 +174,7 @@ async function processImage(file) {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const maxW = 800;
+        const maxW = 800; // 読み込み速度を維持するためリサイズ
         const ratio = img.height / img.width;
         canvas.width = maxW; 
         canvas.height = maxW * ratio;
@@ -189,33 +192,39 @@ function updatePreview() {
   const container = document.getElementById("dynamic-content");
   container.innerHTML = "";
   
+  // 1. 画像プレビュー（複数ある場合は最新の1枚を表示）
   if(imagesBase64.length > 0) {
-    // 最初の1枚をプレビュー
     const aImg = document.createElement("a-image");
     aImg.setAttribute("src", imagesBase64[0]);
     aImg.setAttribute("rotation", "-90 0 0");
-    aImg.setAttribute("position", "0 0.2 0");
-    aImg.setAttribute("width", 1.6);
-    aImg.setAttribute("height", 1.6 * imageRatios[0]);
+    aImg.setAttribute("position", "0 0.2 0"); // 写真を少し浮かせる
+    
+    const ratio = imageRatios[0] || 1;
+    const baseW = 1.6;
+    aImg.setAttribute("width", baseW);
+    aImg.setAttribute("height", baseW * ratio);
     container.appendChild(aImg);
   }
 
+  // 2. 名前 (画像の上側に配置)
   const nameVal = document.getElementById("nameInput").value;
   const nameText = document.createElement("a-text");
   nameText.setAttribute("value", nameVal);
   nameText.setAttribute("align", "center");
-  nameText.setAttribute("position", "0 0.1 -1.1");
+  nameText.setAttribute("position", "0 0.1 -1.1"); 
   nameText.setAttribute("rotation", "-90 0 0");
   nameText.setAttribute("width", 3);
+  nameText.setAttribute("color", "#ffffff");
   container.appendChild(nameText);
 
+  // 3. 肩書き (画像の下側に配置)
   const jobVal = document.getElementById("jobInput").value;
   const jobText = document.createElement("a-text");
   jobText.setAttribute("value", jobVal);
   jobText.setAttribute("align", "center");
-  jobText.setAttribute("position", "0 0.1 1.1");
+  jobText.setAttribute("position", "0 0.1 1.1"); 
   jobText.setAttribute("rotation", "-90 0 0");
-  jobText.setAttribute("width", 2);
+  jobText.setAttribute("width", "2");
   jobText.setAttribute("color", "#ffcc00");
   container.appendChild(jobText);
 }
@@ -246,6 +255,7 @@ document.getElementById("saveBtn").onclick = async () => {
     saveBtn.innerText = "FIRESTOREへ保存";
   }
 };
-</script>
+  
+<script>
 </body>
 </html>
