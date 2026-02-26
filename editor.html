@@ -129,42 +129,57 @@ function updatePreview() {
   const nameInputs = document.querySelectorAll(".name-input");
   const jobInputs = document.querySelectorAll(".job-input");
 
+ function updatePreview() {
+  const container = document.getElementById("dynamic-content");
+  if (!container) return;
+  container.innerHTML = "";
+  
+  const nameInputs = document.querySelectorAll(".name-input");
+  const jobInputs = document.querySelectorAll(".job-input");
+
   imagesBase64.forEach((imgData, i) => {
     const entity = document.createElement("a-entity");
-    let posX = i * 5; // プレビューでは横に並べる
-    entity.setAttribute("position", `${posX} 0 0`);
+    entity.setAttribute("position", `${i * 5} 0 0`);
 
-    // 画像
+    // 1. メイン画像
     const aImg = document.createElement("a-image");
     aImg.setAttribute("src", imgData);
     aImg.setAttribute("rotation", "-90 0 0");
+    const ratio = imageRatios[i] || 1;
     aImg.setAttribute("width", 3);
-    aImg.setAttribute("height", 3 * imageRatios[i]);
+    aImg.setAttribute("height", 3 * ratio);
     entity.appendChild(aImg);
 
-    // タイトル（画像ごと）
-    const t1 = document.createElement("a-text");
-    t1.setAttribute("value", nameInputs[i] ? nameInputs[i].value : "");
-    t1.setAttribute("font", FONT_URL);
-    t1.setAttribute("shader", "msdf");
-    t1.setAttribute("align", "center");
-    t1.setAttribute("position", "0 0.1 -2.5");
-    t1.setAttribute("rotation", "-90 0 0");
-    t1.setAttribute("width", 6);
-    entity.appendChild(t1);
+    // 2. 文字を画像として作成（Canvas機能）
+    const createTextImg = (text, color) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512; canvas.height = 128;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = color;
+      ctx.font = "bold 60px sans-serif"; // ブラウザ標準フォントを使用
+      ctx.textAlign = "center";
+      ctx.fillText(text, 256, 80);
+      return canvas.toDataURL();
+    };
 
-    // 説明（画像ごと）
-    const t2 = document.createElement("a-text");
-    t2.setAttribute("value", jobInputs[i] ? jobInputs[i].value : "");
-    t2.setAttribute("font", FONT_URL);
-    t2.setAttribute("shader", "msdf");
-    t2.setAttribute("align", "center");
-    t2.setAttribute("position", "0 0.1 2.5");
-    t2.setAttribute("rotation", "-90 0 0");
-    t2.setAttribute("width", 5);
-    t2.setAttribute("color", "#ffcc00");
-    entity.appendChild(t2);
+    // 3. タイトル（画像として配置）
+    const t1Plane = document.createElement("a-image");
+    t1Plane.setAttribute("src", createTextImg(nameInputs[i]?.value || "名前", "#ffffff"));
+    t1Plane.setAttribute("position", `0 0.1 -2.2`);
+    t1Plane.setAttribute("rotation", "-90 0 0");
+    t1Plane.setAttribute("width", 4);
+    t1Plane.setAttribute("height", 1);
+    entity.appendChild(t1Plane);
 
+    // 4. 説明文（画像として配置）
+    const t2Plane = document.createElement("a-image");
+    t2Plane.setAttribute("src", createTextImg(jobInputs[i]?.value || "説明", "#ffcc00"));
+    t2Plane.setAttribute("position", `0 0.1 2.2`);
+    t2Plane.setAttribute("rotation", "-90 0 0");
+    t2Plane.setAttribute("width", 3);
+    t2Plane.setAttribute("height", 0.75);
+    entity.appendChild(t2Plane);
+    
     container.appendChild(entity);
   });
 }
