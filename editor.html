@@ -143,28 +143,34 @@ function updatePreview() {
     entity.appendChild(aImg);
 
     // タイトル（画像ごと）
-    const t1 = document.createElement("a-text");
-    t1.setAttribute("value", nameInputs[i] ? nameInputs[i].value : "");
-    t1.setAttribute("font", FONT_URL);
-    t1.setAttribute("shader", "msdf");
-    t1.setAttribute("align", "center");
-    t1.setAttribute("position", "0 0.1 -2.5");
-    t1.setAttribute("rotation", "-90 0 0");
-    t1.setAttribute("width", 6);
-    entity.appendChild(t1);
+// 名前（t1）の修正
+const t1 = document.createElement("a-text");
+t1.setAttribute("value", nameInputs[i] ? nameInputs[i].value : "PREVIEW");
+// フォント指定を「安定版」に変更
+t1.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
+t1.setAttribute("shader", "msdf");
+t1.setAttribute("align", "center");
+t1.setAttribute("position", "0 0.2 -2.5"); // Yを少し上げ、Zを調整
+t1.setAttribute("rotation", "-90 0 0");
+t1.setAttribute("width", 6);
+t1.setAttribute("color", "#ffffff");
+// フォント読み込み失敗対策
+t1.setAttribute("negate", "false"); 
+entity.appendChild(t1);
 
-    // 説明（画像ごと）
-    const t2 = document.createElement("a-text");
-    t2.setAttribute("value", jobInputs[i] ? jobInputs[i].value : "");
-    t2.setAttribute("font", FONT_URL);
-    t2.setAttribute("shader", "msdf");
-    t2.setAttribute("align", "center");
-    t2.setAttribute("position", "0 0.1 2.5");
-    t2.setAttribute("rotation", "-90 0 0");
-    t2.setAttribute("width", 5);
-    t2.setAttribute("color", "#ffcc00");
-    entity.appendChild(t2);
-
+// 肩書き（t2）も同様に修正
+const t2 = document.createElement("a-text");
+t2.setAttribute("value", jobInputs[i] ? jobInputs[i].value : "JOB TITLE");
+t2.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
+t2.setAttribute("shader", "msdf");
+t2.setAttribute("align", "center");
+t2.setAttribute("position", "0 0.2 2.5");
+t2.setAttribute("rotation", "-90 0 0");
+t2.setAttribute("width", 5);
+t2.setAttribute("color", "#ffcc00");
+t2.setAttribute("negate", "false");
+entity.appendChild(t2);
+    
     container.appendChild(entity);
   });
 }
