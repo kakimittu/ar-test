@@ -11,7 +11,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-    // --- Firebase設定（あなたの設定を貼り付けてください） ---
     const firebaseConfig = {
       apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
       authDomain: "armisetai.firebaseapp.com",
@@ -26,41 +25,38 @@
 
     let currentIndex = 0;
     let items = [];
+    let images = [];
+    let names = [];
+    let jobs = [];
+    const FONT_URL = "https://raw.githubusercontent.com/etiennepinchon/aframe-fonts/master/fonts/notosansjp/NotoSansJP-Medium.json";
 
     window.addEventListener("load", () => {
       const marker = document.querySelector("a-marker");
-
-      // 1. URLからIDを取得 (?id=akazawa など)
       const urlParams = new URLSearchParams(window.location.search);
       const markerId = urlParams.get('id') || 'akazawa'; 
 
-      // HUDの更新
       const hudUser = document.querySelector(".hud");
       if(hudUser) hudUser.innerHTML = `<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
 
-      // 2. リアルタイム監視(onSnapshot)
+      // 1. リアルタイム監視
       onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
-        if (!docSnap.exists()) {
-          console.log("No data found for: " + markerId);
-          return;
-        }
+        if (!docSnap.exists()) return;
         
-       const data = docSnap.data();
-    
-    // ★これを目印のすぐ下に貼り付けてください！
-    if (data.pattUrl) { marker.setAttribute("url", data.pattUrl); }
+        const data = docSnap.data();
+        if (data.pattUrl) { marker.setAttribute("url", data.pattUrl); }
 
-    const images = data.images || [];
-    const ratios = data.ratios || [];
-        const nameValue = data.name || "NO NAME";
-        const jobValue = data.job || "NO TITLE";
+        images = data.images || [];
+        const ratios = data.ratios || [];
+        // 配列データ（names/jobs）を優先し、なければ古いデータ（name/job）を配列化して使う
+        names = data.names || [data.name || ""];
+        jobs = data.jobs || [data.job || ""];
 
         // 既存の要素をリセット
         while (marker.firstChild) { marker.removeChild(marker.firstChild); }
-        addDecorations(marker); // 装飾（光など）を再配置
+        addDecorations(marker);
         items = [];
 
-        // 3. 画像とテキストの生成
+        // 2. 画像と「画像ごとのテキスト」の生成
         images.forEach((url, i) => {
           const entity = document.createElement("a-entity");
           entity.setAttribute("visible", "false");
@@ -77,22 +73,26 @@
           aImg.setAttribute("height", baseW * ratio);
           entity.appendChild(aImg);
 
-          // 名前
+          // 名前（画像 i 番目のテキスト）
           const nameText = document.createElement("a-text");
-          nameText.setAttribute("value", nameValue);
+          nameText.setAttribute("value", names[i] || names[0] || "");
+          nameText.setAttribute("font", FONT_URL);
+          nameText.setAttribute("shader", "msdf");
           nameText.setAttribute("align", "center");
           nameText.setAttribute("position", "0 0.1 -1.1");
           nameText.setAttribute("rotation", "-90 0 0");
           nameText.setAttribute("width", "3");
           entity.appendChild(nameText);
 
-          // 肩書き
+          // 肩書き（画像 i 番目のテキスト）
           const jobText = document.createElement("a-text");
-          jobText.setAttribute("value", jobValue);
+          jobText.setAttribute("value", jobs[i] || jobs[0] || "");
+          jobText.setAttribute("font", FONT_URL);
+          jobText.setAttribute("shader", "msdf");
           jobText.setAttribute("align", "center");
           jobText.setAttribute("position", "0 0.1 1.1");
           jobText.setAttribute("rotation", "-90 0 0");
-          jobText.setAttribute("width", "2");
+          jobText.setAttribute("width", "2.2");
           jobText.setAttribute("color", "#ffcc00");
           entity.appendChild(jobText);
 
@@ -102,7 +102,6 @@
         updateCarousel();
       });
 
-      // 装飾を配置する関数
       function addDecorations(target) {
         const p = document.createElement("a-plane");
         p.setAttribute("color", "#ff9900"); p.setAttribute("width", "2.2"); p.setAttribute("height", "1.4");
@@ -124,14 +123,24 @@
         if (items.length === 0) return;
         items.forEach((item, index) => {
           const isCenter = (index === currentIndex);
-          const offset = (index - currentIndex) * 2.2;
+          const offset = (index - currentIndex) * 2.5; // 重ならないよう間隔を少し広げました
           item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
           item.setAttribute("position", `${offset} ${isCenter ? 0.2 : 0.15} 0`);
           item.setAttribute("scale", isCenter ? "1 1 1" : "0.6 0.6 0.6");
+          // 非表示のものの不透明度を下げる演出
+          item.setAttribute("animation", `property: components.material.material.opacity; to: ${isCenter ? 1 : 0.3}; dur: 300`);
         });
       }
 
-      // 操作系
+      // 3. 自動切り替えタイマー (5秒ごと)
+      setInterval(() => {
+        if (items.length > 1) {
+          currentIndex = (currentIndex + 1) % items.length;
+          updateCarousel();
+        }
+      }, 3000);
+
+      // 操作系（手動で動かしてもタイマーは止まりませんが、直感的に動かせます）
       marker.addEventListener("click", () => {
         currentIndex = (currentIndex + 1) % items.length;
         updateCarousel();
@@ -164,4 +173,5 @@
   </a-scene>
 </body>
 </html>
+
 
