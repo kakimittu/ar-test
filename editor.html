@@ -43,9 +43,8 @@
 
 <div id="preview">
   <a-scene embedded vr-mode-ui="enabled: false">
-    <a-entity id="rig" position="0 8 2" rotation="-85 0 0">
-      <a-entity camera></a-entity>
-    </a-entity>
+    <a-entity id="rig" position="0 10 0" rotation="-90 0 0">
+  <a-entity camera="far: 1000; near: 0.1"></a-entity>
     <a-light type="ambient" intensity="1.0"></a-light>
     <a-entity id="dynamic-content"></a-entity>
   </a-scene>
