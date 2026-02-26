@@ -19,7 +19,7 @@
 <body>
 
 <div id="controls">
-  <h2>AR EDITOR</h2>
+  <h2>AR EDITOR2</h2>
   <div class="input-group">
     <label>① ドキュメントID</label>
     <input type="text" id="markerId" value="akazawa">
@@ -107,46 +107,64 @@ async function processImage(file) {
 }
 
 function updatePreview() {
-  const stage = document.getElementById("dynamic-content");
-  stage.innerHTML = "";
-  const names = document.querySelectorAll(".name-input");
-  const jobs = document.querySelectorAll(".job-input");
+  const container = document.getElementById("dynamic-content");
+  if (!container) return;
+  container.innerHTML = "";
+  
+  const imagesCount = imagesBase64.length;
+  // 画像ごとの入力を取得
+  const nameInputs = document.querySelectorAll(".name-input");
+  const jobInputs = document.querySelectorAll(".job-input");
 
-  imagesBase64.forEach((img, i) => {
-    const ent = document.createElement("a-entity");
-    ent.setAttribute("position", `${i * 4} 0 0`);
+  // フォントURL（安定版）
+  const FONT_URL = "https://raw.githubusercontent.com/etiennepinchon/aframe-fonts/master/fonts/notosansjp/NotoSansJP-Medium.json";
 
+  imagesBase64.forEach((imgData, i) => {
+    const entity = document.createElement("a-entity");
+    // 前のコードと同じ並べ方（横に広げる）
+    let posX = (i === 0) ? 0 : (i % 2 === 1 ? Math.ceil(i/2)*5 : Math.ceil(i/2)*-5);
+    entity.setAttribute("position", `${posX} 0 0`);
+
+    // --- 画像（映っていた時の設定に戻す） ---
     const aImg = document.createElement("a-image");
-    aImg.setAttribute("src", img);
+    aImg.setAttribute("src", imgData);
+    aImg.setAttribute("rotation", "-90 0 0"); // 地面に寝かせる
+    const ratio = imageRatios[i] || 1;
     aImg.setAttribute("width", 2.5);
-    aImg.setAttribute("height", 2.5 * imageRatios[i]);
-    ent.appendChild(aImg);
+    aImg.setAttribute("height", 2.5 * ratio);
+    entity.appendChild(aImg);
 
+    // --- 名前（タイトル） ---
     const t1 = document.createElement("a-text");
-    t1.setAttribute("value", names[i]?.value || "");
+    t1.setAttribute("value", nameInputs[i] ? nameInputs[i].value : "TITLE");
     t1.setAttribute("font", FONT_URL);
     t1.setAttribute("shader", "msdf");
     t1.setAttribute("negate", "false");
     t1.setAttribute("align", "center");
-    t1.setAttribute("position", `0 ${(2.5 * imageRatios[i] / 2) + 0.4} 0.05`);
-    t1.setAttribute("width", 5);
-    ent.appendChild(t1);
+    t1.setAttribute("color", "#ffffff");
+    t1.setAttribute("width", 6);
+    // 画像の上に重ねる（少し浮かせる）
+    t1.setAttribute("position", `0 0.2 -${(2.5 * ratio / 2) + 0.5}`);
+    t1.setAttribute("rotation", "-90 0 0"); // 画像と同じく寝かせる
+    entity.appendChild(t1);
 
+    // --- 肩書き（説明） ---
     const t2 = document.createElement("a-text");
-    t2.setAttribute("value", jobs[i]?.value || "");
+    t2.setAttribute("value", jobInputs[i] ? jobInputs[i].value : "DESCRIPTION");
     t2.setAttribute("font", FONT_URL);
     t2.setAttribute("shader", "msdf");
     t2.setAttribute("negate", "false");
     t2.setAttribute("align", "center");
     t2.setAttribute("color", "#ffcc00");
-    t2.setAttribute("position", `0 -${(2.5 * imageRatios[i] / 2) + 0.4} 0.05`);
-    t2.setAttribute("width", 3.5);
-    ent.appendChild(t2);
-
-    stage.appendChild(ent);
+    t2.setAttribute("width", 4);
+    // 画像の下に重ねる
+    t2.setAttribute("position", `0 0.2 ${(2.5 * ratio / 2) + 0.5}`);
+    t2.setAttribute("rotation", "-90 0 0");
+    entity.appendChild(t2);
+    
+    container.appendChild(entity);
   });
 }
-
 document.getElementById("saveBtn").onclick = async () => {
   const id = document.getElementById("markerId").value;
   const names = Array.from(document.querySelectorAll(".name-input")).map(el => el.value);
