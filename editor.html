@@ -124,6 +124,7 @@ async function processImage(file) {
 
 function updatePreview() {
   const container = document.getElementById("dynamic-content");
+  if (!container) return; // コンテナがない場合のガード
   container.innerHTML = "";
   
   const nameInputs = document.querySelectorAll(".name-input");
@@ -131,45 +132,48 @@ function updatePreview() {
 
   imagesBase64.forEach((imgData, i) => {
     const entity = document.createElement("a-entity");
-    let posX = i * 5; // プレビューでは横に並べる
+    // プレビューでは横に5m間隔で並べる
+    let posX = i * 5; 
     entity.setAttribute("position", `${posX} 0 0`);
 
-    // 画像
+    // --- 画像の配置 ---
     const aImg = document.createElement("a-image");
     aImg.setAttribute("src", imgData);
-    aImg.setAttribute("rotation", "-90 0 0");
+    aImg.setAttribute("rotation", "0 0 0"); // カメラ（真上）に向けて正面
+    const ratio = imageRatios[i] || 1;
     aImg.setAttribute("width", 3);
-    aImg.setAttribute("height", 3 * imageRatios[i]);
+    aImg.setAttribute("height", 3 * ratio);
     entity.appendChild(aImg);
 
-    // タイトル（画像ごと）
-// 名前（t1）の修正
-const t1 = document.createElement("a-text");
-t1.setAttribute("value", nameInputs[i] ? nameInputs[i].value : "PREVIEW");
-// フォント指定を「安定版」に変更
-t1.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
-t1.setAttribute("shader", "msdf");
-t1.setAttribute("align", "center");
-t1.setAttribute("position", "0 0.2 -2.5"); // Yを少し上げ、Zを調整
-t1.setAttribute("rotation", "-90 0 0");
-t1.setAttribute("width", 6);
-t1.setAttribute("color", "#ffffff");
-// フォント読み込み失敗対策
-t1.setAttribute("negate", "false"); 
-entity.appendChild(t1);
+    // --- タイトルの配置 ---
+    const t1 = document.createElement("a-text");
+    const nameVal = nameInputs[i] && nameInputs[i].value ? nameInputs[i].value : "PREVIEW NAME";
+    t1.setAttribute("value", nameVal);
+    t1.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
+    t1.setAttribute("shader", "msdf");
+    t1.setAttribute("negate", "false");
+    t1.setAttribute("align", "center");
+    t1.setAttribute("width", 8); // 文字を大きく
+    t1.setAttribute("color", "#ffffff");
+    // 真上カメラに対して正面を向くように rotation="0 0 0" に変更
+    t1.setAttribute("position", `0 ${3 * ratio / 2 + 0.5} 0.01`); 
+    t1.setAttribute("rotation", "0 0 0");
+    entity.appendChild(t1);
 
-// 肩書き（t2）も同様に修正
-const t2 = document.createElement("a-text");
-t2.setAttribute("value", jobInputs[i] ? jobInputs[i].value : "JOB TITLE");
-t2.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
-t2.setAttribute("shader", "msdf");
-t2.setAttribute("align", "center");
-t2.setAttribute("position", "0 0.2 2.5");
-t2.setAttribute("rotation", "-90 0 0");
-t2.setAttribute("width", 5);
-t2.setAttribute("color", "#ffcc00");
-t2.setAttribute("negate", "false");
-entity.appendChild(t2);
+    // --- 肩書きの配置 ---
+    const t2 = document.createElement("a-text");
+    const jobVal = jobInputs[i] && jobInputs[i].value ? jobInputs[i].value : "JOB TITLE";
+    t2.setAttribute("value", jobVal);
+    t2.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
+    t2.setAttribute("shader", "msdf");
+    t2.setAttribute("negate", "false");
+    t2.setAttribute("align", "center");
+    t2.setAttribute("width", 6);
+    t2.setAttribute("color", "#ffcc00");
+    // 画像の下側に配置
+    t2.setAttribute("position", `0 -${3 * ratio / 2 + 0.5} 0.01`);
+    t2.setAttribute("rotation", "0 0 0");
+    entity.appendChild(t2);
     
     container.appendChild(entity);
   });
