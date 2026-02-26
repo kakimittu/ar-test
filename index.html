@@ -1,185 +1,106 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CYBER AR - PORTFOLIO</title>
+  <meta charset="utf-8">
+  <title>AR PORTFOLIO PLAYER</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-      authDomain: "armisetai.firebaseapp.com",
-      projectId: "armisetai",
-      storageBucket: "armisetai.firebasestorage.app",
-      messagingSenderId: "1006973944547",
-      appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let currentIndex = 0;
-    let items = [];
-    let images = [];
-    let names = [];
-    let jobs = [];
-    const FONT_URL = "https://raw.githubusercontent.com/etiennepinchon/aframe-fonts/master/fonts/notosansjp/NotoSansJP-Medium.json";
-
-    window.addEventListener("load", () => {
-      const marker = document.querySelector("a-marker");
-      const urlParams = new URLSearchParams(window.location.search);
-      const markerId = urlParams.get('id') || 'akazawa'; 
-
-      const hudUser = document.querySelector(".hud");
-      if(hudUser) hudUser.innerHTML = `<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
-
-      // 1. リアルタイム監視
-      onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
-        if (!docSnap.exists()) return;
-        
-        const data = docSnap.data();
-        if (data.pattUrl) { marker.setAttribute("url", data.pattUrl); }
-
-        images = data.images || [];
-        const ratios = data.ratios || [];
-        // 配列データ（names/jobs）を優先し、なければ古いデータ（name/job）を配列化して使う
-        names = data.names || [data.name || ""];
-        jobs = data.jobs || [data.job || ""];
-
-        // 既存の要素をリセット
-        while (marker.firstChild) { marker.removeChild(marker.firstChild); }
-        addDecorations(marker);
-        items = [];
-
-        // 2. 画像と「画像ごとのテキスト」の生成
-        images.forEach((url, i) => {
-          const entity = document.createElement("a-entity");
-          entity.setAttribute("visible", "false");
-
-          // メイン画像
-          const aImg = document.createElement("a-image");
-          aImg.setAttribute("src", url);
-          aImg.setAttribute("rotation", "-90 0 0");
-          aImg.setAttribute("material", "shader: flat; transparent: true; alphaTest: 0.5; side: double");
-          
-          const ratio = ratios[i] || 1;
-          const baseW = 1.6;
-          aImg.setAttribute("width", baseW);
-          aImg.setAttribute("height", baseW * ratio);
-          entity.appendChild(aImg);
-
-          // 名前（画像 i 番目のテキスト）
-         // 名前（タイトル）の生成部分
-const nameText = document.createElement("a-text");
-nameText.setAttribute("value", names[i] || ""); 
-// ★ここを新しいURLと設定に変更
-nameText.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
-nameText.setAttribute("shader", "msdf");
-nameText.setAttribute("negate", "false"); // これを入れると日本語が安定します
-
-nameText.setAttribute("align", "center");
-nameText.setAttribute("position", "0 0.2 -1.3"); // 少し浮かせる(0.2)
-nameText.setAttribute("rotation", "-90 0 0");
-nameText.setAttribute("width", "4");
-entity.appendChild(nameText);
-
-// 肩書き（説明）の生成部分
-const jobText = document.createElement("a-text");
-jobText.setAttribute("value", jobs[i] || ""); 
-// ★ここを新しいURLと設定に変更
-jobText.setAttribute("font", "https://cdn.aframe.io/fonts/NotoSansJP-Medium.json");
-jobText.setAttribute("shader", "msdf");
-jobText.setAttribute("negate", "false");
-
-jobText.setAttribute("align", "center");
-jobText.setAttribute("position", "0 0.2 1.3"); // 少し浮かせる(0.2)
-jobText.setAttribute("rotation", "-90 0 0");
-jobText.setAttribute("width", "3");
-jobText.setAttribute("color", "#ffcc00");
-entity.appendChild(jobText);
-
-          marker.appendChild(entity);
-          items.push(entity);
-        });
-        updateCarousel();
-      });
-
-      function addDecorations(target) {
-        const p = document.createElement("a-plane");
-        p.setAttribute("color", "#ff9900"); p.setAttribute("width", "2.2"); p.setAttribute("height", "1.4");
-        p.setAttribute("position", "0 0.01 0"); p.setAttribute("rotation", "-90 0 0");
-        p.setAttribute("material", "shader: flat; opacity: 0.3; transparent: true; blending: additive; depthWrite: false");
-        target.appendChild(p);
-
-        const pos = ["-1.4 0.1 0.6", "1.4 0.1 0.6"];
-        pos.forEach(pPos => {
-          const c = document.createElement("a-circle");
-          c.setAttribute("radius", "0.1"); c.setAttribute("color", "#ff8c00");
-          c.setAttribute("position", pPos); c.setAttribute("rotation", "-90 0 0");
-          c.setAttribute("material", "shader: flat; transparent: true; opacity: 0.6; blending: additive");
-          target.appendChild(c);
-        });
-      }
-
-      function updateCarousel() {
-        if (items.length === 0) return;
-        items.forEach((item, index) => {
-          const isCenter = (index === currentIndex);
-          const offset = (index - currentIndex) * 2.5; // 重ならないよう間隔を少し広げました
-          item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
-          item.setAttribute("position", `${offset} ${isCenter ? 0.2 : 0.15} 0`);
-          item.setAttribute("scale", isCenter ? "1 1 1" : "0.6 0.6 0.6");
-          // 非表示のものの不透明度を下げる演出
-          item.setAttribute("animation", `property: components.material.material.opacity; to: ${isCenter ? 1 : 0.3}; dur: 300`);
-        });
-      }
-
-      // 3. 自動切り替えタイマー (5秒ごと)
-      setInterval(() => {
-        if (items.length > 1) {
-          currentIndex = (currentIndex + 1) % items.length;
-          updateCarousel();
-        }
-      }, 3000);
-
-      // 操作系（手動で動かしてもタイマーは止まりませんが、直感的に動かせます）
-      marker.addEventListener("click", () => {
-        currentIndex = (currentIndex + 1) % items.length;
-        updateCarousel();
-      });
-
-      let startX = 0;
-      window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
-      window.addEventListener("touchend", (e) => {
-        let diff = e.changedTouches[0].clientX - startX;
-        if (Math.abs(diff) > 50) {
-          currentIndex = diff > 0 ? (currentIndex - 1 + items.length) % items.length : (currentIndex + 1) % items.length;
-          updateCarousel();
-        }
-      });
-    });
-  </script>
-
-  <style>
-    .hud { position: fixed; top: 20px; left: 20px; color: #00f2ff; font-family: monospace; font-size: 12px; pointer-events: none; z-index: 10001; text-shadow: 0 0 5px #00f2ff; }
-    .rec-dot { display: inline-block; width: 10px; height: 10px; background: red; border-radius: 50%; margin-right: 5px; animation: blink 1s infinite; }
-    @keyframes blink { 50% { opacity: 0; } }
-    body { margin: 0; overflow: hidden; background: #000; }
-  </style>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </head>
-<body>
-  <div class="hud"></div>
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-    <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt"></a-marker>
+<body style="margin: 0; overflow: hidden;">
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+    <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt" id="mainMarker">
+      </a-marker>
     <a-entity camera></a-entity>
   </a-scene>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+  authDomain: "armisetai.firebaseapp.com",
+  projectId: "armisetai",
+  storageBucket: "armisetai.firebasestorage.app",
+  messagingSenderId: "1006973944547",
+  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const urlParams = new URLSearchParams(window.location.search);
+const markerId = urlParams.get('id') || 'akazawa';
+const marker = document.getElementById("mainMarker");
+const FONT_URL = "https://raw.githubusercontent.com/etiennepinchon/aframe-fonts/master/fonts/notosansjp/NotoSansJP-Medium.json";
+
+let items = [];
+let currentIndex = 0;
+
+onSnapshot(doc(db, "arUsers", markerId), (snap) => {
+  if (!snap.exists()) return;
+  const data = snap.snap.data();
+  if (data.pattUrl) marker.setAttribute("url", data.pattUrl);
+
+  marker.innerHTML = "";
+  items = [];
+
+  const imgs = data.images || [];
+  const names = data.names || [];
+  const jobs = data.jobs || [];
+
+  imgs.forEach((src, i) => {
+    const ent = document.createElement("a-entity");
+    ent.setAttribute("visible", "false");
+
+    const img = document.createElement("a-image");
+    img.setAttribute("src", src);
+    img.setAttribute("rotation", "-90 0 0");
+    img.setAttribute("width", 2);
+    img.setAttribute("height", 2 * (data.ratios[i] || 1));
+    ent.appendChild(img);
+
+    const t1 = document.createElement("a-text");
+    t1.setAttribute("value", names[i] || "");
+    t1.setAttribute("font", FONT_URL);
+    t1.setAttribute("shader", "msdf");
+    t1.setAttribute("negate", "false");
+    t1.setAttribute("align", "center");
+    t1.setAttribute("position", "0 0.2 -1.5");
+    t1.setAttribute("rotation", "-90 0 0");
+    t1.setAttribute("width", 4);
+    ent.appendChild(t1);
+
+    const t2 = document.createElement("a-text");
+    t2.setAttribute("value", jobs[i] || "");
+    t2.setAttribute("font", FONT_URL);
+    t2.setAttribute("shader", "msdf");
+    t2.setAttribute("negate", "false");
+    t2.setAttribute("align", "center");
+    t2.setAttribute("color", "#ffcc00");
+    t2.setAttribute("position", "0 0.2 1.5");
+    t2.setAttribute("rotation", "-90 0 0");
+    t2.setAttribute("width", 3);
+    ent.appendChild(t2);
+
+    marker.appendChild(ent);
+    items.push(ent);
+  });
+  updateDisplay();
+});
+
+function updateDisplay() {
+  items.forEach((item, i) => {
+    item.setAttribute("visible", i === currentIndex);
+  });
+}
+
+// 5秒ごとに自動切り替え
+setInterval(() => {
+  if (items.length > 0) {
+    currentIndex = (currentIndex + 1) % items.length;
+    updateDisplay();
+  }
+},3000);
+</script>
 </body>
 </html>
-
-
-
