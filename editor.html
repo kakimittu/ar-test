@@ -129,7 +129,7 @@ function updatePreview() {
     // 写真
     const aImg = document.createElement("a-image");
     aImg.setAttribute("src", img);
-    aImg.setAttribute("rotation", "0 0 0");
+    aImg.setAttribute("rotation", "-90 0 0");
     const r = imageRatios[i] || 1;
     aImg.setAttribute("width", 3); aImg.setAttribute("height", 3 * r);
     ent.appendChild(aImg);
