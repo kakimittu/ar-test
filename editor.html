@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>FONT CHECK - TEST ONLY</title>
+    <title>FONT CHECK FINAL</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 </head>
 <body style="margin: 0; background-color: #000;">
@@ -10,12 +10,10 @@
     <a-scene embedded vr-mode-ui="enabled: false">
         <a-entity camera position="0 0 5"></a-entity>
 
-        <a-sky color="#222"></a-sky>
-
         <a-text 
-            value="日本語フォント表示テスト\nABC123あいうえお" 
-            font="assets/fonts/mplus-msdf.json"
-            font-image="assets/fonts/mplus-msdf.png"
+            value="日本語表示テスト成功！" 
+            font="./assets/fonts/mplus-msdf.json"
+            font-image="./assets/fonts/mplus-msdf.png"
             shader="msdf" 
             negate="false"
             color="#00f2ff" 
@@ -24,16 +22,12 @@
             align="center">
         </a-text>
 
+        <a-sky color="#222"></a-sky>
         <a-box position="0 0 -1" scale="10 2 0.1" color="#444"></a-box>
-
     </a-scene>
 
-    <script>
-        // ブラウザのコンソールに状況を表示
-        window.addEventListener('load', () => {
-            console.log("=== FONT CHECK START ===");
-            console.log("Checking path: assets/fonts/mplus-msdf.json");
-        });
+    <script type="module">
+        console.log("Module mode active.");
     </script>
 </body>
 </html>
