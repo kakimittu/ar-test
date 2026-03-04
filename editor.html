@@ -2,34 +2,87 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>FONT CHECK - EMERGENCY</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <title>AR Editor - Japanese Font Ver</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <style>
+        /* UIのスタイル（適宜調整してください） */
+        #ui { position: absolute; top: 10px; left: 10px; z-index: 100; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; }
+    </style>
 </head>
-<body style="margin: 0; background: #111;">
+<body>
 
-    <script type="module">
-        console.log("A-Frame Scene is starting...");
-    </script>
+    <div id="ui">
+        <input type="text" id="textInput" placeholder="表示する文字を入力">
+        <button id="updateBtn">反映する</button>
+    </div>
 
-    <a-scene embedded vr-mode-ui="enabled: false">
-        <a-entity camera position="0 0 5"></a-entity>
-
-        <a-sky color="#333"></a-sky>
-
-        <a-box position="0 -1 -2" scale="5 0.5 0.1" color="red"></a-box>
-
+    <a-scene embedded vr-mode-ui="enabled: false" background="color: #222">
+        <a-entity camera position="0 1.6 3"></a-entity>
+        
         <a-text 
-            value="表示テスト: 日本語" 
-            font="assets/fonts/mplus-msdf.json"
-            font-image="assets/fonts/mplus-msdf.png"
+            id="previewText"
+            value="ここに文字が出ます" 
+            font="./assets/fonts/mplus-msdf.json"
+            font-image="./assets/fonts/mplus-msdf.png"
             shader="msdf" 
             negate="false"
             color="#00f2ff" 
-            width="8" 
-            position="0 0.5 -2" 
+            width="6" 
+            position="0 1.6 -1" 
             align="center">
         </a-text>
+
+        <a-grid></a-grid>
     </a-scene>
 
+ <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+    authDomain: "armisetai.firebaseapp.com",
+    projectId: "armisetai",
+    storageBucket: "armisetai.firebasestorage.app",
+    messagingSenderId: "1006973944547",
+    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+
+        const textInput = document.querySelector('#textInput');
+        const updateBtn = document.querySelector('#updateBtn');
+        const previewText = document.querySelector('#previewText');
+
+        // 定数としてフォントパスを定義（テストで成功したパス）
+        const FONT_PATH = "./assets/fonts/mplus-msdf.json";
+        const FONT_IMAGE = "./assets/fonts/mplus-msdf.png";
+
+        // 文字を更新する関数
+        function updateDisplay() {
+            const newText = textInput.value;
+            if(!newText) return;
+
+            // 重要：反映時にフォント設定が外れないよう、念のため再セットする
+            previewText.setAttribute('value', newText);
+            previewText.setAttribute('font', FONT_PATH);
+            previewText.setAttribute('font-image', FONT_IMAGE);
+            previewText.setAttribute('shader', 'msdf');
+            previewText.setAttribute('negate', 'false');
+            
+            console.log("Text Updated:", newText);
+        }
+
+        updateBtn.addEventListener('click', updateDisplay);
+
+        // エンターキーでも反映されるようにする
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') updateDisplay();
+        });
+    </script>
 </body>
 </html>
