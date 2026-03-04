@@ -10,17 +10,18 @@
     <a-scene embedded vr-mode-ui="enabled: false">
         <a-entity camera position="0 0 5"></a-entity>
 
-        <a-text 
-            value="日本語表示テスト成功！" 
-            font="./assets/fonts/mplus-msdf.json"
-            font-image="./assets/fonts/mplus-msdf.png"
-            shader="msdf" 
-            negate="false"
-            color="#00f2ff" 
-            width="8" 
-            position="0 0 0" 
-            align="center">
-        </a-text>
+<a-text 
+    value="日本語テスト成功" 
+    font="assets/fonts/mplus-msdf.json"
+    font-image="assets/fonts/mplus-msdf.png"
+    shader="msdf" 
+    negate="true"
+    side="double"
+    color="#00f2ff" 
+    width="10" 
+    position="0 0 -3" 
+    align="center">
+</a-text>
 
         <a-sky color="#222"></a-sky>
         <a-box position="0 0 -1" scale="10 2 0.1" color="#444"></a-box>
