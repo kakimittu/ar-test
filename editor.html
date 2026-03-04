@@ -1,79 +1,11 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>AR EDITOR - MSDF COMPLETE</title>
-
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://unpkg.com/aframe-msdf-text-component/dist/aframe-msdf-text-component.min.js"></script>
-
-<style>
-body { margin:0; display:flex; height:100vh; background:#111; color:#fff; font-family:sans-serif;}
-#controls { width:340px; padding:20px; background:#1a1a1a; }
-#preview { flex:1; }
-input { width:100%; padding:8px; margin-bottom:10px; }
-button { width:100%; padding:12px; background:#00f2ff; border:none; font-weight:bold; }
-</style>
-</head>
-<body>
-
-<div id="controls">
-  <h3>TEXT CONTROL</h3>
-  <input type="text" id="nameInput" value="赤澤優子">
-  <input type="text" id="jobInput" value="HORSE TRAINER">
-  <button onclick="updateText()">更新</button>
-</div>
-
-<div id="preview">
-<a-scene embedded vr-mode-ui="enabled:false">
-
-  <a-assets>
-    <a-asset-item id="mplusFont" src="assets/fonts/mplus-msdf.json"></a-asset-item>
-    <img id="mplusFontImage" src="assets/fonts/mplus-msdf.png">
-  </a-assets>
-
-  <a-entity position="0 5 1" rotation="-90 0 0">
-    
-    <!-- 名前 -->
-    <a-entity id="nameText"
-      msdf-text="value: 赤澤優子;
-                 font: #mplusFont;
-                 fontImage: #mplusFontImage;
-                 color: #ffffff;
-                 align: center;
-                 width: 6;">
-    </a-entity>
-
-    <!-- 肩書き -->
-    <a-entity id="jobText"
-      position="0 0 -1"
-      msdf-text="value: HORSE TRAINER;
-                 font: #mplusFont;
-                 fontImage: #mplusFontImage;
-                 color: #ffcc00;
-                 align: center;
-                 width: 5;">
-    </a-entity>
-
-  </a-entity>
-
-  <a-light type="ambient" intensity="1"></a-light>
-
+<a-scene>
+  <a-text
+    value="こんにちは世界！"
+    font="mplus-msdf.json"
+    font-image="mplus-msdf.png"
+    negate="false"
+    scale="2 2 1"
+    position="0 1 -4"
+  >
+  </a-text>
 </a-scene>
-</div>
-
-<script>
-function updateText(){
-  const name = document.getElementById("nameInput").value;
-  const job  = document.getElementById("jobInput").value;
-
-  document.querySelector("#nameText")
-    .setAttribute("msdf-text", "value", name);
-
-  document.querySelector("#jobText")
-    .setAttribute("msdf-text", "value", job);
-}
-</script>
-
-</body>
-</html>
