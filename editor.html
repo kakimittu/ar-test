@@ -2,39 +2,37 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>日本語フォント表示テスト</title>
+    <title>FONT CHECK - TEST ONLY</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 </head>
-<body style="margin: 0; background: #000;">
+<body style="margin: 0; background-color: #000;">
 
     <a-scene embedded vr-mode-ui="enabled: false">
-        <a-assets>
-            <a-asset-item id="jp-font" src="assets/fonts/mplus-msdf.json"></a-asset-item>
-        </a-assets>
-
         <a-entity camera position="0 0 5"></a-entity>
 
+        <a-sky color="#222"></a-sky>
+
         <a-text 
-            id="test-text"
-            value="日本語が表示されますか？" 
-            font="#jp-font" 
+            value="日本語フォント表示テスト\nABC123あいうえお" 
+            font="assets/fonts/mplus-msdf.json"
+            font-image="assets/fonts/mplus-msdf.png"
             shader="msdf" 
             negate="false"
             color="#00f2ff" 
-            width="6" 
+            width="8" 
             position="0 0 0" 
             align="center">
         </a-text>
 
-        <a-sky color="#111"></a-sky>
+        <a-box position="0 0 -1" scale="10 2 0.1" color="#444"></a-box>
+
     </a-scene>
 
- <script type="module">  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-        // ページ読み込み時にログを出す（デバッグ用）
+    <script>
+        // ブラウザのコンソールに状況を表示
         window.addEventListener('load', () => {
-            console.log("A-Frame Scene Loaded");
-            const fontPath = document.querySelector('#jp-font').getAttribute('src');
-            console.log("読み込もうとしているフォントのパス:", fontPath);
+            console.log("=== FONT CHECK START ===");
+            console.log("Checking path: assets/fonts/mplus-msdf.json");
         });
     </script>
 </body>
