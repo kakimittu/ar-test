@@ -1,11 +1,41 @@
-<a-scene>
-  <a-text
-    value="こんにちは世界！"
-    font="mplus-msdf.json"
-    font-image="mplus-msdf.png"
-    negate="false"
-    scale="2 2 1"
-    position="0 1 -4"
-  >
-  </a-text>
-</a-scene>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>日本語フォント表示テスト</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+</head>
+<body style="margin: 0; background: #000;">
+
+    <a-scene embedded vr-mode-ui="enabled: false">
+        <a-assets>
+            <a-asset-item id="jp-font" src="assets/fonts/mplus-msdf.json"></a-asset-item>
+        </a-assets>
+
+        <a-entity camera position="0 0 5"></a-entity>
+
+        <a-text 
+            id="test-text"
+            value="日本語が表示されますか？" 
+            font="#jp-font" 
+            shader="msdf" 
+            negate="false"
+            color="#00f2ff" 
+            width="6" 
+            position="0 0 0" 
+            align="center">
+        </a-text>
+
+        <a-sky color="#111"></a-sky>
+    </a-scene>
+
+    <script>
+        // ページ読み込み時にログを出す（デバッグ用）
+        window.addEventListener('load', () => {
+            console.log("A-Frame Scene Loaded");
+            const fontPath = document.querySelector('#jp-font').getAttribute('src');
+            console.log("読み込もうとしているフォントのパス:", fontPath);
+        });
+    </script>
+</body>
+</html>
