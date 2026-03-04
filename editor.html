@@ -26,22 +26,17 @@
     </div>
 
 <a-scene embedded vr-mode-ui="enabled: false" background="color: #222">
-    <a-assets timeout="10000">
-        <img id="fontImg" src="./assets/fonts/mplus-msdf.png">
-    </a-assets>
-
     <a-entity camera position="0 1.6 3"></a-entity>
     
     <a-text 
         id="previewText"
         value="READY" 
-        font="./assets/fonts/mplus-msdf.json"
-        font-image="#fontImg"
+        font="assets/fonts/mplus-msdf.json"
         shader="msdf" 
         negate="false"
         color="#00f2ff" 
         width="6" 
-        position="0 1.6 -2" 
+        position="0 1.6 -1" 
         align="center">
     </a-text>
 
@@ -82,24 +77,21 @@
         }
 
         // 反映処理
-        function applyChanges() {
-            const val = textInput.value;
-            if (!val) return;
+    function applyChanges() {
+    const val = textInput.value;
+    if (!val) return;
 
-            statusEl.innerText = "反映中...";
-            
-            // A-Frameのテキスト要素を更新
-            previewText.setAttribute('value', val);
-            
-            // フォント設定を再適用
-            previewText.setAttribute('font', './assets/fonts/mplus-msdf.json');
-            previewText.setAttribute('font-image', './assets/fonts/mplus-msdf.png');
-            previewText.setAttribute('shader', 'msdf');
-            previewText.setAttribute('negate', 'false');
+    statusEl.innerText = "反映中...";
+    
+    previewText.setAttribute('value', val);
+    
+    // 画像パス(font-image)をセットせず、jsonだけをセットする
+    previewText.setAttribute('font', 'assets/fonts/mplus-msdf.json');
+    previewText.setAttribute('shader', 'msdf');
+    previewText.setAttribute('negate', 'false');
 
-            statusEl.innerText = "表示更新: " + val;
-            console.log("Updated to:", val);
-        }
+    statusEl.innerText = "表示更新: " + val;
+}
 
         updateBtn.addEventListener('click', applyChanges);
         
