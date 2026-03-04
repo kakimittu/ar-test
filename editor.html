@@ -1,44 +1,51 @@
+3.勝ち完成版・プレビュー安定・日本語は無理
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>AR PORTFOLIO EDITOR - CUSTOM FONT</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #111; color: #fff; }
-        #controls { width: 380px; padding: 20px; background: #1a1a1a; overflow-y: auto; border-right: 1px solid #333; }
-        #preview { flex-grow: 1; background: #000; }
-        .group { margin-bottom: 20px; padding: 15px; background: #262626; border-radius: 8px; border-left: 4px solid #00f2ff; }
-        label { display: block; margin-bottom: 5px; font-size: 12px; color: #00f2ff; font-weight: bold; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 10px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
-        .card { background: #111; padding: 12px; margin-top: 10px; border-radius: 5px; border: 1px solid #444; }
-        .card img { width: 50px; height: 50px; object-fit: cover; margin-bottom: 8px; }
-        .btn { width: 100%; padding: 15px; background: #00f2ff; color: #000; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    </style>
+<meta charset="UTF-8">
+<title>AR EDITOR - STABLE VIEW</title>
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<style>
+  body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #0f0f0f; color: #fff; overflow: hidden; }
+  #controls { width: 360px; padding: 20px; background: #1a1a1a; overflow-y: auto; border-right: 1px solid #333; display: flex; flex-direction: column; box-sizing: border-box; z-index: 10; }
+  #preview { flex-grow: 1; position: relative; background: #000; }
+  h2 { margin: 0 0 20px 0; color: #00f2ff; font-size: 18px; }
+  .input-group { margin-bottom: 15px; }
+  label { display: block; margin-bottom: 5px; font-size: 12px; color: #00f2ff; }
+  input[type="text"], input[type="file"] { width: 100%; padding: 10px; background: #262626; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
+  .btn { width: 100%; padding: 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px; background: #00f2ff; color: #000; }
+  #fileList { margin-top: 5px; font-size: 11px; color: #888; }
+</style>
 </head>
 <body>
 
 <div id="controls">
-    <h2>AR EDITOR</h2>
-    <div class="group">
-        <label>① マーカーID (Firebase用)</label>
-        <input type="text" id="markerId" value="akazawa">
-    </div>
-    <div class="group">
-        <label>② 画像を選択</label>
-        <input type="file" id="fileInput" accept="image/*" multiple>
-        <div id="dynamic-inputs"></div>
-    </div>
-    <button id="saveBtn" class="btn">保存して公開</button>
+  <h2>AR EDITOR SYSTEM</h2>
+  <div class="input-group"><label>ドキュメントID</label><input type="text" id="markerId" value="akazawa"></div>
+  <div class="input-group"><label>マーカーパス</label><input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt"></div>
+  <div class="input-group"><label>お名前</label><input type="text" id="nameInput" value="AKAZAWA YUKO"></div>
+  <div class="input-group"><label>肩書き</label><input type="text" id="jobInput" value="HORSE TRAINER"></div>
+  <div class="input-group"><label>画像選択</label><input type="file" id="fileInput" accept="image/*" multiple><div id="fileList">未選択</div></div>
+  <button id="saveBtn" class="btn">FIRESTOREへ保存</button>
 </div>
 
 <div id="preview">
-    <a-scene embedded vr-mode-ui="enabled: false">
-        <a-entity id="rig" position="0 8 0" rotation="-90 0 0">
-            <a-entity camera></a-entity>
-        </a-entity>
-        <a-entity id="dynamic-content"></a-entity>
-    </a-scene>
+  <a-scene embedded vr-mode-ui="enabled: false">
+  <a-assets>
+    <a-asset-item id="mplusFont" src="assets/fonts/mplus-msdf.json"></a-asset-item>
+    <img id="mplusFontImage" src="assets/fonts/mplus-msdf.png">
+  </a-assets>
+    <a-entity id="rig" position="0 6 1" rotation="-85 0 0">
+      <a-entity camera></a-entity>
+    </a-entity>
+
+    <a-light type="ambient" intensity="1.0"></a-light>
+    
+    <a-entity id="ar-stage" position="0 0 0">
+      <a-plane color="#333" width="10" height="10" rotation="-90 0 0" material="opacity: 0.1; transparent: true;"></a-plane>
+      <a-entity id="dynamic-content"></a-entity>
+    </a-entity>
+  </a-scene>
 </div>
 
 <script type="module">
@@ -46,117 +53,132 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA", // 自分のキーに書き換えてください
-    authDomain: "armisetai.firebaseapp.com",
-    projectId: "armisetai",
-    storageBucket: "armisetai.firebasestorage.app",
-    messagingSenderId: "1006973944547",
-    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+  authDomain: "armisetai.firebaseapp.com",
+  projectId: "armisetai",
+  storageBucket: "armisetai.firebasestorage.app",
+  messagingSenderId: "1006973944547",
+  appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let imagesBase64 = [];
 let imageRatios = [];
-// ★ 指定されたフォントのパス
-const FONT_PATH = "assets/fonts/mplus-msdf.json";
 
 document.getElementById("fileInput").onchange = async (e) => {
-    imagesBase64 = []; imageRatios = [];
-    const container = document.getElementById("dynamic-inputs");
-    container.innerHTML = "";
-
-    for (let file of e.target.files) {
-        const res = await processImage(file);
-        imagesBase64.push(res.data);
-        imageRatios.push(res.ratio);
-
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-            <img src="${res.data}"><br>
-            <input type="text" class="name-input" placeholder="タイトル" value="作品タイトル">
-            <input type="text" class="job-input" placeholder="説明文" value="ここに説明が入ります">
-        `;
-        container.appendChild(card);
-    }
-    document.querySelectorAll("input").forEach(el => el.oninput = updatePreview);
-    updatePreview();
+  imagesBase64 = []; imageRatios = [];
+  const files = Array.from(e.target.files);
+  document.getElementById("fileList").innerText = `${files.length}枚選択中`;
+  for (let file of files) {
+    const result = await processImage(file);
+    imagesBase64.push(result.data);
+    imageRatios.push(result.ratio);
+  }
+  updatePreview();
 };
 
+['nameInput', 'jobInput'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updatePreview);
+});
+
 async function processImage(file) {
-    return new Promise(resolve => {
-        const r = new FileReader();
-        r.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement("canvas");
-                const ratio = img.height / img.width;
-                canvas.width = 600; canvas.height = 600 * ratio;
-                canvas.getContext("2d").drawImage(img, 0, 0, 600, 600 * ratio);
-                resolve({ data: canvas.toDataURL("image/jpeg", 0.7), ratio: ratio });
-            };
-            img.src = e.target.result;
-        };
-        r.readAsDataURL(file);
-    });
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 800;
+        const ratio = img.height / img.width;
+        canvas.width = maxW; canvas.height = maxW * ratio;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve({ data: canvas.toDataURL("image/jpeg", 0.7), ratio: ratio });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function updatePreview() {
-    const stage = document.getElementById("dynamic-content");
-    stage.innerHTML = "";
-    const names = document.querySelectorAll(".name-input");
-    const jobs = document.querySelectorAll(".job-input");
+  const container = document.getElementById("dynamic-content");
+  if (!container) return;
+  container.innerHTML = "";
+  
+  const imagesCount = imagesBase64.length;
+  const nameVal = document.getElementById("nameInput").value || "NAME";
+  const jobVal = document.getElementById("jobInput").value || "JOB";
 
-    imagesBase64.forEach((img, i) => {
-        const ent = document.createElement("a-entity");
-        ent.setAttribute("position", `${i * 6} 0 0`);
+  const loopCount = imagesCount > 0 ? imagesCount : 1;
 
-        // 画像
-        const aImg = document.createElement("a-image");
-        aImg.setAttribute("src", img);
-        const r = imageRatios[i] || 1;
-        aImg.setAttribute("width", 4); aImg.setAttribute("height", 4 * r);
-        ent.appendChild(aImg);
+  for (let i = 0; i < loopCount; i++) {
+    const entity = document.createElement("a-entity");
+    // 横に重ならないように並べる
+    let posX = (i === 0) ? 0 : (i % 2 === 1 ? Math.ceil(i/2)*4 : Math.ceil(i/2)*-4);
+    entity.setAttribute("position", `${posX} 0 0`);
 
-        // 日本語タイトル (カスタムフォント使用)
-        const t1 = document.createElement("a-text");
-        t1.setAttribute("value", names[i]?.value || "");
-        t1.setAttribute("font", FONT_PATH);
-        t1.setAttribute("shader", "msdf");
-        t1.setAttribute("negate", "false"); // 変ならtrueに
-        t1.setAttribute("align", "center");
-        t1.setAttribute("color", "#00f2ff");
-        t1.setAttribute("width", 6);
-        t1.setAttribute("position", `0 ${(4 * r / 2) + 0.6} 0.1`);
-        ent.appendChild(t1);
+    // 画像
+    if (imagesCount > 0 && imagesBase64[i]) {
+      const aImg = document.createElement("a-image");
+      aImg.setAttribute("src", imagesBase64[i]);
+      aImg.setAttribute("rotation", "-90 0 0"); // 地面に水平に置く
+      const ratio = imageRatios[i] || 1;
+      aImg.setAttribute("width", 2.5);
+      aImg.setAttribute("height", 2.5 * ratio);
+      entity.appendChild(aImg);
+    }
 
-        // 日本語説明
-        const t2 = document.createElement("a-text");
-        t2.setAttribute("value", jobs[i]?.value || "");
-        t2.setAttribute("font", FONT_PATH);
-        t2.setAttribute("shader", "msdf");
-        t2.setAttribute("negate", "false");
-        t2.setAttribute("align", "center");
-        t2.setAttribute("color", "#fff");
-        t2.setAttribute("width", 4);
-        t2.setAttribute("position", `0 -${(4 * r / 2) + 0.6} 0.1`);
-        ent.appendChild(t2);
+    // 名前
+    const t1 = document.createElement("a-text");
+    t1.setAttribute("value", nameVal);
+    t1.setAttribute("align", "center");
+    t1.setAttribute("color", "#ffffff");
+    t1.setAttribute("width", 6);
+    t1.setAttribute("font", "#mplusFont");
+    t1.setAttribute("font-image", "#mplusFontImage");
+    t1.setAttribute("position", "0 0.1 -2"); // 画像の上
+    t1.setAttribute("rotation", "-90 0 0");
+    entity.appendChild(t1);
 
-        stage.appendChild(ent);
-    });
+    // 肩書き
+    const t2 = document.createElement("a-text");
+    t2.setAttribute("value", jobVal);
+    t2.setAttribute("align", "center");
+    t2.setAttribute("color", "#ffcc00");
+    t2.setAttribute("width", 5);
+    t1.setAttribute("font", "#mplusFont");
+    t1.setAttribute("font-image", "#mplusFontImage");
+    t2.setAttribute("position", "0 0.1 2"); // 画像の下
+    t2.setAttribute("rotation", "-90 0 0");
+    entity.appendChild(t2);
+
+    container.appendChild(entity);
+  }
 }
 
+// 初期実行：ページを開いた瞬間に文字だけでも出す
+window.onload = updatePreview;
+
 document.getElementById("saveBtn").onclick = async () => {
-    const id = document.getElementById("markerId").value;
-    const names = Array.from(document.querySelectorAll(".name-input")).map(el => el.value);
-    const jobs = Array.from(document.querySelectorAll(".job-input")).map(el => el.value);
-    try {
-        await setDoc(doc(db, "arUsers", id), {
-            images: imagesBase64, ratios: imageRatios, names: names, jobs: jobs
-        });
-        alert("保存完了！");
-    } catch (e) { alert(e.message); }
+  const markerId = document.getElementById("markerId").value;
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.disabled = true; saveBtn.innerText = "保存中...";
+  try {
+    await setDoc(doc(db, "arUsers", markerId), {
+      images: imagesBase64,
+      ratios: imageRatios,
+      name: document.getElementById("nameInput").value,
+      job: document.getElementById("jobInput").value,
+      pattUrl: document.getElementById("pattInput").value
+    });
+    alert("保存完了しました！");
+  } catch (e) {
+    alert("エラー: " + e.message);
+  } finally {
+    saveBtn.disabled = false; saveBtn.innerText = "FIRESTOREへ保存";
+  }
 };
 </script>
 </body>
