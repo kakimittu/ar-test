@@ -11,7 +11,7 @@
             background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 10px; color: white;
         }
         input { padding: 8px; width: 200px; border-radius: 4px; border: none; }
-        button { padding: 8px 15px; cursor: pointer; background: #00f2ff; border: none; border-radius: 4px; font-weight: bold; }
+        button { padding: 8px 15px; cursor: pointer; background: #00f2ff; border: none; border-radius: 4px; font-weight: bold; color: #000; }
     </style>
 </head>
 <body>
@@ -39,45 +39,43 @@
             align="center">
         </a-text>
 
-        <a-grid></a-grid>
+        <a-plane rotation="-90 0 0" width="100" height="100" color="#333"></a-plane>
     </a-scene>
 
     <script type="module">
- // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+        // バージョンを 10.8.0 に修正
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-    authDomain: "armisetai.firebaseapp.com",
-    projectId: "armisetai",
-    storageBucket: "armisetai.firebasestorage.app",
-    messagingSenderId: "1006973944547",
-    appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-  };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA", 
+            authDomain: "armisetai.firebaseapp.com",
+            projectId: "armisetai",
+            storageBucket: "armisetai.firebasestorage.app",
+            messagingSenderId: "1006973944547",
+            appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+        };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-        // -------------------------------------------------------
+        // Firebase初期化（APIキーが空だとエラーになるのでtry-catchで囲む）
+        try {
+            const app = initializeApp(firebaseConfig);
+            console.log("Firebase Initialized");
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+        }
 
         const textInput = document.querySelector('#textInput');
         const updateBtn = document.querySelector('#updateBtn');
         const previewText = document.querySelector('#previewText');
         const statusEl = document.querySelector('#status');
 
-        console.log("Editor Script Loaded.");
-
-        // 反映処理
         function applyChanges() {
             const val = textInput.value;
             if (!val) return;
 
             statusEl.innerText = "反映中...";
-
-            // テストで成功した設定をそのまま流し込む
+            
             previewText.setAttribute('value', val);
+            // 成功した設定を再適用
             previewText.setAttribute('font', './assets/fonts/mplus-msdf.json');
             previewText.setAttribute('font-image', './assets/fonts/mplus-msdf.png');
             previewText.setAttribute('shader', 'msdf');
@@ -88,10 +86,11 @@
         }
 
         updateBtn.addEventListener('click', applyChanges);
-        
         textInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') applyChanges();
         });
+
+        console.log("Editor Script Loaded.");
     </script>
 </body>
 </html>
