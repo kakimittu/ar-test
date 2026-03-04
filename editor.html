@@ -137,21 +137,24 @@ function updatePreview() {
     t1.setAttribute("width", 6);
     t1.setAttribute("font", "#mplusFont");
     t1.setAttribute("font-image", "#mplusFontImage");
-    t1.setAttribute("position", "0 0.1 -2"); // 画像の上
-    t1.setAttribute("rotation", "-90 0 0");
+    t1.setAttribute("shader", "msdf");
+    t1.setAttribute("width", 10);
     entity.appendChild(t1);
 
     // 肩書き
-    const t2 = document.createElement("a-text");
-    t2.setAttribute("value", jobVal);
-    t2.setAttribute("align", "center");
-    t2.setAttribute("color", "#ffcc00");
-    t2.setAttribute("width", 5);
-    t1.setAttribute("font", "#mplusFont");
-    t1.setAttribute("font-image", "#mplusFontImage");
-    t2.setAttribute("position", "0 0.1 2"); // 画像の下
-    t2.setAttribute("rotation", "-90 0 0");
-    entity.appendChild(t2);
+ // 肩書き
+const t2 = document.createElement("a-text");
+t2.setAttribute("value", jobVal);
+t2.setAttribute("align", "center");
+t2.setAttribute("color", "#ffcc00");
+t2.setAttribute("width", 5);
+
+t2.setAttribute("font", "#mplusFont");
+t2.setAttribute("font-image", "#mplusFontImage");
+
+t2.setAttribute("position", "0 0.1 2");
+t2.setAttribute("rotation", "-90 0 0");
+entity.appendChild(t2);
 
     container.appendChild(entity);
   }
