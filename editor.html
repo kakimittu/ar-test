@@ -105,18 +105,13 @@ color:#888;
 
 <a-scene embedded vr-mode-ui="enabled:false">
 
-<a-assets>
-
-<a-asset-item
-id="jpFont"
-src="assets/fonts/mplus-msdf.json">
-</a-asset-item>
-
-<img
-id="jpFontImg"
-src="assets/fonts/mplus-msdf.png">
-
-</a-assets>
+<a-text
+ value="こんにちは"
+ font="assets/fonts/mplus-msdf.json"
+ shader="msdf"
+ width="4"
+ align="center">
+</a-text>
 
 <a-entity
 id="rig"
