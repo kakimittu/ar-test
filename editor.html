@@ -105,9 +105,17 @@ color:#888;
 
 <a-scene embedded vr-mode-ui="enabled:false">
 
+<a-assets>
+
+<a-asset-item id="jpFont" src="assets/fonts/mplus-msdf.json"></a-asset-item>
+<img id="jpFontImg" src="assets/fonts/mplus-msdf.png">
+
+</a-assets>
+
 <a-text
 value="日本語テスト"
-font="assets/fonts/mplus-msdf.json"
+font="#jpFont"
+font-image="#jpFontImg"
 shader="msdf"
 color="#00f2ff"
 width="10"
