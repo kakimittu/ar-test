@@ -1,212 +1,265 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<title>AR Viewer - 名刺表示</title>
 
-<!-- A-Frame + AR.js -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CYBER AR - PORTFOLIO</title>
+
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
 <style>
-  html,body{height:100%;margin:0;background:#000}
-  #msg {
-    position: absolute; left: 12px; top: 12px; z-index: 999;
-    background: rgba(0,0,0,0.5); color: #fff; padding:8px 12px; border-radius:6px;
-    font-family: sans-serif; font-size:14px;
-  }
+
+body{
+margin:0;
+overflow:hidden;
+background:#000;
+}
+
+.hud{
+position:fixed;
+top:20px;
+left:20px;
+color:#00f2ff;
+font-family:monospace;
+font-size:12px;
+pointer-events:none;
+z-index:10001;
+text-shadow:0 0 5px #00f2ff;
+}
+
+.rec-dot{
+display:inline-block;
+width:10px;
+height:10px;
+background:red;
+border-radius:50%;
+margin-right:5px;
+animation:blink 1s infinite;
+}
+
+@keyframes blink{
+50%{opacity:0;}
+}
+
 </style>
-</head>
-<body>
 
-<div id="msg">データ読み込み中...</div>
-
-<!-- AR Scene -->
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="logarithmicDepthBuffer: true;">
-  <a-assets id="assets"></a-assets>
-
-  <!-- マーカーは後から script で作ります -->
-  <a-entity id="marker-root"></a-entity>
-
-  <a-entity camera></a-entity>
-</a-scene>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-/* ----- Firebase 設定（editor と同じにする） ----- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
-  authDomain: "armisetai.firebaseapp.com",
-  projectId: "armisetai",
-  storageBucket: "armisetai.firebasestorage.app",
-  messagingSenderId: "1006973944547",
-  appId: "1:1006973947547:web:adc5e195039585bbdabbd6" // 実際の appId を editor と合わせてください
+
+apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+authDomain:"armisetai.firebaseapp.com",
+projectId:"armisetai",
+storageBucket:"armisetai.firebasestorage.app",
+messagingSenderId:"1006973944547",
+appId:"1:1006973944547:web:adc5e195039585bbdabbd6"
+
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ----- ユーティリティ ----- */
-function qsParam(name, defaultVal) {
-  const url = new URL(location.href);
-  return url.searchParams.get(name) || defaultVal;
+let currentIndex=0;
+let items=[];
+
+window.addEventListener("load",()=>{
+
+const marker=document.querySelector("a-marker");
+
+const urlParams=new URLSearchParams(window.location.search);
+
+const markerId=urlParams.get("id") || "akazawa";
+
+document.querySelector(".hud").innerHTML=
+`<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
+
+
+onSnapshot(doc(db,"arUsers",markerId),(docSnap)=>{
+
+if(!docSnap.exists()) return;
+
+const data=docSnap.data();
+
+const images=data.images||[];
+const ratios=data.ratios||[];
+const nameValue=data.name||"";
+const jobValue=data.job||"";
+const pattUrl=data.pattUrl||"";
+
+
+// マーカー更新
+if(pattUrl){
+marker.setAttribute("url",pattUrl);
 }
 
-function createTextDataURL(text, color = "#ffffff", fontSize = 80, width = 1024, height = 256) {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0, width, height);
-  // optional: background transparent
-  ctx.fillStyle = "rgba(0,0,0,0)";
-  ctx.fillRect(0,0,width,height);
-  ctx.fillStyle = color;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `bold ${fontSize}px sans-serif`;
-  // auto-scale font if text too long
-  const maxTextWidth = width * 0.9;
-  let measured = ctx.measureText(text).width;
-  if (measured > maxTextWidth) {
-    const ratio = maxTextWidth / measured;
-    const newSize = Math.floor(fontSize * ratio);
-    ctx.font = `bold ${Math.max(24,newSize)}px sans-serif`;
-  }
-  ctx.fillText(text, width/2, height/2);
-  return canvas.toDataURL("image/png");
+
+// リセット
+while(marker.firstChild){
+marker.removeChild(marker.firstChild);
 }
 
-/* create A-Frame a-image with proper material settings to avoid edge lines */
-function makeAImage(src, w, h, pos, rot="-90 0 0", extra={}) {
-  const el = document.createElement("a-image");
-  el.setAttribute("src", src);
-  el.setAttribute("rotation", rot);
-  el.setAttribute("position", pos);
-  el.setAttribute("width", String(w));
-  el.setAttribute("height", String(h));
-  // improve visuals
-  el.setAttribute("material", "shader:flat; transparent:true; side:double;");
-  // small offset to reduce z-fighting if needed
-  if (extra.zOffset) {
-    const p = pos.split(" ").map(Number);
-    p[2] = (p[2] || 0) + extra.zOffset;
-    el.setAttribute("position", p.join(" "));
-  }
-  return el;
+addDecorations(marker);
+
+items=[];
+
+
+// コンテンツ生成
+images.forEach((url,i)=>{
+
+const entity=document.createElement("a-entity");
+
+entity.setAttribute("visible","false");
+
+
+//画像
+const img=document.createElement("a-image");
+
+img.setAttribute("src",url);
+
+img.setAttribute("rotation","-90 0 0");
+
+img.setAttribute("material","shader:flat;transparent:true;alphaTest:0.5;side:double");
+
+const ratio=ratios[i]||1;
+
+const baseW=1.6;
+
+img.setAttribute("width",baseW);
+
+img.setAttribute("height",baseW*ratio);
+
+entity.appendChild(img);
+
+
+//名前
+const nameText=document.createElement("a-text");
+
+nameText.setAttribute("value",nameValue);
+
+nameText.setAttribute("align","center");
+
+nameText.setAttribute("position","0 0.1 -1.1");
+
+nameText.setAttribute("rotation","-90 0 0");
+
+nameText.setAttribute("width","3");
+
+nameText.setAttribute("font","https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf");
+
+entity.appendChild(nameText);
+
+
+//肩書
+const jobText=document.createElement("a-text");
+
+jobText.setAttribute("value",jobValue);
+
+jobText.setAttribute("align","center");
+
+jobText.setAttribute("position","0 0.1 1.1");
+
+jobText.setAttribute("rotation","-90 0 0");
+
+jobText.setAttribute("width","2");
+
+jobText.setAttribute("color","#ffcc00");
+
+jobText.setAttribute("font","https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf");
+
+entity.appendChild(jobText);
+
+
+marker.appendChild(entity);
+
+items.push(entity);
+
+});
+
+updateCarousel();
+
+});
+
+
+function addDecorations(target){
+
+const p=document.createElement("a-plane");
+
+p.setAttribute("color","#ff9900");
+
+p.setAttribute("width","2.2");
+
+p.setAttribute("height","1.4");
+
+p.setAttribute("position","0 0.01 0");
+
+p.setAttribute("rotation","-90 0 0");
+
+p.setAttribute("material","shader:flat;opacity:0.3;transparent:true;blending:additive;depthWrite:false");
+
+target.appendChild(p);
+
 }
 
-/* ----- メイン: Firestore から読み込んで表示構築 ----- */
-(async function main(){
-  const markerId = qsParam("id", "akazawa");
-  const msg = document.getElementById("msg");
-  msg.innerText = `ID: ${markerId} を読み込み中...`;
 
-  try {
-    const snap = await getDoc(doc(db, "arUsers", markerId));
-    if (!snap.exists()) {
-      msg.innerText = `ドキュメントが見つかりません: ${markerId}`;
-      return;
-    }
-    const data = snap.data();
-    // editor が保存したフィールド：
-    // data.images (base64 array), data.ratios (array), data.name (string), data.job (string), data.pattUrl (string)
-    const images = Array.isArray(data.images) ? data.images : [];
-    const ratios = Array.isArray(data.ratios) ? data.ratios : [];
-    const name = data.name || "";
-    const job = data.job || "";
-    const pattUrl = data.pattUrl || "";
+function updateCarousel(){
 
-    msg.innerText = "データ読み込み完了。マーカーを表示してください。";
+if(items.length===0) return;
 
-    // create marker element (use custom pattern if provided)
-    const markerRoot = document.getElementById("marker-root");
-    let markerEl;
-    if (pattUrl && pattUrl.trim() !== "") {
-      // If pattUrl looks like a path, use patternUrl
-      markerEl = document.createElement("a-marker");
-      markerEl.setAttribute("type", "pattern");
-      markerEl.setAttribute("url", pattUrl);
-    } else {
-      // fallback to hiro preset
-      markerEl = document.createElement("a-marker");
-      markerEl.setAttribute("preset", "hiro");
-    }
-    markerRoot.appendChild(markerEl);
+items.forEach((item,index)=>{
 
-    // card background plane
-    const bg = document.createElement("a-plane");
-    bg.setAttribute("width", "2");
-    bg.setAttribute("height", "1.2");
-    bg.setAttribute("color", "#ffffff");
-    bg.setAttribute("position", "0 0 0");
-    bg.setAttribute("rotation", "0 0 0"); // plane faces camera when marker on ground
-    bg.setAttribute("material", "shader:flat; side:double;");
-    // initial scale 0 -> animate to 1
-    bg.setAttribute("scale", "0 0 0");
-    bg.setAttribute("animation", "property: scale; from:0 0 0; to:1 1 1; dur:700; easing:easeOutBack");
-    markerEl.appendChild(bg);
+const isCenter=(index===currentIndex);
 
-    // Create name and job images (Canvas-based) and add
-    const nameDataUrl = createTextDataURL(name, "#000000", 80, 1024, 256);
-    const jobDataUrl = createTextDataURL(job, "#333333", 56, 1024, 200);
+const offset=(index-currentIndex)*2.2;
 
-    // Place photo(s) and text relative to card
-    // Photo area: left side
-    if (images.length > 0) {
-      // show first photo by default
-      const photoSrc = images[0];
-      const ratio = (ratios && ratios[0]) ? ratios[0] : 1;
-      const photoW = 0.6;
-      const photoH = 0.6 * ratio;
-      const photoPos = "-0.6 0.05 0.02";
-      const photoEl = makeAImage(photoSrc, photoW, photoH, photoPos);
-      markerEl.appendChild(photoEl);
-    }
+item.setAttribute("visible",Math.abs(index-currentIndex)<=1);
 
-    // name image
-    const nameEl = makeAImage(nameDataUrl, 1.2, 0.3, "0.4 0.25 0.02");
-    markerEl.appendChild(nameEl);
-    // job image
-    const jobEl = makeAImage(jobDataUrl, 1.2, 0.26, "0.4 -0.05 0.02");
-    markerEl.appendChild(jobEl);
+item.setAttribute("position",`${offset} ${isCenter?0.2:0.15} 0`);
 
-    // small floating animation for the whole card (y oscillation)
-    const floatHolder = document.createElement("a-entity");
-    floatHolder.setAttribute("position", "0 0 0");
-    floatHolder.setAttribute("animation", "property: position; to:0 0.03 0; dur:1500; dir:alternate; loop:true; easing: easeInOutSine");
-    // move children into floatHolder by appending clones
-    // we want bg, photo, name, job inside floatHolder -> move them
-    // (remove from markerEl and append to floatHolder)
-    const childrenToFloat = [bg, nameEl, jobEl];
-    if (images.length > 0) {
-      // find the photo we appended (last or earlier)
-      const photoCandidate = markerEl.querySelector('a-image');
-      if (photoCandidate) childrenToFloat.unshift(photoCandidate);
-    }
-    childrenToFloat.forEach(ch => {
-      markerEl.removeChild(ch);
-      floatHolder.appendChild(ch);
-    });
-    markerEl.appendChild(floatHolder);
+item.setAttribute("scale",isCenter?"1 1 1":"0.6 0.6 0.6");
 
-    // optional: add click to open a URL if you later store it
-    // markerEl.addEventListener('click', () => { window.open('https://example.com'); });
+});
 
-    // success
-    msg.style.display = "none";
+}
 
-  } catch (err) {
-    console.error(err);
-    document.getElementById("msg").innerText = "読み込みエラー: " + (err.message || err);
-  }
 
-})();
+//クリック
+marker.addEventListener("click",()=>{
+
+currentIndex=(currentIndex+1)%items.length;
+
+updateCarousel();
+
+});
+
+
+});
+
 </script>
+
+</head>
+
+<body>
+
+<div class="hud"></div>
+
+<a-scene
+embedded
+arjs="sourceType:webcam;debugUIEnabled:false;"
+vr-mode-ui="enabled:false"
+>
+
+<a-marker type="pattern"></a-marker>
+
+<a-entity camera></a-entity>
+
+</a-scene>
 
 </body>
 </html>
-
