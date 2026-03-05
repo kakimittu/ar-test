@@ -1,216 +1,125 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>AR EDITOR JP STABLE</title>
+<meta charset="utf-8">
+<title>AR名刺</title>
+
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
 <style>
-body{
+body {
 margin:0;
-display:flex;
-height:100vh;
-font-family:sans-serif;
-background:#0f0f0f;
-color:#fff;
 overflow:hidden;
 }
-
-#controls{
-width:360px;
-padding:20px;
-background:#1a1a1a;
-border-right:1px solid #333;
-overflow-y:auto;
-box-sizing:border-box;
-}
-
-#preview{
-flex-grow:1;
-background:#000;
-}
-
-h2{
-margin:0 0 20px 0;
-color:#00f2ff;
-}
-
-.input-group{
-margin-bottom:15px;
-}
-
-label{
-display:block;
-margin-bottom:5px;
-font-size:12px;
-color:#00f2ff;
-}
-
-input{
-width:100%;
-padding:10px;
-background:#262626;
-border:1px solid #444;
-color:#fff;
-border-radius:4px;
-}
 </style>
+
 </head>
 
 <body>
 
-<div id="controls">
+<a-scene
+embedded
+arjs="sourceType: webcam; debugUIEnabled: false;"
+renderer="logarithmicDepthBuffer: true;"
+>
 
-<h2>AR EDITOR</h2>
+<a-assets>
 
-<div class="input-group">
-<label>お名前</label>
-<input type="text" id="nameInput" value="赤澤 優子">
-</div>
+<img id="photo" src="assets/photo.png">
 
-<div class="input-group">
-<label>肩書き</label>
-<input type="text" id="jobInput" value="ホーストレーナー">
-</div>
+</a-assets>
 
-<div class="input-group">
-<label>画像</label>
-<input type="file" id="fileInput" multiple>
-</div>
+<a-marker preset="hiro">
 
-</div>
-
-<div id="preview">
-
-<a-scene embedded>
-
-<a-entity id="rig" position="0 6 1" rotation="-85 0 0">
-<a-entity camera></a-entity>
-</a-entity>
-
-<a-light type="ambient" intensity="1"></a-light>
+<!-- 名刺背景 -->
 
 <a-plane
-color="#333"
-width="10"
-height="10"
-rotation="-90 0 0"
-opacity="0.1">
+position="0 0 0"
+width="2"
+height="1.2"
+color="#ffffff"
+material="side:double"
+animation="property: scale; from:0 0 0; to:1 1 1; dur:800; easing:easeOutBack"
+>
 </a-plane>
 
-<a-entity id="dynamic"></a-entity>
+<!-- 写真 -->
+
+<a-image
+src="#photo"
+position="-0.6 0.1 0.01"
+width="0.6"
+height="0.6"
+material="transparent:true; side:double"
+>
+</a-image>
+
+<!-- 名前 -->
+
+<a-text
+value="山田 太郎"
+color="#000000"
+align="left"
+width="2"
+position="0.1 0.3 0.01"
+material="transparent:true"
+>
+</a-text>
+
+<!-- 会社 -->
+
+<a-text
+value="AR Creative Studio"
+color="#333333"
+align="left"
+width="2"
+position="0.1 0.05 0.01"
+material="transparent:true"
+>
+</a-text>
+
+<!-- 説明 -->
+
+<a-text
+value="AR Developer"
+color="#555555"
+align="left"
+width="2"
+position="0.1 -0.15 0.01"
+material="transparent:true"
+>
+</a-text>
+
+<!-- クリックエリア -->
+
+<a-plane
+position="0 -0.45 0.02"
+width="1.4"
+height="0.25"
+color="#0066ff"
+class="clickable"
+event-set__enter="_event: mouseenter; color:#0099ff"
+event-set__leave="_event: mouseleave; color:#0066ff"
+onclick="window.open('https://example.com')"
+>
+
+<a-text
+value="WEBSITE"
+align="center"
+color="#ffffff"
+width="3"
+position="0 0 0.01"
+>
+</a-text>
+
+</a-plane>
+
+</a-marker>
+
+<a-entity camera></a-entity>
 
 </a-scene>
-
-</div>
-
-<script>
-
-let images=[]
-
-document.getElementById("fileInput").onchange=async(e)=>{
-
-images=[]
-
-const files=[...e.target.files]
-
-for(const file of files){
-
-const reader=new FileReader()
-
-reader.onload=(ev)=>{
-
-images.push(ev.target.result)
-
-updatePreview()
-
-}
-
-reader.readAsDataURL(file)
-
-}
-
-}
-
-document.getElementById("nameInput").addEventListener("input",updatePreview)
-document.getElementById("jobInput").addEventListener("input",updatePreview)
-
-
-function createTextImage(text,color,size){
-
-const canvas=document.createElement("canvas")
-
-canvas.width=1024
-canvas.height=256
-
-const ctx=canvas.getContext("2d")
-
-ctx.fillStyle="transparent"
-ctx.fillRect(0,0,canvas.width,canvas.height)
-
-ctx.fillStyle=color
-ctx.font=size+"px sans-serif"
-ctx.textAlign="center"
-ctx.textBaseline="middle"
-
-ctx.fillText(text,512,128)
-
-return canvas.toDataURL()
-
-}
-
-
-function updatePreview(){
-
-const container=document.getElementById("dynamic")
-
-container.innerHTML=""
-
-const name=document.getElementById("nameInput").value
-const job=document.getElementById("jobInput").value
-
-const nameImg=createTextImage(name,"white",80)
-const jobImg=createTextImage(job,"#ffcc00",60)
-
-const namePlane=document.createElement("a-image")
-
-namePlane.setAttribute("src",nameImg)
-namePlane.setAttribute("position","0 0.1 -2")
-namePlane.setAttribute("rotation","-90 0 0")
-namePlane.setAttribute("width","3")
-namePlane.setAttribute("height","0.7")
-
-container.appendChild(namePlane)
-
-const jobPlane=document.createElement("a-image")
-
-jobPlane.setAttribute("src",jobImg)
-jobPlane.setAttribute("position","0 0.1 2")
-jobPlane.setAttribute("rotation","-90 0 0")
-jobPlane.setAttribute("width","3")
-jobPlane.setAttribute("height","0.6")
-
-container.appendChild(jobPlane)
-
-images.forEach((img,i)=>{
-
-const image=document.createElement("a-image")
-
-image.setAttribute("src",img)
-image.setAttribute("rotation","-90 0 0")
-image.setAttribute("position",(i*3)+" 0 0")
-image.setAttribute("width","2.5")
-image.setAttribute("height","2")
-
-container.appendChild(image)
-
-})
-
-}
-
-updatePreview()
-
-</script>
 
 </body>
 </html>
