@@ -1,85 +1,304 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>AR Editor - Final Fix</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #222; }
-        #ui { 
-            position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            background: rgba(40, 40, 40, 0.9); padding: 15px; border-radius: 10px; color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        input { padding: 8px; width: 180px; border-radius: 4px; border: 1px solid #555; background: #222; color: white; }
-        button { padding: 8px 15px; cursor: pointer; background: #00f2ff; border: none; border-radius: 4px; font-weight: bold; color: #000; margin-left: 5px; }
-        button:hover { background: #00c8d4; }
-    </style>
+<meta charset="UTF-8">
+<title>AR EDITOR JP STABLE</title>
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+<style>
+body{
+margin:0;
+display:flex;
+height:100vh;
+font-family:sans-serif;
+background:#0f0f0f;
+color:#fff;
+overflow:hidden;
+}
+
+#controls{
+width:360px;
+padding:20px;
+background:#1a1a1a;
+border-right:1px solid #333;
+overflow-y:auto;
+box-sizing:border-box;
+}
+
+#preview{
+flex-grow:1;
+background:#000;
+}
+
+h2{
+margin:0 0 20px 0;
+color:#00f2ff;
+font-size:18px;
+}
+
+.input-group{
+margin-bottom:15px;
+}
+
+label{
+display:block;
+margin-bottom:5px;
+font-size:12px;
+color:#00f2ff;
+}
+
+input[type="text"],input[type="file"]{
+width:100%;
+padding:10px;
+background:#262626;
+border:1px solid #444;
+color:#fff;
+border-radius:4px;
+box-sizing:border-box;
+}
+
+.btn{
+width:100%;
+padding:15px;
+border:none;
+border-radius:4px;
+font-weight:bold;
+cursor:pointer;
+margin-top:20px;
+background:#00f2ff;
+color:#000;
+}
+
+#fileList{
+margin-top:5px;
+font-size:11px;
+color:#888;
+}
+</style>
 </head>
+
 <body>
 
-    <div id="ui">
-        <h3 style="margin:0 0 10px 0; font-size: 14px;">テキスト編集</h3>
-        <input type="text" id="textInput" placeholder="文字を入力...">
-        <button id="updateBtn">反映する</button>
-        <p id="status" style="font-size: 10px; margin-top: 8px; color: #aaa;">待機中...</p>
-    </div>
+<div id="controls">
 
-    <a-scene embedded vr-mode-ui="enabled: false">
-        <a-entity camera position="0 1.6 3" look-controls></a-entity>
-        
-        <a-text 
-            id="previewText"
-            value="READY" 
-            font="assets/fonts/mplus-msdf.json"
-            font-image="assets/fonts/mplus-msdf.png"
-            shader="msdf" 
-            negate="false"
-            color="#00f2ff" 
-            width="6" 
-            position="0 1.6 -1" 
-            align="center"
-            rotation="0 0 0">
-        </a-text>
+<h2>AR EDITOR</h2>
 
-        <a-grid></a-grid>
-        <a-sky color="#222"></a-sky>
-    </a-scene>
+<div class="input-group">
+<label>お名前</label>
+<input type="text" id="nameInput" value="赤澤 優子">
+</div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    
-    <script>
-        // UI要素
-        const textInput = document.querySelector('#textInput');
-        const updateBtn = document.querySelector('#updateBtn');
-        const previewText = document.querySelector('#previewText');
-        const statusEl = document.querySelector('#status');
+<div class="input-group">
+<label>肩書き</label>
+<input type="text" id="jobInput" value="ホーストレーナー">
+</div>
 
-        // Firebase初期化 (Compat版)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA", // ここを書き換えてください
-            authDomain: "armisetai.firebaseapp.com",
-            projectId: "armisetai",
-            appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-        };
+<div class="input-group">
+<label>画像</label>
+<input type="file" id="fileInput" accept="image/*" multiple>
+<div id="fileList">未選択</div>
+</div>
 
-        if (firebaseConfig.apiKey !== "あなたのAPIキー") {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase connected.");
-        }
+</div>
 
-        // 反映
-        function applyChanges() {
-            const val = textInput.value;
-            if (!val) return;
-            
-            statusEl.innerText = "反映中...";
-            previewText.setAttribute('value', val);
-            statusEl.innerText = "表示更新: " + val;
-        }
+<div id="preview">
 
-        updateBtn.addEventListener('click', applyChanges);
-        textInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') applyChanges(); });
-    </script>
+<a-scene embedded vr-mode-ui="enabled:false">
+
+<a-assets>
+
+<a-asset-item
+id="jpFont"
+src="assets/fonts/mplus-msdf.json">
+</a-asset-item>
+
+<img
+id="jpFontImg"
+src="assets/fonts/mplus-msdf.png">
+
+</a-assets>
+
+<a-entity
+id="rig"
+position="0 6 1"
+rotation="-85 0 0">
+
+<a-entity camera></a-entity>
+
+</a-entity>
+
+<a-light
+type="ambient"
+intensity="1.0">
+</a-light>
+
+<a-plane
+color="#333"
+width="10"
+height="10"
+rotation="-90 0 0"
+material="opacity:0.1;transparent:true">
+</a-plane>
+
+<a-entity id="dynamic-content"></a-entity>
+
+</a-scene>
+
+</div>
+
+<script>
+
+let images=[]
+let ratios=[]
+
+document.getElementById("fileInput").onchange=async(e)=>{
+
+images=[]
+ratios=[]
+
+const files=[...e.target.files]
+
+document.getElementById("fileList").innerText=files.length+"枚選択"
+
+for(const file of files){
+
+const result=await processImage(file)
+
+images.push(result.data)
+ratios.push(result.ratio)
+
+}
+
+updatePreview()
+
+}
+
+document.getElementById("nameInput").addEventListener("input",updatePreview)
+document.getElementById("jobInput").addEventListener("input",updatePreview)
+
+function processImage(file){
+
+return new Promise(resolve=>{
+
+const reader=new FileReader()
+
+reader.onload=e=>{
+
+const img=new Image()
+
+img.onload=()=>{
+
+const canvas=document.createElement("canvas")
+
+const maxW=800
+
+const ratio=img.height/img.width
+
+canvas.width=maxW
+canvas.height=maxW*ratio
+
+const ctx=canvas.getContext("2d")
+
+ctx.drawImage(img,0,0,canvas.width,canvas.height)
+
+resolve({
+data:canvas.toDataURL("image/jpeg",0.7),
+ratio:ratio
+})
+
+}
+
+img.src=e.target.result
+
+}
+
+reader.readAsDataURL(file)
+
+})
+
+}
+
+function createJPText(text,color,width,pos){
+
+const t=document.createElement("a-text")
+
+t.setAttribute("value",text)
+
+t.setAttribute("align","center")
+
+t.setAttribute("color",color)
+
+t.setAttribute("width",width)
+
+t.setAttribute("position",pos)
+
+t.setAttribute("rotation","-90 0 0")
+
+t.setAttribute("font","#jpFont")
+
+t.setAttribute("font-image","#jpFontImg")
+
+t.setAttribute("shader","msdf")
+
+t.setAttribute("negate","false")
+
+return t
+
+}
+
+function updatePreview(){
+
+const container=document.getElementById("dynamic-content")
+
+container.innerHTML=""
+
+const name=document.getElementById("nameInput").value||"NAME"
+
+const job=document.getElementById("jobInput").value||"JOB"
+
+const count=images.length>0?images.length:1
+
+for(let i=0;i<count;i++){
+
+const entity=document.createElement("a-entity")
+
+let posX=i*3
+
+entity.setAttribute("position",posX+" 0 0")
+
+if(images[i]){
+
+const img=document.createElement("a-image")
+
+img.setAttribute("src",images[i])
+
+img.setAttribute("rotation","-90 0 0")
+
+img.setAttribute("width","2.5")
+
+img.setAttribute("height",2.5*(ratios[i]||1))
+
+entity.appendChild(img)
+
+}
+
+entity.appendChild(createJPText(name,"#ffffff",4,"0 0.1 -2"))
+
+entity.appendChild(createJPText(job,"#ffcc00",4,"0 0.1 2"))
+
+container.appendChild(entity)
+
+}
+
+}
+
+window.addEventListener("load",()=>{
+
+setTimeout(updatePreview,300)
+
+})
+
+</script>
+
 </body>
 </html>
