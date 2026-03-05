@@ -1,125 +1,358 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-<meta charset="utf-8">
-<title>AR名刺</title>
+<meta charset="UTF-8">
+<title>AR EDITOR</title>
 
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
 <style>
-body {
+body{
 margin:0;
+display:flex;
+height:100vh;
+font-family:sans-serif;
+background:#0f0f0f;
+color:#fff;
 overflow:hidden;
 }
-</style>
 
+#controls{
+width:360px;
+padding:20px;
+background:#1a1a1a;
+overflow-y:auto;
+border-right:1px solid #333;
+box-sizing:border-box;
+}
+
+#preview{
+flex-grow:1;
+background:#000;
+}
+
+h2{
+margin:0 0 20px 0;
+color:#00f2ff;
+font-size:18px;
+}
+
+.input-group{
+margin-bottom:15px;
+}
+
+label{
+display:block;
+margin-bottom:5px;
+font-size:12px;
+color:#00f2ff;
+}
+
+input[type="text"],input[type="file"]{
+width:100%;
+padding:10px;
+background:#262626;
+border:1px solid #444;
+color:#fff;
+border-radius:4px;
+box-sizing:border-box;
+}
+
+.btn{
+width:100%;
+padding:15px;
+border:none;
+border-radius:4px;
+font-weight:bold;
+cursor:pointer;
+margin-top:20px;
+background:#00f2ff;
+color:#000;
+}
+
+#fileList{
+margin-top:5px;
+font-size:11px;
+color:#888;
+}
+</style>
 </head>
 
 <body>
 
-<a-scene
-embedded
-arjs="sourceType: webcam; debugUIEnabled: false;"
-renderer="logarithmicDepthBuffer: true;"
->
+<div id="controls">
 
-<a-assets>
+<h2>AR EDITOR</h2>
 
-<img id="photo" src="assets/photo.png">
+<div class="input-group">
+<label>ドキュメントID</label>
+<input type="text" id="markerId" value="akazawa">
+</div>
 
-</a-assets>
+<div class="input-group">
+<label>マーカーパス</label>
+<input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt">
+</div>
 
-<a-marker preset="hiro">
+<div class="input-group">
+<label>お名前</label>
+<input type="text" id="nameInput" value="赤澤 優子">
+</div>
 
-<!-- 名刺背景 -->
+<div class="input-group">
+<label>肩書き</label>
+<input type="text" id="jobInput" value="ホーストレーナー">
+</div>
 
-<a-plane
-position="0 0 0"
-width="2"
-height="1.2"
-color="#ffffff"
-material="side:double"
-animation="property: scale; from:0 0 0; to:1 1 1; dur:800; easing:easeOutBack"
->
-</a-plane>
+<div class="input-group">
+<label>画像</label>
+<input type="file" id="fileInput" accept="image/*" multiple>
+<div id="fileList">未選択</div>
+</div>
 
-<!-- 写真 -->
+<button id="saveBtn" class="btn">FIRESTOREへ保存</button>
 
-<a-image
-src="#photo"
-position="-0.6 0.1 0.01"
-width="0.6"
-height="0.6"
-material="transparent:true; side:double"
->
-</a-image>
+</div>
 
-<!-- 名前 -->
 
-<a-text
-value="山田 太郎"
-color="#000000"
-align="left"
-width="2"
-position="0.1 0.3 0.01"
-material="transparent:true"
->
-</a-text>
+<div id="preview">
 
-<!-- 会社 -->
+<a-scene embedded vr-mode-ui="enabled:false">
 
-<a-text
-value="AR Creative Studio"
-color="#333333"
-align="left"
-width="2"
-position="0.1 0.05 0.01"
-material="transparent:true"
->
-</a-text>
-
-<!-- 説明 -->
-
-<a-text
-value="AR Developer"
-color="#555555"
-align="left"
-width="2"
-position="0.1 -0.15 0.01"
-material="transparent:true"
->
-</a-text>
-
-<!-- クリックエリア -->
-
-<a-plane
-position="0 -0.45 0.02"
-width="1.4"
-height="0.25"
-color="#0066ff"
-class="clickable"
-event-set__enter="_event: mouseenter; color:#0099ff"
-event-set__leave="_event: mouseleave; color:#0066ff"
-onclick="window.open('https://example.com')"
->
-
-<a-text
-value="WEBSITE"
-align="center"
-color="#ffffff"
-width="3"
-position="0 0 0.01"
->
-</a-text>
-
-</a-plane>
-
-</a-marker>
-
+<a-entity position="0 6 1" rotation="-85 0 0">
 <a-entity camera></a-entity>
+</a-entity>
+
+<a-light type="ambient" intensity="1"></a-light>
+
+<a-plane
+color="#333"
+width="10"
+height="10"
+rotation="-90 0 0"
+material="opacity:0.1;transparent:true">
+</a-plane>
+
+<a-entity id="dynamic-content"></a-entity>
 
 </a-scene>
+
+</div>
+
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"ここはそのまま",
+authDomain:"armisetai.firebaseapp.com",
+projectId:"armisetai",
+storageBucket:"armisetai.firebasestorage.app",
+messagingSenderId:"1006973944547",
+appId:"1:1006973944547:web:adc5e195039585bbdabbd6"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+
+let imagesBase64=[];
+let imageRatios=[];
+
+document.getElementById("fileInput").onchange=async(e)=>{
+
+imagesBase64=[];
+imageRatios=[];
+
+const files=[...e.target.files];
+
+document.getElementById("fileList").innerText=files.length+"枚選択";
+
+for(const file of files){
+
+const result=await processImage(file);
+
+imagesBase64.push(result.data);
+imageRatios.push(result.ratio);
+
+}
+
+updatePreview();
+
+};
+
+["nameInput","jobInput"].forEach(id=>{
+document.getElementById(id).addEventListener("input",updatePreview);
+});
+
+function processImage(file){
+
+return new Promise(resolve=>{
+
+const reader=new FileReader();
+
+reader.onload=e=>{
+
+const img=new Image();
+
+img.onload=()=>{
+
+const canvas=document.createElement("canvas");
+
+const maxW=800;
+const ratio=img.height/img.width;
+
+canvas.width=maxW;
+canvas.height=maxW*ratio;
+
+const ctx=canvas.getContext("2d");
+
+ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+resolve({
+data:canvas.toDataURL("image/jpeg",0.7),
+ratio:ratio
+});
+
+};
+
+img.src=e.target.result;
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+}
+
+function createTextImage(text,color){
+
+return new Promise(resolve=>{
+
+const canvas=document.createElement("canvas");
+const ctx=canvas.getContext("2d");
+
+canvas.width=1024;
+canvas.height=256;
+
+ctx.fillStyle="rgba(0,0,0,0)";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ctx.font="bold 80px sans-serif";
+ctx.fillStyle=color;
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+
+ctx.fillText(text,canvas.width/2,canvas.height/2);
+
+resolve(canvas.toDataURL("image/png"));
+
+});
+
+}
+
+async function updatePreview(){
+
+const container=document.getElementById("dynamic-content");
+container.innerHTML="";
+
+const nameVal=document.getElementById("nameInput").value||"NAME";
+const jobVal=document.getElementById("jobInput").value||"JOB";
+
+const nameImg=await createTextImage(nameVal,"#ffffff");
+const jobImg=await createTextImage(jobVal,"#ffcc00");
+
+const count=imagesBase64.length>0?imagesBase64.length:1;
+
+for(let i=0;i<count;i++){
+
+const entity=document.createElement("a-entity");
+
+let posX=(i===0)?0:(i%2===1?Math.ceil(i/2)*4:Math.ceil(i/2)*-4);
+
+entity.setAttribute("position",`${posX} 0 0`);
+
+if(imagesBase64[i]){
+
+const img=document.createElement("a-image");
+
+img.setAttribute("src",imagesBase64[i]);
+img.setAttribute("rotation","-90 0 0");
+
+const ratio=imageRatios[i]||1;
+
+img.setAttribute("width",2.5);
+img.setAttribute("height",2.5*ratio);
+
+entity.appendChild(img);
+
+}
+
+const nameImage=document.createElement("a-image");
+
+nameImage.setAttribute("src",nameImg);
+nameImage.setAttribute("width",4);
+nameImage.setAttribute("height",1);
+nameImage.setAttribute("rotation","-90 0 0");
+nameImage.setAttribute("position","0 0.1 -2");
+
+entity.appendChild(nameImage);
+
+const jobImage=document.createElement("a-image");
+
+jobImage.setAttribute("src",jobImg);
+jobImage.setAttribute("width",4);
+jobImage.setAttribute("height",1);
+jobImage.setAttribute("rotation","-90 0 0");
+jobImage.setAttribute("position","0 0.1 2");
+
+entity.appendChild(jobImage);
+
+container.appendChild(entity);
+
+}
+
+}
+
+window.onload=updatePreview;
+
+document.getElementById("saveBtn").onclick=async()=>{
+
+const markerId=document.getElementById("markerId").value;
+
+const saveBtn=document.getElementById("saveBtn");
+
+saveBtn.disabled=true;
+saveBtn.innerText="保存中...";
+
+try{
+
+await setDoc(doc(db,"arUsers",markerId),{
+
+images:imagesBase64,
+ratios:imageRatios,
+name:document.getElementById("nameInput").value,
+job:document.getElementById("jobInput").value,
+pattUrl:document.getElementById("pattInput").value
+
+});
+
+alert("保存完了しました");
+
+}catch(e){
+
+alert("エラー："+e.message);
+
+}
+
+saveBtn.disabled=false;
+saveBtn.innerText="FIRESTOREへ保存";
+
+};
+
+</script>
 
 </body>
 </html>
