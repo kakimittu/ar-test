@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>AR Editor - Complete Version</title>
+    <title>AR Editor - Final Fix</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #000; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #222; }
         #ui { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
             background: rgba(40, 40, 40, 0.9); padding: 15px; border-radius: 10px; color: white;
@@ -25,14 +25,14 @@
         <p id="status" style="font-size: 10px; margin-top: 8px; color: #aaa;">待機中...</p>
     </div>
 
-   <a-scene embedded vr-mode-ui="enabled: false" background="color: #222">
-        <a-entity camera position="0 1.6 2" look-controls></a-entity>
+    <a-scene embedded vr-mode-ui="enabled: false">
+        <a-entity camera position="0 1.6 3" look-controls></a-entity>
         
         <a-text 
             id="previewText"
             value="READY" 
-            font="https://kakimittu.github.io/ar-test/assets/fonts/mplus-msdf.json"
-            font-image="https://kakimittu.github.io/ar-test/assets/fonts/mplus-msdf.png"
+            font="assets/fonts/mplus-msdf.json"
+            font-image="assets/fonts/mplus-msdf.png"
             shader="msdf" 
             negate="false"
             color="#00f2ff" 
@@ -42,64 +42,44 @@
             rotation="0 0 0">
         </a-text>
 
-        <a-plane rotation="-90 0 0" width="100" height="100" color="#333" opacity="0.5"></a-plane>
+        <a-grid></a-grid>
+        <a-sky color="#222"></a-sky>
     </a-scene>
 
-    <script type="module">
-        // Firebase SDKのバージョンを安定版(10.8.0)に修正
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA", // ←ここに本物のAPIキーを貼ってください
-            authDomain: "armisetai.firebaseapp.com",
-            projectId: "armisetai",
-            storageBucket: "armisetai.firebasestorage.app",
-            messagingSenderId: "1006973944547",
-            appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-        };
-
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    
+    <script>
+        // UI要素
         const textInput = document.querySelector('#textInput');
         const updateBtn = document.querySelector('#updateBtn');
         const previewText = document.querySelector('#previewText');
         const statusEl = document.querySelector('#status');
 
-        // Firebase初期化
-        try {
-            if (!firebaseConfig.apiKey.includes("あなたの")) {
-                const app = initializeApp(firebaseConfig);
-                console.log("Firebase initialized.");
-            }
-        } catch (e) {
-            console.error("Firebase Error:", e);
+        // Firebase初期化 (Compat版)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA", // ここを書き換えてください
+            authDomain: "armisetai.firebaseapp.com",
+            projectId: "armisetai",
+            appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+        };
+
+        if (firebaseConfig.apiKey !== "あなたのAPIキー") {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase connected.");
         }
 
-        // 反映処理
+        // 反映
         function applyChanges() {
             const val = textInput.value;
             if (!val) return;
-
+            
             statusEl.innerText = "反映中...";
-            console.log("Updating text to:", val);
-            
-            // テキストの内容を更新
             previewText.setAttribute('value', val);
-            
-            // フォントの再読み込みを強制（フルURL）
-            previewText.setAttribute('font', 'https://kakimittu.github.io/ar-test/assets/fonts/mplus-msdf.json');
-            previewText.setAttribute('font-image', 'https://kakimittu.github.io/ar-test/assets/fonts/mplus-msdf.png');
-            previewText.setAttribute('shader', 'msdf');
-            previewText.setAttribute('negate', 'false');
-
             statusEl.innerText = "表示更新: " + val;
         }
 
         updateBtn.addEventListener('click', applyChanges);
-        
-        textInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') applyChanges();
-        });
-
-        console.log("Editor script is ready.");
+        textInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') applyChanges(); });
     </script>
 </body>
 </html>
