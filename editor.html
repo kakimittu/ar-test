@@ -2,8 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>AR EDITOR JP STABLE</title>
+<title>AR EDITOR JP</title>
+
 <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script src="https://unpkg.com/aframe-msdf-text-component/dist/aframe-msdf-text-component.min.js"></script>
 
 <style>
 body{
@@ -33,7 +35,6 @@ background:#000;
 h2{
 margin:0 0 20px 0;
 color:#00f2ff;
-font-size:18px;
 }
 
 .input-group{
@@ -47,7 +48,7 @@ font-size:12px;
 color:#00f2ff;
 }
 
-input[type="text"],input[type="file"]{
+input{
 width:100%;
 padding:10px;
 background:#262626;
@@ -57,20 +58,7 @@ border-radius:4px;
 box-sizing:border-box;
 }
 
-.btn{
-width:100%;
-padding:15px;
-border:none;
-border-radius:4px;
-font-weight:bold;
-cursor:pointer;
-margin-top:20px;
-background:#00f2ff;
-color:#000;
-}
-
 #fileList{
-margin-top:5px;
 font-size:11px;
 color:#888;
 }
@@ -107,22 +95,17 @@ color:#888;
 
 <a-assets>
 
-<a-asset-item id="jpFont" src="assets/fonts/mplus-msdf.json"></a-asset-item>
-<img id="jpFontImg" src="assets/fonts/mplus-msdf.png">
+<a-asset-item
+id="jpFont"
+src="assets/fonts/mplus-msdf.json">
+</a-asset-item>
+
+<img
+id="jpFontImg"
+src="assets/fonts/mplus-msdf.png">
 
 </a-assets>
 
-<a-text
-value="日本語テスト"
-font="#jpFont"
-font-image="#jpFontImg"
-shader="msdf"
-color="#00f2ff"
-width="10"
-position="0 3 -5"
-align="center">
-</a-text>
-  
 <a-entity
 id="rig"
 position="0 6 1"
@@ -132,10 +115,7 @@ rotation="-85 0 0">
 
 </a-entity>
 
-<a-light
-type="ambient"
-intensity="1.0">
-</a-light>
+<a-light type="ambient" intensity="1"></a-light>
 
 <a-plane
 color="#333"
@@ -196,7 +176,6 @@ img.onload=()=>{
 const canvas=document.createElement("canvas")
 
 const maxW=800
-
 const ratio=img.height/img.width
 
 canvas.width=maxW
@@ -225,27 +204,18 @@ reader.readAsDataURL(file)
 
 function createJPText(text,color,width,pos){
 
-const t=document.createElement("a-text")
+const t=document.createElement("a-entity")
 
-t.setAttribute("value",text)
-
-t.setAttribute("align","center")
-
-t.setAttribute("color",color)
-
-t.setAttribute("width",width)
+t.setAttribute("msdf-text",{
+value:text,
+font:"#jpFont",
+color:color,
+width:width,
+align:"center"
+})
 
 t.setAttribute("position",pos)
-
 t.setAttribute("rotation","-90 0 0")
-
-t.setAttribute("font","#jpFont")
-
-t.setAttribute("font-image","#jpFontImg")
-
-t.setAttribute("shader","msdf")
-
-t.setAttribute("negate","false")
 
 return t
 
@@ -254,11 +224,9 @@ return t
 function updatePreview(){
 
 const container=document.getElementById("dynamic-content")
-
 container.innerHTML=""
 
 const name=document.getElementById("nameInput").value||"NAME"
-
 const job=document.getElementById("jobInput").value||"JOB"
 
 const count=images.length>0?images.length:1
@@ -276,11 +244,8 @@ if(images[i]){
 const img=document.createElement("a-image")
 
 img.setAttribute("src",images[i])
-
 img.setAttribute("rotation","-90 0 0")
-
 img.setAttribute("width","2.5")
-
 img.setAttribute("height",2.5*(ratios[i]||1))
 
 entity.appendChild(img)
@@ -288,7 +253,6 @@ entity.appendChild(img)
 }
 
 entity.appendChild(createJPText(name,"#ffffff",4,"0 0.1 -2"))
-
 entity.appendChild(createJPText(job,"#ffcc00",4,"0 0.1 2"))
 
 container.appendChild(entity)
@@ -298,9 +262,7 @@ container.appendChild(entity)
 }
 
 window.addEventListener("load",()=>{
-
 setTimeout(updatePreview,300)
-
 })
 
 </script>
