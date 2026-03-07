@@ -1,325 +1,176 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <title>AR PORTFOLIO - Japanese Support</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 
-<title>AR PORTFOLIO</title>
-
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-
-<style>
-
-body{
-margin:0;
-overflow:hidden;
-background:#000;
-}
-
-.hud{
-position:fixed;
-top:20px;
-left:20px;
-color:#00f2ff;
-font-family:monospace;
-font-size:12px;
-z-index:999;
-text-shadow:0 0 6px #00f2ff;
-}
-
-</style>
-
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        .hud {
+            position: fixed; top: 20px; left: 20px; color: #00f2ff;
+            font-family: monospace; font-size: 12px; z-index: 999;
+            text-shadow: 0 0 6px #00f2ff;
+        }
+    </style>
 </head>
 
 <body>
-
-<div class="hud">AR SYSTEM ACTIVE</div>
-
-<a-scene
-embedded
-arjs="sourceType:webcam;debugUIEnabled:false"
-vr-mode-ui="enabled:false"
-renderer="precision: mediump; antialias:true"
->
-
-<a-assets>
-
-<a-asset-item
-id="jpfont"
-src="https://cdn.jsdelivr.net/gh/etiennepinchon/aframe-fonts/fonts/notosansjp/NotoSansJP-Regular.json">
-</a-asset-item>
-
-</a-assets>
-
-<a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt"></a-marker>
-
-<a-entity
-camera="fov:80;near:0.01;far:1000"
-look-controls="enabled:false"
-></a-entity>
-
-</a-scene>
-
-
-
-<script type="module">
-
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"
-
-import { getFirestore, doc, onSnapshot }
-from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js"
-
-
-
-const firebaseConfig={
-
-apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZA",
-authDomain:"armisetai.firebaseapp.com",
-projectId:"armisetai",
-storageBucket:"armisetai.firebasestorage.app",
-messagingSenderId:"1006973944547",
-appId:"1:1006973944547:web:adc5e195039585bbdabbd6"
-
-}
-
-
-const app=initializeApp(firebaseConfig)
-
-const db=getFirestore(app)
-
-
-
-let items=[]
-let currentIndex=0
-
-
-
-window.addEventListener("load",()=>{
-
-const marker=document.getElementById("marker")
-
-const params=new URLSearchParams(location.search)
-
-const markerId=params.get("id")||"akazawa"
-
-
-
-onSnapshot(doc(db,"arUsers",markerId),(docSnap)=>{
-
-if(!docSnap.exists()) return
-
-
-
-const data=docSnap.data()
-
-const images=data.images||[]
-const ratios=data.ratios||[]
-const nameValue=data.name||""
-const jobValue=data.job||""
-const pattUrl=data.pattUrl||""
-
-
-
-if(pattUrl){
-marker.setAttribute("url",pattUrl)
-}
-
-
-
-while(marker.firstChild){
-marker.removeChild(marker.firstChild)
-}
-
-
-
-items=[]
-
-
-
-images.forEach((url,i)=>{
-
-const entity=document.createElement("a-entity")
-
-entity.setAttribute("visible","false")
-
-
-
-const img=document.createElement("a-image")
-
-img.setAttribute("src",url)
-
-img.setAttribute("rotation","-90 0 0")
-
-img.setAttribute(
-"material",
-"shader:flat;transparent:true;alphaTest:0.5;side:double;npot:true"
-)
-
-const ratio=ratios[i]||1
-
-const baseW=1.2
-
-img.setAttribute("width",baseW)
-
-img.setAttribute("height",baseW*ratio)
-
-entity.appendChild(img)
-
-
-
-const nameText=document.createElement("a-text")
-
-nameText.setAttribute("value",nameValue)
-
-nameText.setAttribute("font","#jpfont")
-
-nameText.setAttribute("align","center")
-
-nameText.setAttribute("width","3")
-
-nameText.setAttribute("rotation","-90 0 0")
-
-nameText.setAttribute("position","0 0.1 -0.9")
-
-entity.appendChild(nameText)
-
-
-
-const jobText=document.createElement("a-text")
-
-jobText.setAttribute("value",jobValue)
-
-jobText.setAttribute("font","#jpfont")
-
-jobText.setAttribute("align","center")
-
-jobText.setAttribute("width","2")
-
-jobText.setAttribute("color","#ffcc00")
-
-jobText.setAttribute("rotation","-90 0 0")
-
-jobText.setAttribute("position","0 0.1 0.9")
-
-entity.appendChild(jobText)
-
-
-
-entity.setAttribute("scale","0 0 0")
-
-entity.setAttribute("animation__in",{
-
-property:"scale",
-
-to:"1 1 1",
-
-dur:600,
-
-easing:"easeOutBack"
-
-})
-
-
-
-marker.appendChild(entity)
-
-items.push(entity)
-
-})
-
-
-
-updateCarousel()
-
-})
-
-
-
-function updateCarousel(){
-
-if(items.length===0) return
-
-
-
-items.forEach((item,index)=>{
-
-const isCenter=index===currentIndex
-
-const offset=(index-currentIndex)*1.8
-
-
-
-item.setAttribute("visible",Math.abs(index-currentIndex)<=1)
-
-item.setAttribute("position",`${offset} ${isCenter?0.2:0.15} 0`)
-
-item.setAttribute("scale",isCenter?"1 1 1":"0.6 0.6 0.6")
-
-})
-
-}
-
-
-
-marker.addEventListener("click",()=>{
-
-if(items.length===0) return
-
-currentIndex=(currentIndex+1)%items.length
-
-updateCarousel()
-
-})
-
-
-
-let startX=0
-
-
-
-window.addEventListener("touchstart",(e)=>{
-
-startX=e.touches[0].clientX
-
-})
-
-
-
-window.addEventListener("touchend",(e)=>{
-
-const diff=e.changedTouches[0].clientX-startX
-
-
-
-if(Math.abs(diff)>50){
-
-if(diff>0){
-
-currentIndex=(currentIndex-1+items.length)%items.length
-
-}else{
-
-currentIndex=(currentIndex+1)%items.length
-
-}
-
-
-
-updateCarousel()
-
-}
-
-})
-
-
-
-})
-
-</script>
-
+    <div class="hud">AR SYSTEM ACTIVE</div>
+
+    <a-scene
+        embedded
+        arjs="sourceType:webcam;debugUIEnabled:false;trackingMethod:best;"
+        vr-mode-ui="enabled:false"
+        renderer="precision: mediump; antialias:true; logarithmicDepthBuffer: true;"
+    >
+        <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt">
+            </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- Firebase設定 ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZA", 
+            authDomain: "armisetai.firebaseapp.com",
+            projectId: "armisetai",
+            storageBucket: "armisetai.firebasestorage.app",
+            messagingSenderId: "1006973944547",
+            appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let items = [];
+        let currentIndex = 0;
+
+        // --- Canvasで日本語を画像化する関数 ---
+        function createTextCanvas(text, color, fontSize = "40px") {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            
+            // 背景透過、文字描画
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = color;
+            ctx.font = `bold ${fontSize} sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // 少し影をつけて読みやすくする
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 4;
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+            
+            return canvas.toDataURL();
+        }
+
+        window.addEventListener("load", () => {
+            const marker = document.getElementById("marker");
+            const params = new URLSearchParams(location.search);
+            const markerId = params.get("id") || "akazawa";
+
+            onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
+                if (!docSnap.exists()) return;
+
+                const data = docSnap.data();
+                const images = data.images || [];
+                const ratios = data.ratios || [];
+                const nameValue = data.name || "";
+                const jobValue = data.job || "";
+                const pattUrl = data.pattUrl || "";
+
+                if (pattUrl) marker.setAttribute("url", pattUrl);
+
+                // 既存の要素をクリア
+                while (marker.firstChild) marker.removeChild(marker.firstChild);
+                items = [];
+
+                images.forEach((url, i) => {
+                    const entity = document.createElement("a-entity");
+                    entity.setAttribute("visible", "false");
+
+                    // 1. メイン画像
+                    const img = document.createElement("a-image");
+                    img.setAttribute("src", url);
+                    img.setAttribute("rotation", "-90 0 0");
+                    img.setAttribute("material", "shader:flat;transparent:true;side:double;");
+                    const ratio = ratios[i] || 1;
+                    img.setAttribute("width", "1.2");
+                    img.setAttribute("height", 1.2 * ratio);
+                    entity.appendChild(img);
+
+                    // 2. 名前 (Canvas方式)
+                    const namePlane = document.createElement("a-plane");
+                    namePlane.setAttribute("position", "0 0.05 -0.8");
+                    namePlane.setAttribute("rotation", "-90 0 0");
+                    namePlane.setAttribute("width", "1.5");
+                    namePlane.setAttribute("height", "0.375");
+                    const nameImg = createTextCanvas(nameValue, "#00f2ff", "60px");
+                    namePlane.setAttribute("material", `src: ${nameImg}; transparent: true; shader: flat; side: double;`);
+                    entity.appendChild(namePlane);
+
+                    // 3. 職業 (Canvas方式)
+                    const jobPlane = document.createElement("a-plane");
+                    jobPlane.setAttribute("position", "0 0.05 0.8");
+                    jobPlane.setAttribute("rotation", "-90 0 0");
+                    jobPlane.setAttribute("width", "1.2");
+                    jobPlane.setAttribute("height", "0.3");
+                    const jobImg = createTextCanvas(jobValue, "#ffcc00", "45px");
+                    jobPlane.setAttribute("material", `src: ${jobImg}; transparent: true; shader: flat; side: double;`);
+                    entity.appendChild(jobPlane);
+
+                    // 出現アニメーション
+                    entity.setAttribute("scale", "0 0 0");
+                    entity.setAttribute("animation__in", {
+                        property: "scale", to: "1 1 1", dur: 600, easing: "easeOutBack"
+                    });
+
+                    marker.appendChild(entity);
+                    items.push(entity);
+                });
+
+                updateCarousel();
+            });
+
+            function updateCarousel() {
+                if (items.length === 0) return;
+                items.forEach((item, index) => {
+                    const isCenter = index === currentIndex;
+                    const offset = (index - currentIndex) * 1.8;
+                    item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
+                    item.setAttribute("position", `${offset} ${isCenter ? 0.1 : 0.05} 0`);
+                    item.setAttribute("scale", isCenter ? "1 1 1" : "0.6 0.6 0.6");
+                });
+            }
+
+            // クリック/タップで次へ
+            marker.addEventListener("click", () => {
+                if (items.length === 0) return;
+                currentIndex = (currentIndex + 1) % items.length;
+                updateCarousel();
+            });
+
+            // スワイプ操作
+            let startX = 0;
+            window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
+            window.addEventListener("touchend", (e) => {
+                const diff = e.changedTouches[0].clientX - startX;
+                if (Math.abs(diff) > 50) {
+                    currentIndex = (diff > 0) ? (currentIndex - 1 + items.length) % items.length : (currentIndex + 1) % items.length;
+                    updateCarousel();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
-
