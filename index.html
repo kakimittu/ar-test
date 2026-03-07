@@ -1,127 +1,177 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <title>AR PORTFOLIO - Fix</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-    <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        .hud { position: fixed; top: 20px; left: 20px; color: #00f2ff; font-family: monospace; z-index: 999; text-shadow: 0 0 6px #00f2ff; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CYBER AR - PORTFOLIO FINAL</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    .hud { 
+      position: fixed; top: 20px; left: 20px; color: #00f2ff; 
+      font-family: monospace; font-size: 12px; pointer-events: none; 
+      z-index: 10001; text-shadow: 0 0 5px #00f2ff; 
+    }
+    .rec-dot { 
+      display: inline-block; width: 10px; height: 10px; background: red; 
+      border-radius: 50%; margin-right: 5px; animation: blink 1s infinite; 
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
 </head>
+
 <body>
-    <div class="hud">SYSTEM: READY</div>
+  <div class="hud"></div>
 
-    <a-scene embedded arjs="sourceType:webcam;debugUIEnabled:false;" vr-mode-ui="enabled:false">
-        <a-marker id="marker" type="pattern" url="assets/markers/pattern-AKA2.patt">
-            </a-marker>
-        <a-entity camera></a-entity>
-    </a-scene>
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
+      </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZA", 
-            authDomain: "armisetai.firebaseapp.com",
-            projectId: "armisetai",
-            storageBucket: "armisetai.firebasestorage.app",
-            messagingSenderId: "1006973944547",
-            appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-        };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZA",
+      authDomain: "armisetai.firebaseapp.com",
+      projectId: "armisetai",
+      storageBucket: "armisetai.firebasestorage.app",
+      messagingSenderId: "1006973944547",
+      appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        let items = [];
-        let currentIndex = 0;
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        // 文字を画像化する関数（確実に反映されるよう改良）
-        function createTextTexture(text, color) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, 512, 128);
-            ctx.fillStyle = color;
-            ctx.font = "bold 60px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(text, 256, 64);
-            return canvas.toDataURL();
-        }
+    let currentIndex = 0;
+    let items = [];
 
-        onSnapshot(doc(db, "arUsers", "akazawa"), (docSnap) => {
-            if (!docSnap.exists()) return;
-            const data = docSnap.data();
-            const images = data.images || [];
-            const ratios = data.ratios || [];
-            const marker = document.getElementById("marker");
+    // --- 日本語Canvasテクスチャ生成関数 ---
+    function createTextTexture(text, color, fontSize = "50px") {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 512, 128);
+      ctx.fillStyle = color;
+      ctx.font = `bold ${fontSize} sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, 256, 64);
+      return canvas.toDataURL();
+    }
 
-            while (marker.firstChild) marker.removeChild(marker.firstChild);
-            items = [];
+    // --- サイバー装飾の配置 ---
+    function addDecorations(target) {
+      const p = document.createElement("a-plane");
+      p.setAttribute("color", "#ff9900"); p.setAttribute("width", "2.2"); p.setAttribute("height", "1.4");
+      p.setAttribute("position", "0 0.01 0"); p.setAttribute("rotation", "-90 0 0");
+      p.setAttribute("material", "shader: flat; opacity: 0.2; transparent: true; blending: additive;");
+      target.appendChild(p);
 
-            images.forEach((url, i) => {
-                const container = document.createElement("a-entity");
-                
-                // 1. メイン画像
-                const img = document.createElement("a-image");
-                img.setAttribute("src", url);
-                img.setAttribute("rotation", "-90 0 0");
-                const r = ratios[i] || 1;
-                img.setAttribute("width", "1.2");
-                img.setAttribute("height", 1.2 * r);
-                container.appendChild(img);
+      ["-1.4 0.1 0.6", "1.4 0.1 0.6"].forEach(pos => {
+        const c = document.createElement("a-circle");
+        c.setAttribute("radius", "0.08"); c.setAttribute("color", "#ff8c00");
+        c.setAttribute("position", pos); c.setAttribute("rotation", "-90 0 0");
+        c.setAttribute("material", "shader: flat; transparent: true; opacity: 0.6; blending: additive");
+        target.appendChild(c);
+      });
+    }
 
-                // 2. 名前ラベル (Canvas)
-                const nPlane = document.createElement("a-plane");
-                nPlane.setAttribute("position", "0 0.1 -0.8");
-                nPlane.setAttribute("rotation", "-90 0 0");
-                nPlane.setAttribute("width", "1.5");
-                nPlane.setAttribute("height", "0.4");
-                nPlane.setAttribute("material", {
-                    src: createTextTexture(data.name || "", "#00f2ff"),
-                    transparent: true, shader: "flat"
-                });
-                container.appendChild(nPlane);
+    window.addEventListener("load", () => {
+      const marker = document.querySelector("a-marker");
+      const urlParams = new URLSearchParams(window.location.search);
+      const markerId = urlParams.get('id') || 'akazawa'; 
 
-                // 3. 職業ラベル (Canvas)
-                const jPlane = document.createElement("a-plane");
-                jPlane.setAttribute("position", "0 0.1 0.8");
-                jPlane.setAttribute("rotation", "-90 0 0");
-                jPlane.setAttribute("width", "1.2");
-                jPlane.setAttribute("height", "0.3");
-                jPlane.setAttribute("material", {
-                    src: createTextTexture(data.job || "", "#ffcc00"),
-                    transparent: true, shader: "flat"
-                });
-                container.appendChild(jPlane);
+      const hud = document.querySelector(".hud");
+      hud.innerHTML = `<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
 
-                marker.appendChild(container);
-                items.push(container);
-            });
-            updateCarousel();
+      // リアルタイム監視
+      onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
+        if (!docSnap.exists()) return;
+        
+        const data = docSnap.data();
+        const images = data.images || [];
+        const ratios = data.ratios || [];
+
+        // リセット
+        while (marker.firstChild) { marker.removeChild(marker.firstChild); }
+        addDecorations(marker);
+        items = [];
+
+        images.forEach((url, i) => {
+          const container = document.createElement("a-entity");
+          container.setAttribute("visible", "false");
+
+          // メイン画像
+          const aImg = document.createElement("a-image");
+          aImg.setAttribute("src", url);
+          aImg.setAttribute("rotation", "-90 0 0");
+          aImg.setAttribute("material", "shader: flat; transparent: true; side: double");
+          const ratio = ratios[i] || 1;
+          const baseW = 1.4;
+          aImg.setAttribute("width", baseW);
+          aImg.setAttribute("height", baseW * ratio);
+          container.appendChild(aImg);
+
+          // 名前 (日本語対応Canvas)
+          const nPlane = document.createElement("a-plane");
+          nPlane.setAttribute("position", "0 0.1 -1.1");
+          nPlane.setAttribute("rotation", "-90 0 0");
+          nPlane.setAttribute("width", "1.8"); nPlane.setAttribute("height", "0.45");
+          nPlane.setAttribute("material", {
+            src: createTextTexture(data.name || "NO NAME", "#00f2ff", "60px"),
+            transparent: true, shader: "flat"
+          });
+          container.appendChild(nPlane);
+
+          // 肩書き (日本語対応Canvas)
+          const jPlane = document.createElement("a-plane");
+          jPlane.setAttribute("position", "0 0.1 1.1");
+          jPlane.setAttribute("rotation", "-90 0 0");
+          jPlane.setAttribute("width", "1.4"); jPlane.setAttribute("height", "0.35");
+          jPlane.setAttribute("material", {
+            src: createTextTexture(data.job || "NO TITLE", "#ffcc00", "45px"),
+            transparent: true, shader: "flat"
+          });
+          container.appendChild(jPlane);
+
+          marker.appendChild(container);
+          items.push(container);
         });
+        updateCarousel();
+      });
 
-        function updateCarousel() {
-            items.forEach((item, index) => {
-                const offset = (index - currentIndex) * 2.0; // 間隔を2.0に広げる
-                const isCenter = index === currentIndex;
-                
-                // 直接 position を書き換えて重なりを解消
-                item.setAttribute("position", {x: offset, y: isCenter ? 0.2 : 0, z: 0});
-                item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
-                item.setAttribute("scale", isCenter ? "1 1 1" : "0.7 0.7 0.7");
-            });
-        }
-
-        // クリックで次へ
-        window.addEventListener("click", () => {
-            if (items.length === 0) return;
-            currentIndex = (currentIndex + 1) % items.length;
-            updateCarousel();
+      function updateCarousel() {
+        items.forEach((item, index) => {
+          const isCenter = (index === currentIndex);
+          const offset = (index - currentIndex) * 2.2;
+          item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
+          item.setAttribute("position", {x: offset, y: isCenter ? 0.2 : 0.1, z: 0});
+          item.setAttribute("scale", isCenter ? "1 1 1" : "0.7 0.7 0.7");
         });
-    </script>
+      }
+
+      // 操作系
+      window.addEventListener("click", () => {
+        if (items.length === 0) return;
+        currentIndex = (currentIndex + 1) % items.length;
+        updateCarousel();
+      });
+
+      let startX = 0;
+      window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
+      window.addEventListener("touchend", (e) => {
+        let diff = e.changedTouches[0].clientX - startX;
+        if (Math.abs(diff) > 50) {
+          currentIndex = diff > 0 ? (currentIndex - 1 + items.length) % items.length : (currentIndex + 1) % items.length;
+          updateCarousel();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
