@@ -19,11 +19,62 @@
       border-radius: 50%; margin-right: 5px; animation: blink 1s infinite; 
     }
     @keyframes blink { 50% { opacity: 0; } }
+
+    #snsUI{
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+display:flex;
+gap:18px;
+z-index:999;
+padding:10px 16px;
+background:rgba(0,0,0,0.35);
+backdrop-filter:blur(6px);
+border-radius:40px;
+}
+
+#snsUI img{
+width:55px;
+height:55px;
+border-radius:50%;
+cursor:pointer;
+box-shadow:0 6px 18px rgba(0,0,0,0.5);
+transition:all 0.25s;
+}
+
+#snsUI img:hover{
+transform:scale(1.15);
+}
+
+#snsUI img:active{
+transform:scale(0.95);
+}
   </style>
 </head>
 
 <body>
   <div class="hud"></div>
+
+  <div id="snsUI">
+
+<a href="https://instagram.com/あなたのID" target="_blank">
+<img src="assets/icons/instagram.png">
+</a>
+
+<a href="https://x.com/あなたのID" target="_blank">
+<img src="assets/icons/x.png">
+</a>
+
+<a href="https://youtube.com/あなたのチャンネル" target="_blank">
+<img src="assets/icons/youtube.png">
+</a>
+
+<a href="https://line.me/ti/p/あなたのID" target="_blank">
+<img src="assets/icons/line.png">
+</a>
+
+</div>
 
   <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
     <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
