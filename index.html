@@ -20,35 +20,47 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    #snsUI{
-position:fixed;
-bottom:20px;
-left:50%;
-transform:translateX(-50%);
-display:flex;
-gap:18px;
-z-index:999;
-padding:10px 16px;
-background:rgba(0,0,0,0.35);
-backdrop-filter:blur(6px);
-border-radius:40px;
+/* SNSコンテナの配置 */
+.sns-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: row-reverse; /* 右から左へ並べる */
+    gap: 12px;
+    z-index: 10002;
 }
 
-#snsUI img{
-width:55px;
-height:55px;
-border-radius:50%;
-cursor:pointer;
-box-shadow:0 6px 18px rgba(0,0,0,0.5);
-transition:all 0.25s;
+/* ボタンの外枠 */
+.sns-btn {
+    width: 48px;
+    height: 48px;
+    border: 1.5px solid rgba(0, 242, 255, 0.5);
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-#snsUI img:hover{
-transform:scale(1.15);
+/* アイコン画像そのもの */
+.sns-btn img {
+    width: 70%;  /* ボタン枠内のサイズ */
+    height: 70%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.8)); /* アイコンを光らせる */
 }
 
-#snsUI img:active{
-transform:scale(0.95);
+/* タップ/ホバー時の演出 */
+.sns-btn:active, .sns-btn:hover {
+    transform: scale(1.1) translateY(-5px);
+    border-color: #00f2ff;
+    background: rgba(0, 242, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.6);
 }
   </style>
 </head>
@@ -56,20 +68,19 @@ transform:scale(0.95);
 <body>
   <div class="hud"></div>
 
-  <div id="snsUI">
-
-<a href="https://instagram.com/あなたのID" target="_blank">
-<img src="assets/icons/instagram.png">
-</a>
-
-<a href="https://x.com/あなたのID" target="_blank">
-<img src="assets/icons/X.png">
-</a>
-
-<a href="https://line.me/ti/p/あなたのID" target="_blank">
-<img src="assets/icons/LINE.png">
-</a>
-
+  <div class="sns-container">
+    <a href="#" id="line-link" target="_blank" class="sns-btn">
+        <img src="assets/icons/line.png" alt="LINE">
+    </a>
+    <a href="#" id="youtube-link" target="_blank" class="sns-btn">
+        <img src="assets/icons/youtube.png" alt="YouTube">
+    </a>
+    <a href="#" id="x-link" target="_blank" class="sns-btn">
+        <img src="assets/icons/x.png" alt="X">
+    </a>
+    <a href="#" id="insta-link" target="_blank" class="sns-btn">
+        <img src="assets/icons/instagram.png" alt="Instagram">
+    </a>
 </div>
 
   <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
