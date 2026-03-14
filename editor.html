@@ -353,16 +353,18 @@ await setDoc(doc(db,"arUsers",markerId),{
 
 images:imagesBase64,
 ratios:imageRatios,
+
 name:document.getElementById("nameInput").value,
 job:document.getElementById("jobInput").value,
+
 pattUrl:document.getElementById("pattInput").value,
 
-instagram:document.getElementById("instagramInput").value,
-x:document.getElementById("xInput").value,
-youtube:document.getElementById("youtubeInput").value,
-line:document.getElementById("lineInput").value
+instagram:document.getElementById("instagramInput")?.value || "",
+x:document.getElementById("xInput")?.value || "",
+youtube:document.getElementById("HPInput")?.value || "",
+line:document.getElementById("lineInput")?.value || ""
 
-});
+});;
 
 alert("保存完了しました");
 
