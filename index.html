@@ -1,256 +1,428 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CYBER AR - PORTFOLIO FINAL</title>
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <style>
-    body { margin: 0; overflow: hidden; background: #000; }
-    .hud { 
-      position: fixed; top: 20px; left: 20px; color: #00f2ff; 
-      font-family: monospace; font-size: 12px; pointer-events: none; 
-      z-index: 10001; text-shadow: 0 0 5px #00f2ff; 
-    }
-    .rec-dot { 
-      display: inline-block; width: 10px; height: 10px; background: red; 
-      border-radius: 50%; margin-right: 5px; animation: blink 1s infinite; 
-    }
-    @keyframes blink { 50% { opacity: 0; } }
+<title>CYBER AR - PORTFOLIO FINAL</title>
 
-/* SNSコンテナ（右下固定） */
-.sns-container {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    display: flex;
-    flex-direction: row-reverse;
-    gap: 20px; /* 枠線が重ならないよう少し広めに */
-    z-index: 10002;
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+background:#000;
 }
 
-/* 枠線シャドウ・ボタン本体 */
-.btn-border-shadow {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 50px;
-    height: 50px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.3s;
-    background: rgba(255, 255, 255, 0.8); /* 少しだけ透けさせてARに馴染ませる */
-    border-radius: 50%; /* 100vh相当で丸く */
-    padding: 0;
+.hud{
+position:fixed;
+top:20px;
+left:20px;
+color:#00f2ff;
+font-family:monospace;
+font-size:12px;
+pointer-events:none;
+z-index:10001;
+text-shadow:0 0 5px #00f2ff;
 }
 
-/* 外側の枠線とシャドウ */
-.btn-border-shadow:before {
-    position: absolute;
-    top: -6px;
-    left: -6px;
-    width: 100%;
-    height: 100%;
-    content: "";
-    transition: all 0.3s ease;
-    border: 3px solid #000;
-    border-radius: 50%;
-    box-shadow: 3px 3px 0 #78e5e5; /* カラー2の水色シャドウ */
-    box-sizing: content-box; /* 枠線が外に広がるように */
+.rec-dot{
+display:inline-block;
+width:10px;
+height:10px;
+background:red;
+border-radius:50%;
+margin-right:5px;
+animation:blink 1s infinite;
 }
 
-/* ホバー（タップ）時の動き */
-.btn-border-shadow:hover {
-    transform: translate(-3px, -3px); /* 枠が縮まる分、本体を少し動かして相殺 */
+@keyframes blink{
+50%{opacity:0;}
 }
 
-.btn-border-shadow:hover:before {
-    top: 0;
-    left: 0;
-    box-shadow: 0 0 0 #78e5e5; /* シャドウを消して押し込んだ感を出す */
+
+/* SNS */
+
+.sns-container{
+position:fixed;
+bottom:25px;
+right:25px;
+display:flex;
+flex-direction:row-reverse;
+gap:20px;
+z-index:10002;
 }
 
-/* ボタン内のアイコン画像 */
-.btn-border-shadow img {
-    width: 60%;
-    height: 60%;
-    object-fit: contain;
-    z-index: 1;
-    transition: transform 0.3s;
+#insta-link,
+#x-link,
+#line-link{
+display:none;
 }
 
-.btn-border-shadow:hover img {
-    transform: scale(1.1);
+.btn-border-shadow{
+position:relative;
+display:flex;
+justify-content:center;
+align-items:center;
+width:50px;
+height:50px;
+cursor:pointer;
+text-decoration:none;
+background:rgba(255,255,255,0.85);
+border-radius:50%;
 }
-  </style>
+
+.btn-border-shadow:before{
+position:absolute;
+top:-6px;
+left:-6px;
+width:100%;
+height:100%;
+content:"";
+transition:all .3s ease;
+border:3px solid #000;
+border-radius:50%;
+box-shadow:3px 3px 0 #78e5e5;
+box-sizing:content-box;
+}
+
+.btn-border-shadow:hover{
+transform:translate(-3px,-3px);
+}
+
+.btn-border-shadow:hover:before{
+top:0;
+left:0;
+box-shadow:0 0 0 #78e5e5;
+}
+
+.btn-border-shadow img{
+width:60%;
+height:60%;
+object-fit:contain;
+z-index:1;
+}
+
+</style>
 </head>
 
 <body>
-  <div class="hud"></div>
+
+<div class="hud"></div>
+
 
 <div class="sns-container">
-    <a href="#" id="line-link" target="_blank" class="btn-border-shadow">
-        <img src="assets/icons/LINE.png" alt="LINE">
-    </a>
-    </a>
-    <a href="#" id="x-link" target="_blank" class="btn-border-shadow">
-        <img src="assets/icons/X.png" alt="X">
-    </a>
-    <a href="#" id="insta-link" target="_blank" class="btn-border-shadow">
-        <img src="assets/icons/instagram.png" alt="Instagram">
-    </a>
+
+<a href="#" id="line-link" target="_blank" class="btn-border-shadow">
+<img src="assets/icons/LINE.png">
+</a>
+
+<a href="#" id="x-link" target="_blank" class="btn-border-shadow">
+<img src="assets/icons/X.png">
+</a>
+
+<a href="#" id="insta-link" target="_blank" class="btn-border-shadow">
+<img src="assets/icons/instagram.png">
+</a>
+
 </div>
-  
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-    <a-marker type="pattern" url="assets/markers/pattern-AKA2.patt">
-      </a-marker>
-    <a-entity camera></a-entity>
-  </a-scene>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZA",
-      authDomain: "armisetai.firebaseapp.com",
-      projectId: "armisetai",
-      storageBucket: "armisetai.firebasestorage.app",
-      messagingSenderId: "1006973944547",
-      appId: "1:1006973944547:web:adc5e195039585bbdabbd6"
-    };
+<a-scene
+embedded
+arjs="sourceType:webcam; debugUIEnabled:false;"
+vr-mode-ui="enabled:false"
+>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+<a-marker type="pattern" url="assets/markers/pattern-AKA2.patt"></a-marker>
 
-    let currentIndex = 0;
-    let items = [];
+<a-entity camera></a-entity>
 
-    // --- 日本語Canvasテクスチャ生成関数 ---
-    function createTextTexture(text, color, fontSize = "50px") {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512; canvas.height = 128;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, 512, 128);
-      ctx.fillStyle = color;
-      ctx.font = `bold ${fontSize} sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(text, 256, 64);
-      return canvas.toDataURL();
-    }
+</a-scene>
 
-    // --- サイバー装飾の配置 ---
-    function addDecorations(target) {
-      const p = document.createElement("a-plane");
-      p.setAttribute("color", "#ff9900"); p.setAttribute("width", "2.2"); p.setAttribute("height", "1.4");
-      p.setAttribute("position", "0 0.01 0"); p.setAttribute("rotation", "-90 0 0");
-      p.setAttribute("material", "shader: flat; opacity: 0.2; transparent: true; blending: additive;");
-      target.appendChild(p);
 
-      ["-1.4 0.1 0.6", "1.4 0.1 0.6"].forEach(pos => {
-        const c = document.createElement("a-circle");
-        c.setAttribute("radius", "0.08"); c.setAttribute("color", "#ff8c00");
-        c.setAttribute("position", pos); c.setAttribute("rotation", "-90 0 0");
-        c.setAttribute("material", "shader: flat; transparent: true; opacity: 0.6; blending: additive");
-        target.appendChild(c);
-      });
-    }
+<script type="module">
 
-    window.addEventListener("load", () => {
-      const marker = document.querySelector("a-marker");
-      const urlParams = new URLSearchParams(window.location.search);
-      const markerId = urlParams.get('id') || 'akazawa'; 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-      const hud = document.querySelector(".hud");
-      hud.innerHTML = `<div class="rec-dot"></div> REC: AR_SYSTEM_ACTIVE<br>USER: ${markerId}`;
+const firebaseConfig={
+apiKey:"あなたのAPIキー",
+authDomain:"armisetai.firebaseapp.com",
+projectId:"armisetai",
+storageBucket:"armisetai.firebasestorage.app",
+messagingSenderId:"1006973944547",
+appId:"1:1006973944547:web:adc5e195039585bbdabbd6"
+};
 
-      // リアルタイム監視
-      onSnapshot(doc(db, "arUsers", markerId), (docSnap) => {
-        if (!docSnap.exists()) return;
-        
-        const data = docSnap.data();
-        const images = data.images || [];
-        const ratios = data.ratios || [];
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-        // リセット
-        while (marker.firstChild) { marker.removeChild(marker.firstChild); }
-        addDecorations(marker);
-        items = [];
 
-        images.forEach((url, i) => {
-          const container = document.createElement("a-entity");
-          container.setAttribute("visible", "false");
+let currentIndex=0;
+let items=[];
 
-          // メイン画像
-          const aImg = document.createElement("a-image");
-          aImg.setAttribute("src", url);
-          aImg.setAttribute("rotation", "-90 0 0");
-          aImg.setAttribute("material", "shader: flat; transparent: true; side: double");
-          const ratio = ratios[i] || 1;
-          const baseW = 1.4;
-          aImg.setAttribute("width", baseW);
-          aImg.setAttribute("height", baseW * ratio);
-          container.appendChild(aImg);
 
-          // 名前 (日本語対応Canvas)
-          const nPlane = document.createElement("a-plane");
-          nPlane.setAttribute("position", "0 0.1 -1.1");
-          nPlane.setAttribute("rotation", "-90 0 0");
-          nPlane.setAttribute("width", "1.8"); nPlane.setAttribute("height", "0.45");
-          nPlane.setAttribute("material", {
-            src: createTextTexture(data.name || "NO NAME", "#00f2ff", "60px"),
-            transparent: true, shader: "flat"
-          });
-          container.appendChild(nPlane);
+/* 日本語Canvas */
 
-          // 肩書き (日本語対応Canvas)
-          const jPlane = document.createElement("a-plane");
-          jPlane.setAttribute("position", "0 0.1 1.1");
-          jPlane.setAttribute("rotation", "-90 0 0");
-          jPlane.setAttribute("width", "1.4"); jPlane.setAttribute("height", "0.35");
-          jPlane.setAttribute("material", {
-            src: createTextTexture(data.job || "NO TITLE", "#ffcc00", "45px"),
-            transparent: true, shader: "flat"
-          });
-          container.appendChild(jPlane);
+function createTextTexture(text,color,fontSize="50px"){
 
-          marker.appendChild(container);
-          items.push(container);
-        });
-        updateCarousel();
-      });
+const canvas=document.createElement("canvas");
+canvas.width=512;
+canvas.height=128;
 
-      function updateCarousel() {
-        items.forEach((item, index) => {
-          const isCenter = (index === currentIndex);
-          const offset = (index - currentIndex) * 2.2;
-          item.setAttribute("visible", Math.abs(index - currentIndex) <= 1);
-          item.setAttribute("position", {x: offset, y: isCenter ? 0.2 : 0.1, z: 0});
-          item.setAttribute("scale", isCenter ? "1 1 1" : "0.7 0.7 0.7");
-        });
-      }
+const ctx=canvas.getContext("2d");
 
-      // 操作系
-      window.addEventListener("click", () => {
-        if (items.length === 0) return;
-        currentIndex = (currentIndex + 1) % items.length;
-        updateCarousel();
-      });
+ctx.clearRect(0,0,512,128);
+ctx.fillStyle=color;
+ctx.font=`bold ${fontSize} sans-serif`;
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillText(text,256,64);
 
-      let startX = 0;
-      window.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
-      window.addEventListener("touchend", (e) => {
-        let diff = e.changedTouches[0].clientX - startX;
-        if (Math.abs(diff) > 50) {
-          currentIndex = diff > 0 ? (currentIndex - 1 + items.length) % items.length : (currentIndex + 1) % items.length;
-          updateCarousel();
-        }
-      });
-    });
-  </script>
+return canvas.toDataURL();
+
+}
+
+
+/* サイバー装飾 */
+
+function addDecorations(target){
+
+const p=document.createElement("a-plane");
+
+p.setAttribute("color","#ff9900");
+p.setAttribute("width","2.2");
+p.setAttribute("height","1.4");
+
+p.setAttribute("position","0 0.01 0");
+p.setAttribute("rotation","-90 0 0");
+
+p.setAttribute("material","shader:flat;opacity:0.2;transparent:true;blending:additive;");
+
+target.appendChild(p);
+
+["-1.4 0.1 0.6","1.4 0.1 0.6"].forEach(pos=>{
+
+const c=document.createElement("a-circle");
+
+c.setAttribute("radius","0.08");
+c.setAttribute("color","#ff8c00");
+
+c.setAttribute("position",pos);
+c.setAttribute("rotation","-90 0 0");
+
+c.setAttribute("material","shader:flat;transparent:true;opacity:0.6;blending:additive");
+
+target.appendChild(c);
+
+});
+
+}
+
+
+
+window.addEventListener("load",()=>{
+
+const marker=document.querySelector("a-marker");
+
+const urlParams=new URLSearchParams(window.location.search);
+const markerId=urlParams.get("id") || "akazawa";
+
+const hud=document.querySelector(".hud");
+
+hud.innerHTML=`<div class="rec-dot"></div>REC AR ACTIVE<br>USER:${markerId}`;
+
+
+/* SNSボタン */
+
+const lineBtn=document.getElementById("line-link");
+const xBtn=document.getElementById("x-link");
+const instaBtn=document.getElementById("insta-link");
+
+
+function setSNS(button,url){
+
+if(url && url.trim()!==""){
+
+button.href=url;
+button.style.display="flex";
+
+}else{
+
+button.style.display="none";
+
+}
+
+}
+
+
+/* Firestore */
+
+onSnapshot(doc(db,"arUsers",markerId),(docSnap)=>{
+
+if(!docSnap.exists()) return;
+
+const data=docSnap.data();
+
+
+setSNS(lineBtn,data.line);
+setSNS(xBtn,data.x);
+setSNS(instaBtn,data.instagram);
+
+
+const images=data.images || [];
+const ratios=data.ratios || [];
+
+
+while(marker.firstChild){
+marker.removeChild(marker.firstChild);
+}
+
+
+addDecorations(marker);
+
+items=[];
+
+
+images.forEach((url,i)=>{
+
+const container=document.createElement("a-entity");
+container.setAttribute("visible","false");
+
+
+const aImg=document.createElement("a-image");
+
+aImg.setAttribute("src",url);
+aImg.setAttribute("rotation","-90 0 0");
+aImg.setAttribute("material","shader:flat;transparent:true;side:double");
+
+const ratio=ratios[i] || 1;
+const baseW=1.4;
+
+aImg.setAttribute("width",baseW);
+aImg.setAttribute("height",baseW*ratio);
+
+container.appendChild(aImg);
+
+
+/* 名前 */
+
+const nPlane=document.createElement("a-plane");
+
+nPlane.setAttribute("position","0 0.1 -1.1");
+nPlane.setAttribute("rotation","-90 0 0");
+
+nPlane.setAttribute("width","1.8");
+nPlane.setAttribute("height","0.45");
+
+nPlane.setAttribute("material",{
+src:createTextTexture(data.name || "NO NAME","#00f2ff","60px"),
+transparent:true,
+shader:"flat"
+});
+
+container.appendChild(nPlane);
+
+
+/* 肩書き */
+
+const jPlane=document.createElement("a-plane");
+
+jPlane.setAttribute("position","0 0.1 1.1");
+jPlane.setAttribute("rotation","-90 0 0");
+
+jPlane.setAttribute("width","1.4");
+jPlane.setAttribute("height","0.35");
+
+jPlane.setAttribute("material",{
+src:createTextTexture(data.job || "NO TITLE","#ffcc00","45px"),
+transparent:true,
+shader:"flat"
+});
+
+container.appendChild(jPlane);
+
+
+marker.appendChild(container);
+
+items.push(container);
+
+});
+
+
+updateCarousel();
+
+});
+
+
+function updateCarousel(){
+
+items.forEach((item,index)=>{
+
+const isCenter=(index===currentIndex);
+const offset=(index-currentIndex)*2.2;
+
+item.setAttribute("visible",Math.abs(index-currentIndex)<=1);
+
+item.setAttribute("position",{
+x:offset,
+y:isCenter?0.2:0.1,
+z:0
+});
+
+item.setAttribute("scale",isCenter?"1 1 1":"0.7 0.7 0.7");
+
+});
+
+}
+
+
+/* クリック操作 */
+
+window.addEventListener("click",()=>{
+
+if(items.length===0) return;
+
+currentIndex=(currentIndex+1)%items.length;
+
+updateCarousel();
+
+});
+
+
+/* スワイプ操作 */
+
+let startX=0;
+
+window.addEventListener("touchstart",(e)=>{
+
+startX=e.touches[0].clientX;
+
+});
+
+window.addEventListener("touchend",(e)=>{
+
+let diff=e.changedTouches[0].clientX-startX;
+
+if(Math.abs(diff)>50){
+
+currentIndex=diff>0
+?(currentIndex-1+items.length)%items.length
+:(currentIndex+1)%items.length;
+
+updateCarousel();
+
+}
+
+});
+
+});
+
+</script>
+
 </body>
 </html>
