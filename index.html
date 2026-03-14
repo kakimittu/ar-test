@@ -27,64 +27,63 @@
     right: 25px;
     display: flex;
     flex-direction: row-reverse;
-    gap: 15px;
+    gap: 20px; /* 枠線が重ならないよう少し広めに */
     z-index: 10002;
 }
 
-/* パワーボタン風SNSボタン本体 */
-.sns-btn-real {
+/* 枠線シャドウ・ボタン本体 */
+.btn-border-shadow {
     position: relative;
-    display: grid;
-    width: 60px;  /* スマホ用に少しサイズ調整（100pxだと大きすぎるため） */
-    height: 60px;
-    margin: 0;
-    padding: 0;
-    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
     cursor: pointer;
     text-decoration: none;
-    justify-items: center;
-    align-items: center;
     transition: all 0.3s;
-    
-    /* 金属光沢のグラデーション */
-    background-image: linear-gradient(180deg, white 0%, #bcbbbe 36%, #9b9b9b 50%, #bdbcbf 64%, white 100%);
-    
-    /* 立体的な影 */
-    box-shadow: 0 6px 0 #4d4d4d, inset 0 0 5px black, inset 1px 1px 10px white;
+    background: rgba(255, 255, 255, 0.8); /* 少しだけ透けさせてARに馴染ませる */
+    border-radius: 50%; /* 100vh相当で丸く */
+    padding: 0;
 }
 
-/* ボタン内のアイコン画像 */
-.sns-btn-real img {
-    width: 55%;
-    height: 55%;
-    object-fit: contain;
-    position: relative;
-    z-index: 2;
-    filter: grayscale(1) contrast(1.2); /* 最初は金属に馴染むようグレー */
-    transition: all 0.3s;
+/* 外側の枠線とシャドウ */
+.btn-border-shadow:before {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 100%;
+    height: 100%;
+    content: "";
+    transition: all 0.3s ease;
+    border: 3px solid #000;
+    border-radius: 50%;
+    box-shadow: 3px 3px 0 #78e5e5; /* カラー2の水色シャドウ */
+    box-sizing: content-box; /* 枠線が外に広がるように */
 }
 
 /* ホバー（タップ）時の動き */
-.sns-btn-real:hover, .sns-btn-real:active {
-    transform: translate(0, 3px);
-    box-shadow: 0 3px 0 #4d4d4d, inset 0 0 5px black, inset 1px 1px 10px white;
+.btn-border-shadow:hover {
+    transform: translate(-3px, -3px); /* 枠が縮まる分、本体を少し動かして相殺 */
 }
 
-/* ホバー時にアイコンをSNSカラーで光らせる */
-.sns-btn-real:hover img, .sns-btn-real:active img {
-    filter: grayscale(0) drop-shadow(0 0 5px #00f2ff);
+.btn-border-shadow:hover:before {
+    top: 0;
+    left: 0;
+    box-shadow: 0 0 0 #78e5e5; /* シャドウを消して押し込んだ感を出す */
 }
 
-/* 金属の反射層 */
-.sns-btn-real:before {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    content: "";
-    opacity: 0.3;
-    border-radius: 50%;
-    background-image: linear-gradient(140deg, #9b9b9b 0%, white 50%, #bcbbbe 64%, #9b9b9b 100%);
-    pointer-events: none;
+/* ボタン内のアイコン画像 */
+.btn-border-shadow img {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+    z-index: 1;
+    transition: transform 0.3s;
+}
+
+.btn-border-shadow:hover img {
+    transform: scale(1.1);
 }
   </style>
 </head>
@@ -92,15 +91,15 @@
 <body>
   <div class="hud"></div>
 
- <div class="sns-container">
-    <a href="#" id="line-link" target="_blank" class="sns-btn-real">
+<div class="sns-container">
+    <a href="#" id="line-link" target="_blank" class="btn-border-shadow">
         <img src="assets/icons/LINE.png" alt="LINE">
- 
     </a>
-    <a href="#" id="x-link" target="_blank" class="sns-btn-real">
+    </a>
+    <a href="#" id="x-link" target="_blank" class="btn-border-shadow">
         <img src="assets/icons/X.png" alt="X">
     </a>
-    <a href="#" id="insta-link" target="_blank" class="sns-btn-real">
+    <a href="#" id="insta-link" target="_blank" class="btn-border-shadow">
         <img src="assets/icons/instagram.png" alt="Instagram">
     </a>
 </div>
