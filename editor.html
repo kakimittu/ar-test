@@ -110,6 +110,26 @@ color:#888;
 <div id="fileList">未選択</div>
 </div>
 
+  <div class="input-group">
+<label>Instagram URL</label>
+<input type="text" id="instagramInput" placeholder="https://instagram.com/">
+</div>
+
+<div class="input-group">
+<label>X URL</label>
+<input type="text" id="xInput" placeholder="https://x.com/">
+</div>
+
+<div class="input-group">
+<label>YouTube URL</label>
+<input type="text" id="youtubeInput" placeholder="https://youtube.com/">
+</div>
+
+<div class="input-group">
+<label>LINE URL</label>
+<input type="text" id="lineInput" placeholder="https://line.me/">
+</div>
+
 <button id="saveBtn" class="btn">FIRESTOREへ保存</button>
 
 </div>
@@ -331,6 +351,18 @@ try{
 
 await setDoc(doc(db,"arUsers",markerId),{
 
+images:imagesBase64,
+ratios:imageRatios,
+name:document.getElementById("nameInput").value,
+job:document.getElementById("jobInput").value,
+pattUrl:document.getElementById("pattInput").value,
+
+instagram:document.getElementById("instagramInput").value,
+x:document.getElementById("xInput").value,
+youtube:document.getElementById("youtubeInput").value,
+line:document.getElementById("lineInput").value
+
+});
 images:imagesBase64,
 ratios:imageRatios,
 name:document.getElementById("nameInput").value,
