@@ -22,4 +22,388 @@ overflow:hidden;
 
 #controls{
 width:360px;
-padding
+padding:20px;
+background:#1a1a1a;
+overflow-y:auto;
+border-right:1px solid #333;
+box-sizing:border-box;
+}
+
+#preview{
+flex-grow:1;
+background:#000;
+}
+
+h2{
+margin:0 0 20px 0;
+color:#00f2ff;
+font-size:18px;
+}
+
+.input-group{
+margin-bottom:15px;
+}
+
+label{
+display:block;
+margin-bottom:5px;
+font-size:12px;
+color:#00f2ff;
+}
+
+input[type="text"],input[type="file"],select{
+width:100%;
+padding:10px;
+background:#262626;
+border:1px solid #444;
+color:#fff;
+border-radius:4px;
+box-sizing:border-box;
+}
+
+select{
+cursor:pointer;
+}
+
+select option{
+background:#262626;
+color:#fff;
+}
+
+.btn{
+width:100%;
+padding:15px;
+border:none;
+border-radius:4px;
+font-weight:bold;
+cursor:pointer;
+margin-top:20px;
+background:#00f2ff;
+color:#000;
+}
+
+#fileList{
+margin-top:5px;
+font-size:11px;
+color:#888;
+}
+</style>
+</head>
+
+<body>
+
+<div id="controls">
+
+<h2>AR EDITOR</h2>
+
+<div class="input-group">
+<label>ドキュメントID</label>
+<input type="text" id="markerId" value="akazawa">
+</div>
+
+<div class="input-group">
+<label>マーカーパス</label>
+<input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt">
+</div>
+
+<div class="input-group">
+<label>お名前</label>
+<input type="text" id="nameInput" value="赤澤 優子">
+</div>
+
+<div class="input-group">
+<label>肩書き</label>
+<input type="text" id="jobInput" value="ホーストレーナー">
+</div>
+
+<div class="input-group">
+<label>フォント</label>
+<select id="fontSelect">
+<option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
+<option value="'Roboto', sans-serif">Roboto</option>
+<option value="'Playfair Display', serif">Playfair Display</option>
+<option value="'Caveat', cursive">Caveat</option>
+</select>
+</div>
+
+<div class="input-group">
+<label>画像</label>
+<input type="file" id="fileInput" accept="image/*" multiple>
+<div id="fileList">未選択</div>
+</div>
+
+<div class="input-group">
+<label>Instagram URL</label>
+<input type="text" id="instagramInput" placeholder="https://instagram.com/">
+</div>
+
+<div class="input-group">
+<label>X URL</label>
+<input type="text" id="xInput" placeholder="https://X.com/">
+</div>
+
+<div class="input-group">
+<label>HP URL</label>
+<input type="text" id="HPInput" placeholder="https://youtube.com/">
+</div>
+
+<div class="input-group">
+<label>LINE URL</label>
+<input type="text" id="lineInput" placeholder="https://line.me/">
+</div>
+
+<button id="saveBtn" class="btn">FIRESTOREへ保存</button>
+
+</div>
+
+<div id="preview">
+
+<a-scene embedded vr-mode-ui="enabled:false">
+
+<a-entity position="0 6 1" rotation="-85 0 0">
+<a-entity camera></a-entity>
+</a-entity>
+
+<a-light type="ambient" intensity="1"></a-light>
+
+<a-plane
+color="#333"
+width="10"
+height="10"
+rotation="-90 0 0"
+material="opacity:0.1;transparent:true">
+</a-plane>
+
+<a-entity id="dynamic-content"></a-entity>
+
+</a-scene>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+authDomain:"armisetai.firebaseapp.com",
+projectId:"armisetai",
+storageBucket:"armisetai.firebasestorage.app",
+messagingSenderId:"1006973944547",
+appId:"1:1006973944547:web:adc5e195039585bbdabbd6"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+
+let imagesBase64=[];
+let imageRatios=[];
+
+document.getElementById("fileInput").onchange=async(e)=>{
+
+imagesBase64=[];
+imageRatios=[];
+
+const files=[...e.target.files];
+
+document.getElementById("fileList").innerText=files.length+"枚選択";
+
+for(const file of files){
+
+const result=await processImage(file);
+
+imagesBase64.push(result.data);
+imageRatios.push(result.ratio);
+
+}
+
+updatePreview();
+
+};
+
+["nameInput","jobInput","fontSelect"].forEach(id=>{
+document.getElementById(id).addEventListener("input",updatePreview);
+document.getElementById(id).addEventListener("change",updatePreview);
+});
+
+function processImage(file){
+
+return new Promise(resolve=>{
+
+const reader=new FileReader();
+
+reader.onload=e=>{
+
+const img=new Image();
+
+img.onload=()=>{
+
+const canvas=document.createElement("canvas");
+
+const maxW=800;
+const ratio=img.height/img.width;
+
+canvas.width=maxW;
+canvas.height=maxW*ratio;
+
+const ctx=canvas.getContext("2d");
+
+ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+resolve({
+data:canvas.toDataURL("image/jpeg",0.7),
+ratio:ratio
+});
+
+};
+
+img.src=e.target.result;
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+}
+
+function createTextImage(text,color,fontFamily){
+
+return new Promise(resolve=>{
+
+const canvas=document.createElement("canvas");
+const ctx=canvas.getContext("2d");
+
+canvas.width=1024;
+canvas.height=256;
+
+ctx.fillStyle="rgba(0,0,0,0)";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ctx.font=`bold 80px ${fontFamily}`;
+ctx.fillStyle=color;
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+
+ctx.fillText(text,canvas.width/2,canvas.height/2);
+
+resolve(canvas.toDataURL("image/png"));
+
+});
+
+}
+
+async function updatePreview(){
+
+const container=document.getElementById("dynamic-content");
+container.innerHTML="";
+
+const nameVal=document.getElementById("nameInput").value||"NAME";
+const jobVal=document.getElementById("jobInput").value||"JOB";
+const fontVal=document.getElementById("fontSelect").value;
+
+const nameImg=await createTextImage(nameVal,"#ffffff",fontVal);
+const jobImg=await createTextImage(jobVal,"#ffcc00",fontVal);
+
+const count=imagesBase64.length>0?imagesBase64.length:1;
+
+for(let i=0;i<count;i++){
+
+const entity=document.createElement("a-entity");
+
+let posX=(i===0)?0:(i%2===1?Math.ceil(i/2)*4:Math.ceil(i/2)*-4);
+
+entity.setAttribute("position",`${posX} 0 0`);
+
+if(imagesBase64[i]){
+
+const img=document.createElement("a-image");
+
+img.setAttribute("src",imagesBase64[i]);
+img.setAttribute("rotation","-90 0 0");
+
+const ratio=imageRatios[i]||1;
+
+img.setAttribute("width",2.5);
+img.setAttribute("height",2.5*ratio);
+
+entity.appendChild(img);
+
+}
+
+const nameImage=document.createElement("a-image");
+
+nameImage.setAttribute("src",nameImg);
+nameImage.setAttribute("width",4);
+nameImage.setAttribute("height",1);
+nameImage.setAttribute("rotation","-90 0 0");
+nameImage.setAttribute("position","0 0.1 -2");
+
+entity.appendChild(nameImage);
+
+const jobImage=document.createElement("a-image");
+
+jobImage.setAttribute("src",jobImg);
+jobImage.setAttribute("width",4);
+jobImage.setAttribute("height",1);
+jobImage.setAttribute("rotation","-90 0 0");
+jobImage.setAttribute("position","0 0.1 2");
+
+entity.appendChild(jobImage);
+
+container.appendChild(entity);
+
+}
+
+}
+
+window.onload=updatePreview;
+
+document.getElementById("saveBtn").onclick=async()=>{
+
+const markerId=document.getElementById("markerId").value;
+
+const saveBtn=document.getElementById("saveBtn");
+
+saveBtn.disabled=true;
+saveBtn.innerText="保存中...";
+
+try{
+
+await setDoc(doc(db,"arUsers",markerId),{
+
+images:imagesBase64,
+ratios:imageRatios,
+
+name:document.getElementById("nameInput").value,
+job:document.getElementById("jobInput").value,
+
+font:document.getElementById("fontSelect").value,
+
+pattUrl:document.getElementById("pattInput").value,
+
+instagram:document.getElementById("instagramInput")?.value || "",
+x:document.getElementById("xInput")?.value || "",
+youtube:document.getElementById("HPInput")?.value || "",
+line:document.getElementById("lineInput")?.value || ""
+
+});;
+
+alert("保存完了しました");
+
+}catch(e){
+
+alert("エラー："+e.message);
+
+}
+
+saveBtn.disabled=false;
+saveBtn.innerText="FIRESTOREへ保存";
+
+};
+
+</script>
+
+</body>
+</html>
