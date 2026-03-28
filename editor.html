@@ -7,7 +7,7 @@
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
 <!-- Google Fonts読み込み -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
 
 <style>
 body{
@@ -119,10 +119,11 @@ color:#888;
 <div class="input-group">
 <label>フォント</label>
 <select id="fontSelect">
-<option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
-<option value="'Roboto', sans-serif">Roboto</option>
-<option value="'Playfair Display', serif">Playfair Display</option>
-<option value="'Caveat', cursive">Caveat</option>
+<option value="Noto Sans JP">Noto Sans JP</option>
+<option value="Roboto">Roboto</option>
+<option value="Playfair Display">Playfair Display</option>
+<option value="Caveat">Caveat</option>
+<option value="Aloha">Aloha</option>
 </select>
 </div>
 
@@ -281,7 +282,9 @@ canvas.height=256;
 ctx.fillStyle="rgba(0,0,0,0)";
 ctx.fillRect(0,0,canvas.width,canvas.height);
 
-ctx.font=`bold 80px ${fontFamily}`;
+// フォントが読み込まれるまで待つ
+document.fonts.ready.then(()=>{
+ctx.font=`bold 80px "${fontFamily}"`;
 ctx.fillStyle=color;
 ctx.textAlign="center";
 ctx.textBaseline="middle";
@@ -289,6 +292,7 @@ ctx.textBaseline="middle";
 ctx.fillText(text,canvas.width/2,canvas.height/2);
 
 resolve(canvas.toDataURL("image/png"));
+});
 
 });
 
@@ -394,7 +398,7 @@ alert("保存完了しました");
 
 }catch(e){
 
-alert("エラー："+e.message);
+alert("��ラー："+e.message);
 
 }
 
