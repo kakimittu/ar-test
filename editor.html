@@ -7,7 +7,7 @@
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
 <!-- Google Fonts読み込み -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&family=Raleway:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&family=Raleway:wght@400;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 body{
@@ -119,8 +119,8 @@ color:#888;
 <div class="input-group">
 <label>フォント</label>
 <select id="fontSelect">
+<option value="Noto Serif JP">Noto Serif JP（和モダン）</option>
 <option value="Noto Sans JP">Noto Sans JP</option>
-<option value="Roboto">Roboto</option>
 <option value="Playfair Display">Playfair Display</option>
 <option value="Caveat">Caveat</option>
 <option value="Aloha">Aloha</option>
@@ -291,10 +291,10 @@ ctx.textAlign="center";
 ctx.textBaseline="middle";
 
 // テキストに影を追加
-ctx.shadowColor="rgba(0,0,0,0.5)";
-ctx.shadowBlur=10;
-ctx.shadowOffsetX=2;
-ctx.shadowOffsetY=2;
+ctx.shadowColor="rgba(0,0,0,0.8)";
+ctx.shadowBlur=15;
+ctx.shadowOffsetX=3;
+ctx.shadowOffsetY=3;
 
 ctx.fillText(text,canvas.width/2,canvas.height/2);
 
@@ -326,7 +326,7 @@ entity.setAttribute("position",`${posX} 0 0`);
 
 if(imagesBase64[i]){
 
-/* 写真レイヤー（Z=0） */
+/* 写真レイヤー（Z=0） - 大きくサイズアップ */
 
 const img=document.createElement("a-image");
 
@@ -336,54 +336,54 @@ img.setAttribute("position","0 0 0");
 
 const ratio=imageRatios[i]||1;
 
-img.setAttribute("width",2.5);
-img.setAttribute("height",2.5*ratio);
+img.setAttribute("width",3.5);
+img.setAttribute("height",3.5*ratio);
 
 entity.appendChild(img);
 
 
-/* 半透明ベースプレート（Z=0.05） */
+/* 半透明ベースプレート（Z=0.05） - 写真の下に配置 */
 
 const basePlate=document.createElement("a-plane");
 
-basePlate.setAttribute("position","0 0 0.05");
+basePlate.setAttribute("position","0 -1.9 0.05");
 basePlate.setAttribute("rotation","-90 0 0");
 
-basePlate.setAttribute("width","2.7");
-basePlate.setAttribute("height","0.5");
+basePlate.setAttribute("width","3.8");
+basePlate.setAttribute("height","0.8");
 
-basePlate.setAttribute("material","color:#8B6F47;opacity:0.7;transparent:true;shader:flat");
+basePlate.setAttribute("material","color:#8B6F47;opacity:0.85;transparent:true;shader:flat");
 
 entity.appendChild(basePlate);
 
 }
 
-/* 名前テキスト（Z=0.1） */
+/* 名前テキスト（Z=0.1） - 写真の下に配置 */
 
-const nameImg=await createTextImage(nameVal,"#FFD700",fontVal,"60px");
+const nameImg=await createTextImage(nameVal,"#FFD700",fontVal,"80px");
 
 const nameImage=document.createElement("a-image");
 
 nameImage.setAttribute("src",nameImg);
-nameImage.setAttribute("width",4);
-nameImage.setAttribute("height",1);
+nameImage.setAttribute("width",3);
+nameImage.setAttribute("height",0.75);
 nameImage.setAttribute("rotation","-90 0 0");
-nameImage.setAttribute("position","0 0.05 0.1");
+nameImage.setAttribute("position","0 -1.5 0.1");
 
 entity.appendChild(nameImage);
 
 
-/* 肩書きテキスト（Z=0.1） */
+/* 肩書きテキスト（Z=0.1） - 名前の下に配置 */
 
-const jobImg=await createTextImage(jobVal,"#FFFFFF",fontVal,"45px");
+const jobImg=await createTextImage(jobVal,"#FFFFFF",fontVal,"55px");
 
 const jobImage=document.createElement("a-image");
 
 jobImage.setAttribute("src",jobImg);
-jobImage.setAttribute("width",3.5);
-jobImage.setAttribute("height",0.8);
+jobImage.setAttribute("width",3);
+jobImage.setAttribute("height",0.6);
 jobImage.setAttribute("rotation","-90 0 0");
-jobImage.setAttribute("position","0 -0.05 0.1");
+jobImage.setAttribute("position","0 -2.2 0.1");
 
 entity.appendChild(jobImage);
 
