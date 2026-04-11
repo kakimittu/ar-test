@@ -2,12 +2,11 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>AR EDITOR</title>
+<title>AR EDITOR 完全版</title>
 
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
-<!-- Google Fonts読み込み -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&family=Raleway:wght@400;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Raleway:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 body{
@@ -15,7 +14,7 @@ margin:0;
 display:flex;
 height:100vh;
 font-family:sans-serif;
-background:#0f0f0f;
+background:#111;
 color:#fff;
 overflow:hidden;
 }
@@ -30,14 +29,13 @@ box-sizing:border-box;
 }
 
 #preview{
-flex-grow:1;
+flex:1;
 background:#000;
 }
 
 h2{
-margin:0 0 20px 0;
+margin:0 0 20px;
 color:#00f2ff;
-font-size:18px;
 }
 
 .input-group{
@@ -46,12 +44,12 @@ margin-bottom:15px;
 
 label{
 display:block;
-margin-bottom:5px;
 font-size:12px;
+margin-bottom:5px;
 color:#00f2ff;
 }
 
-input[type="text"],input[type="file"],select{
+input,select{
 width:100%;
 padding:10px;
 background:#262626;
@@ -61,31 +59,16 @@ border-radius:4px;
 box-sizing:border-box;
 }
 
-select{
-cursor:pointer;
-}
-
-select option{
-background:#262626;
-color:#fff;
-}
-
 .btn{
 width:100%;
 padding:15px;
 border:none;
-border-radius:4px;
+background:#00f2ff;
+color:#000;
 font-weight:bold;
 cursor:pointer;
 margin-top:20px;
-background:#00f2ff;
-color:#000;
-}
-
-#fileList{
-margin-top:5px;
-font-size:11px;
-color:#888;
+border-radius:4px;
 }
 </style>
 </head>
@@ -94,20 +77,20 @@ color:#888;
 
 <div id="controls">
 
-<h2>AR EDITOR</h2>
+<h2>AR EDITOR 完全版</h2>
 
 <div class="input-group">
-<label>ドキュメントID</label>
+<label>ID</label>
 <input type="text" id="markerId" value="akazawa">
 </div>
 
 <div class="input-group">
-<label>マーカーパス</label>
+<label>マーカー</label>
 <input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt">
 </div>
 
 <div class="input-group">
-<label>お名前</label>
+<label>名前</label>
 <input type="text" id="nameInput" value="赤澤 優子">
 </div>
 
@@ -119,44 +102,41 @@ color:#888;
 <div class="input-group">
 <label>フォント</label>
 <select id="fontSelect">
-<option value="Noto Serif JP">Noto Serif JP（和モダン）</option>
+<option value="Noto Serif JP">Noto Serif JP</option>
 <option value="Noto Sans JP">Noto Sans JP</option>
-<option value="Playfair Display">Playfair Display</option>
-<option value="Caveat">Caveat</option>
-<option value="Aloha">Aloha</option>
 <option value="Raleway">Raleway</option>
 </select>
 </div>
 
 <div class="input-group">
 <label>画像</label>
-<input type="file" id="fileInput" accept="image/*" multiple>
-<div id="fileList">未選択</div>
+<input type="file" id="fileInput" multiple accept="image/*">
 </div>
 
 <div class="input-group">
-<label>Instagram URL</label>
-<input type="text" id="instagramInput" placeholder="https://instagram.com/">
+<label>Instagram</label>
+<input type="text" id="instagramInput">
 </div>
 
 <div class="input-group">
-<label>X URL</label>
-<input type="text" id="xInput" placeholder="https://X.com/">
+<label>X</label>
+<input type="text" id="xInput">
 </div>
 
 <div class="input-group">
-<label>HP URL</label>
-<input type="text" id="HPInput" placeholder="https://youtube.com/">
+<label>HP</label>
+<input type="text" id="HPInput">
 </div>
 
 <div class="input-group">
-<label>LINE URL</label>
-<input type="text" id="lineInput" placeholder="https://line.me/">
+<label>LINE</label>
+<input type="text" id="lineInput">
 </div>
 
-<button id="saveBtn" class="btn">FIRESTOREへ保存</button>
+<button class="btn" id="saveBtn">保存</button>
 
 </div>
+
 
 <div id="preview">
 
@@ -169,10 +149,10 @@ color:#888;
 <a-light type="ambient" intensity="1"></a-light>
 
 <a-plane
-color="#333"
+rotation="-90 0 0"
 width="10"
 height="10"
-rotation="-90 0 0"
+color="#333"
 material="opacity:0.1;transparent:true">
 </a-plane>
 
@@ -182,13 +162,14 @@ material="opacity:0.1;transparent:true">
 
 </div>
 
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig={
-apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+apiKey:"あなたのAPIキー",
 authDomain:"armisetai.firebaseapp.com",
 projectId:"armisetai",
 storageBucket:"armisetai.firebasestorage.app",
@@ -202,6 +183,8 @@ const db=getFirestore(app);
 let imagesBase64=[];
 let imageRatios=[];
 
+
+/* 画像読み込み */
 document.getElementById("fileInput").onchange=async(e)=>{
 
 imagesBase64=[];
@@ -209,14 +192,11 @@ imageRatios=[];
 
 const files=[...e.target.files];
 
-document.getElementById("fileList").innerText=files.length+"枚選択";
-
 for(const file of files){
 
-const result=await processImage(file);
-
-imagesBase64.push(result.data);
-imageRatios.push(result.ratio);
+const data=await loadImage(file);
+imagesBase64.push(data.base64);
+imageRatios.push(data.ratio);
 
 }
 
@@ -224,12 +204,7 @@ updatePreview();
 
 };
 
-["nameInput","jobInput","fontSelect"].forEach(id=>{
-document.getElementById(id).addEventListener("input",updatePreview);
-document.getElementById(id).addEventListener("change",updatePreview);
-});
-
-function processImage(file){
+function loadImage(file){
 
 return new Promise(resolve=>{
 
@@ -242,19 +217,17 @@ const img=new Image();
 img.onload=()=>{
 
 const canvas=document.createElement("canvas");
-
-const maxW=800;
+const max=1000;
 const ratio=img.height/img.width;
 
-canvas.width=maxW;
-canvas.height=maxW*ratio;
+canvas.width=max;
+canvas.height=max*ratio;
 
 const ctx=canvas.getContext("2d");
-
 ctx.drawImage(img,0,0,canvas.width,canvas.height);
 
 resolve({
-data:canvas.toDataURL("image/jpeg",0.7),
+base64:canvas.toDataURL("image/png"),
 ratio:ratio
 });
 
@@ -270,63 +243,53 @@ reader.readAsDataURL(file);
 
 }
 
-function createTextImage(text,color,fontFamily,fontSize){
 
-return new Promise(resolve=>{
+/* テキスト画像 */
+function createText(text,color,font,size){
 
 const canvas=document.createElement("canvas");
-const ctx=canvas.getContext("2d");
-
 canvas.width=1024;
 canvas.height=256;
 
-ctx.fillStyle="rgba(0,0,0,0)";
-ctx.fillRect(0,0,canvas.width,canvas.height);
+const ctx=canvas.getContext("2d");
 
-// フォントが読み込まれるまで待つ
-document.fonts.ready.then(()=>{
-ctx.font=`bold ${fontSize} "${fontFamily}"`;
+ctx.clearRect(0,0,1024,256);
 ctx.fillStyle=color;
+ctx.font=`bold ${size}px "${font}"`;
 ctx.textAlign="center";
 ctx.textBaseline="middle";
 
-// テキストに影を追加
 ctx.shadowColor="rgba(0,0,0,0.8)";
-ctx.shadowBlur=15;
-ctx.shadowOffsetX=3;
-ctx.shadowOffsetY=3;
+ctx.shadowBlur=10;
+ctx.fillText(text,512,128);
 
-ctx.fillText(text,canvas.width/2,canvas.height/2);
-
-resolve(canvas.toDataURL("image/png"));
-});
-
-});
-
+return canvas.toDataURL("image/png");
 }
 
+
+/* プレビュー更新 */
 async function updatePreview(){
 
-const container=document.getElementById("dynamic-content");
-container.innerHTML="";
+const area=document.getElementById("dynamic-content");
+area.innerHTML="";
 
-const nameVal=document.getElementById("nameInput").value||"NAME";
-const jobVal=document.getElementById("jobInput").value||"JOB";
-const fontVal=document.getElementById("fontSelect").value;
+const name=document.getElementById("nameInput").value;
+const job=document.getElementById("jobInput").value;
+const font=document.getElementById("fontSelect").value;
 
-const count=imagesBase64.length>0?imagesBase64.length:1;
+const nameImg=createText(name,"#FFD700",font,80);
+const jobImg=createText(job,"#FFFFFF",font,55);
+
+const count=imagesBase64.length||1;
 
 for(let i=0;i<count;i++){
 
-const entity=document.createElement("a-entity");
+const wrap=document.createElement("a-entity");
 
-let posX=(i===0)?0:(i%2===1?Math.ceil(i/2)*4:Math.ceil(i/2)*-4);
-
-entity.setAttribute("position",`${posX} 0 0`);
+let x=(i===0)?0:(i%2?4:-4);
+wrap.setAttribute("position",`${x} 0 0`);
 
 if(imagesBase64[i]){
-
-/* 写真レイヤー（Z=0） - 大きくサイズアップ */
 
 const img=document.createElement("a-image");
 
@@ -334,108 +297,92 @@ img.setAttribute("src",imagesBase64[i]);
 img.setAttribute("rotation","-90 0 0");
 img.setAttribute("position","0 0 0");
 
-const ratio=imageRatios[i]||1;
+img.setAttribute("width","3.5");
+img.setAttribute("height",3.5*(imageRatios[i]||1));
 
-img.setAttribute("width",3.5);
-img.setAttribute("height",3.5*ratio);
+img.setAttribute("material",
+"shader:flat;transparent:true;alphaTest:0.01;side:double;depthWrite:false"
+);
 
-entity.appendChild(img);
-
-
-/* 半透明ベースプレート（Z=0.05） - 写真の下に配置 */
-
-const basePlate=document.createElement("a-plane");
-
-basePlate.setAttribute("position","0 -1.9 0.05");
-basePlate.setAttribute("rotation","-90 0 0");
-
-basePlate.setAttribute("width","3.8");
-basePlate.setAttribute("height","0.8");
-
-basePlate.setAttribute("material","color:#8B6F47;opacity:0.85;transparent:true;shader:flat");
-
-entity.appendChild(basePlate);
+wrap.appendChild(img);
 
 }
 
-/* 名前テキスト（Z=0.1） - 写真の下に配置 */
+/* プレート */
+const plate=document.createElement("a-plane");
+plate.setAttribute("rotation","-90 0 0");
+plate.setAttribute("position","0 -1.9 0.02");
+plate.setAttribute("width","3.8");
+plate.setAttribute("height","0.9");
+plate.setAttribute("material","color:#8B6F47;opacity:0.9;transparent:true");
 
-const nameImg=await createTextImage(nameVal,"#FFD700",fontVal,"80px");
-
-const nameImage=document.createElement("a-image");
-
-nameImage.setAttribute("src",nameImg);
-nameImage.setAttribute("width",3);
-nameImage.setAttribute("height",0.75);
-nameImage.setAttribute("rotation","-90 0 0");
-nameImage.setAttribute("position","0 -1.5 0.1");
-
-entity.appendChild(nameImage);
+wrap.appendChild(plate);
 
 
-/* 肩書きテキスト（Z=0.1） - 名前の下に配置 */
+/* 名前 */
+const n=document.createElement("a-image");
+n.setAttribute("src",nameImg);
+n.setAttribute("rotation","-90 0 0");
+n.setAttribute("position","0 -1.55 0.05");
+n.setAttribute("width","3");
+n.setAttribute("height","0.75");
+wrap.appendChild(n);
 
-const jobImg=await createTextImage(jobVal,"#FFFFFF",fontVal,"55px");
+/* 肩書き */
+const j=document.createElement("a-image");
+j.setAttribute("src",jobImg);
+j.setAttribute("rotation","-90 0 0");
+j.setAttribute("position","0 -2.2 0.05");
+j.setAttribute("width","3");
+j.setAttribute("height","0.6");
+wrap.appendChild(j);
 
-const jobImage=document.createElement("a-image");
-
-jobImage.setAttribute("src",jobImg);
-jobImage.setAttribute("width",3);
-jobImage.setAttribute("height",0.6);
-jobImage.setAttribute("rotation","-90 0 0");
-jobImage.setAttribute("position","0 -2.2 0.1");
-
-entity.appendChild(jobImage);
-
-
-container.appendChild(entity);
+area.appendChild(wrap);
 
 }
 
 }
+
+
+/* 入力変更時 */
+["nameInput","jobInput","fontSelect"].forEach(id=>{
+document.getElementById(id).addEventListener("input",updatePreview);
+document.getElementById(id).addEventListener("change",updatePreview);
+});
 
 window.onload=updatePreview;
 
+
+/* 保存 */
 document.getElementById("saveBtn").onclick=async()=>{
-
-const markerId=document.getElementById("markerId").value;
-
-const saveBtn=document.getElementById("saveBtn");
-
-saveBtn.disabled=true;
-saveBtn.innerText="保存中...";
 
 try{
 
-await setDoc(doc(db,"arUsers",markerId),{
+await setDoc(doc(db,"arUsers",document.getElementById("markerId").value),{
 
 images:imagesBase64,
 ratios:imageRatios,
 
 name:document.getElementById("nameInput").value,
 job:document.getElementById("jobInput").value,
-
 font:document.getElementById("fontSelect").value,
 
 pattUrl:document.getElementById("pattInput").value,
 
-instagram:document.getElementById("instagramInput")?.value || "",
-x:document.getElementById("xInput")?.value || "",
-youtube:document.getElementById("HPInput")?.value || "",
-line:document.getElementById("lineInput")?.value || ""
+instagram:document.getElementById("instagramInput").value,
+x:document.getElementById("xInput").value,
+youtube:document.getElementById("HPInput").value,
+line:document.getElementById("lineInput").value
 
-});;
+});
 
-alert("保存完了しました");
+alert("保存完了");
 
 }catch(e){
 
 alert("エラー："+e.message);
 
 }
-
-saveBtn.disabled=false;
-saveBtn.innerText="FIRESTOREへ保存";
 
 };
 
