@@ -7,7 +7,7 @@
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
 <!-- Google Fonts読み込み -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&family=Raleway:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 body{
@@ -124,6 +124,7 @@ color:#888;
 <option value="Playfair Display">Playfair Display</option>
 <option value="Caveat">Caveat</option>
 <option value="Aloha">Aloha</option>
+<option value="Raleway">Raleway</option>
 </select>
 </div>
 
@@ -269,7 +270,7 @@ reader.readAsDataURL(file);
 
 }
 
-function createTextImage(text,color,fontFamily){
+function createTextImage(text,color,fontFamily,fontSize){
 
 return new Promise(resolve=>{
 
@@ -284,10 +285,16 @@ ctx.fillRect(0,0,canvas.width,canvas.height);
 
 // フォントが読み込まれるまで待つ
 document.fonts.ready.then(()=>{
-ctx.font=`bold 80px "${fontFamily}"`;
+ctx.font=`bold ${fontSize} "${fontFamily}"`;
 ctx.fillStyle=color;
 ctx.textAlign="center";
 ctx.textBaseline="middle";
+
+// テキストに影を追加
+ctx.shadowColor="rgba(0,0,0,0.5)";
+ctx.shadowBlur=10;
+ctx.shadowOffsetX=2;
+ctx.shadowOffsetY=2;
 
 ctx.fillText(text,canvas.width/2,canvas.height/2);
 
@@ -307,9 +314,6 @@ const nameVal=document.getElementById("nameInput").value||"NAME";
 const jobVal=document.getElementById("jobInput").value||"JOB";
 const fontVal=document.getElementById("fontSelect").value;
 
-const nameImg=await createTextImage(nameVal,"#ffffff",fontVal);
-const jobImg=await createTextImage(jobVal,"#ffcc00",fontVal);
-
 const count=imagesBase64.length>0?imagesBase64.length:1;
 
 for(let i=0;i<count;i++){
@@ -322,10 +326,13 @@ entity.setAttribute("position",`${posX} 0 0`);
 
 if(imagesBase64[i]){
 
+/* 写真レイヤー（Z=0） */
+
 const img=document.createElement("a-image");
 
 img.setAttribute("src",imagesBase64[i]);
 img.setAttribute("rotation","-90 0 0");
+img.setAttribute("position","0 0 0");
 
 const ratio=imageRatios[i]||1;
 
@@ -334,7 +341,26 @@ img.setAttribute("height",2.5*ratio);
 
 entity.appendChild(img);
 
+
+/* 半透明ベースプレート（Z=0.05） */
+
+const basePlate=document.createElement("a-plane");
+
+basePlate.setAttribute("position","0 0 0.05");
+basePlate.setAttribute("rotation","-90 0 0");
+
+basePlate.setAttribute("width","2.7");
+basePlate.setAttribute("height","0.5");
+
+basePlate.setAttribute("material","color:#8B6F47;opacity:0.7;transparent:true;shader:flat");
+
+entity.appendChild(basePlate);
+
 }
+
+/* 名前テキスト（Z=0.1） */
+
+const nameImg=await createTextImage(nameVal,"#FFD700",fontVal,"60px");
 
 const nameImage=document.createElement("a-image");
 
@@ -342,19 +368,25 @@ nameImage.setAttribute("src",nameImg);
 nameImage.setAttribute("width",4);
 nameImage.setAttribute("height",1);
 nameImage.setAttribute("rotation","-90 0 0");
-nameImage.setAttribute("position","0 0.1 -2");
+nameImage.setAttribute("position","0 0.05 0.1");
 
 entity.appendChild(nameImage);
+
+
+/* 肩書きテキスト（Z=0.1） */
+
+const jobImg=await createTextImage(jobVal,"#FFFFFF",fontVal,"45px");
 
 const jobImage=document.createElement("a-image");
 
 jobImage.setAttribute("src",jobImg);
-jobImage.setAttribute("width",4);
-jobImage.setAttribute("height",1);
+jobImage.setAttribute("width",3.5);
+jobImage.setAttribute("height",0.8);
 jobImage.setAttribute("rotation","-90 0 0");
-jobImage.setAttribute("position","0 0.1 2");
+jobImage.setAttribute("position","0 -0.05 0.1");
 
 entity.appendChild(jobImage);
+
 
 container.appendChild(entity);
 
@@ -398,7 +430,7 @@ alert("保存完了しました");
 
 }catch(e){
 
-alert("��ラー："+e.message);
+alert("エラー："+e.message);
 
 }
 
