@@ -262,33 +262,33 @@ reader.readAsDataURL(file);
 
 async function createText(text,color,font,size){
 
-await document.fonts.load(`${size}px "CorporateMincho"`);
+  await document.fonts.ready;
 
-const canvas=document.createElement("canvas");
-canvas.width=1024;
-canvas.height=256;
+  const canvas=document.createElement("canvas");
+  canvas.width=1024;
+  canvas.height=256;
 
-const ctx=canvas.getContext("2d");
+  const ctx=canvas.getContext("2d");
 
-ctx.clearRect(0,0,1024,256);
+  // デバッグ用背景
+  ctx.fillStyle="rgba(255,0,0,0.3)";
+  ctx.fillRect(0,0,1024,256);
 
-ctx.fillStyle=color;
-ctx.font=`bold ${size}px "CorporateMincho"`;
+  ctx.fillStyle=color;
 
-ctx.textAlign="center";
-ctx.textBaseline="middle";
+  ctx.font=`bold ${size}px "CorporateMincho"`;
 
-ctx.shadowColor="rgba(0,0,0,0.8)";
-ctx.shadowBlur=12;
-ctx.shadowOffsetX=2;
-ctx.shadowOffsetY=2;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
 
-ctx.fillText(text,512,128);
+  ctx.shadowColor="rgba(0,0,0,0.8)";
+  ctx.shadowBlur=12;
+  ctx.shadowOffsetX=2;
+  ctx.shadowOffsetY=2;
 
-return canvas.toDataURL("image/png");
-
+  ctx.fillText(text,512,128);
+  return canvas.toDataURL("image/png");
 }
-
 
 /* --------------------
 プレビュー更新
@@ -360,6 +360,8 @@ entity.appendChild(plate);
 
 /* 名前 */
 
+console.log("名前画像生成", nameImg);
+
 const namePlane=document.createElement("a-image");
 
 namePlane.setAttribute("src",nameImg);
@@ -402,7 +404,15 @@ document.getElementById(id).addEventListener("change",updatePreview);
 
 });
 
-window.onload=updatePreview;
+window.onload=async()=>{
+
+  await document.fonts.ready;
+
+  console.log("フォント読込完了");
+
+  updatePreview();
+
+};
 
 
 /* --------------------
