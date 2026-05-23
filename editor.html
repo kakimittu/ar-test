@@ -9,7 +9,7 @@
 <style>
 @font-face{
   font-family:'CorporateMincho';
-  src:url('assets/fonts/Corporate-Mincho-ver3.otf') format('opentype');
+  src:url('assets/fonts/Corporate-Mincho-ver3.woff2') format('woff2');
   font-display:swap;
 }
 
@@ -262,7 +262,7 @@ reader.readAsDataURL(file);
 
 async function createText(text,color,font,size){
 
-await document.fonts.load(`bold ${size}px "${font}"`);
+await document.fonts.load(`${size}px "CorporateMincho"`);
 
 const canvas=document.createElement("canvas");
 canvas.width=1024;
@@ -273,7 +273,7 @@ const ctx=canvas.getContext("2d");
 ctx.clearRect(0,0,1024,256);
 
 ctx.fillStyle=color;
-ctx.font=`bold ${size}px "${font}"`;
+ctx.font=`bold ${size}px "CorporateMincho"`;
 
 ctx.textAlign="center";
 ctx.textBaseline="middle";
