@@ -25,40 +25,13 @@ style="border:1px solid white"></canvas>
 
 <script>
 
-async function test(){
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
 
-    try{
+ctx.fillStyle="red";
+ctx.fillRect(0,0,1000,300);
 
-        await document.fonts.load('80px "CorporateMincho"');
-
-        console.log("フォント読み込み成功");
-
-        const canvas=document.getElementById("c");
-        const ctx=canvas.getContext("2d");
-
-        ctx.fillStyle="black";
-        ctx.fillRect(0,0,1000,300);
-
-       ctx.font='80px serif';
-
-        ctx.fillStyle="gold";
-
-        ctx.fillText("赤澤 優子",100,120);
-
-        ctx.fillStyle="white";
-
-        ctx.fillText("ホーストレーナー",100,240);
-
-    }
-    catch(e){
-
-        console.error(e);
-
-    }
-
-}
-
-test();
+console.log("描画完了");
 
 </script>
 
