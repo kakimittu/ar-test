@@ -292,6 +292,22 @@ const hud=document.querySelector(".hud");
 
 hud.innerHTML=`<div class="rec-dot"></div>REC AR ACTIVE<br>USER:${markerId}`;
 
+// add editor quick link
+const editBtn=document.createElement('a');
+editBtn.href=`editor.html?id=${markerId}`;
+editBtn.textContent='EDIT';
+editBtn.style.position='fixed';
+editBtn.style.top='20px';
+editBtn.style.right='20px';
+editBtn.style.padding='8px 10px';
+editBtn.style.background='rgba(255,255,255,0.9)';
+editBtn.style.color='#000';
+editBtn.style.borderRadius='6px';
+editBtn.style.zIndex='10003';
+editBtn.style.textDecoration='none';
+editBtn.style.fontFamily='sans-serif';
+document.body.appendChild(editBtn);
+
 
 /* SNSボタン */
 
@@ -392,89 +408,88 @@ const ratio=ratios[i] || 1;
 
 const baseW=1.8; // increased image size for better visibility on mobile
 
-aImg.setAttribute("width",baseW);
-aImg.setAttribute("height",(baseW*ratio).toFixed(3));
+for(let i=0;i<images.length;i++){
 
-container.appendChild(aImg);
+  const url = images[i];
 
+  const container=document.createElement("a-entity");
+  container.setAttribute("visible","false");
 
-/* 名前 */
+  const aImg=document.createElement("a-image");
 
-const nameFontFamily = data.font || "sans-serif";
-const nameFontSize = data.fontSize ? `${data.fontSize}px` : "60px";
-const nameColor = data.nameColor || "#00f2ff";
-const nameOffsetX = typeof data.nameOffsetX === "number" ? data.nameOffsetX : 0;
-const nameOffsetY = typeof data.nameOffsetY === "number" ? data.nameOffsetY : 0.1;
-const nameOffsetZ = typeof data.nameOffsetZ === "number" ? data.nameOffsetZ : -0.3;
-const nameWidth = 1.8 * (data.fontSize ? data.fontSize / 80 : 1);
-const nameHeight = 0.45 * (data.fontSize ? data.fontSize / 80 : 1);
+  aImg.setAttribute("src",url);
+  aImg.setAttribute("rotation","-90 0 0");
+  aImg.setAttribute("material","shader:flat;transparent:true;side:double");
 
-const nPlane=document.createElement("a-plane");
+  const ratio=ratios[i] || 1;
+  const baseW=1.8; // increased image size for better visibility on mobile
 
-nPlane.setAttribute("position",`${nameOffsetX} ${nameOffsetY} ${nameOffsetZ}`);
-nPlane.setAttribute("rotation","-90 0 0");
+  aImg.setAttribute("width",baseW);
+  aImg.setAttribute("height",(baseW*ratio).toFixed(3));
 
-nPlane.setAttribute("width",nameWidth.toFixed(3));
-nPlane.setAttribute("height",nameHeight.toFixed(3));
+  container.appendChild(aImg);
 
+  /* 名前 */
 
-// generate name texture (await font rendering)
-const nameSrc = await createTextTexture(data.name || "NO NAME",nameColor,nameFontSize,nameFontFamily);
-nPlane.setAttribute("material",{
-  src:nameSrc,
-  transparent:true,
-  shader:"flat"
-});
+  const nameFontFamily = data.font || "sans-serif";
+  const nameFontSize = data.fontSize ? `${data.fontSize}px` : "60px";
+  const nameColor = data.nameColor || "#00f2ff";
+  const nameOffsetX = typeof data.nameOffsetX === "number" ? data.nameOffsetX : 0;
+  const nameOffsetY = typeof data.nameOffsetY === "number" ? data.nameOffsetY : 0.1;
+  const nameOffsetZ = typeof data.nameOffsetZ === "number" ? data.nameOffsetZ : -0.3;
+  const nameWidth = 1.8 * (data.fontSize ? data.fontSize / 80 : 1);
+  const nameHeight = 0.45 * (data.fontSize ? data.fontSize / 80 : 1);
 
-container.appendChild(nPlane);
+  const nPlane=document.createElement("a-plane");
 
+  nPlane.setAttribute("position",`${nameOffsetX} ${nameOffsetY} ${nameOffsetZ}`);
+  nPlane.setAttribute("rotation","-90 0 0");
 
-/* 肩書き */
+  nPlane.setAttribute("width",nameWidth.toFixed(3));
+  nPlane.setAttribute("height",nameHeight.toFixed(3));
 
-const jobFontFamily = data.font || "sans-serif";
-const jobFontSize = data.fontSize ? `${Math.max(40, Math.round(data.fontSize * 0.75))}px` : "45px";
-const jobColor = data.jobColor || "#ffcc00";
-const jobOffsetX = typeof data.jobOffsetX === "number" ? data.jobOffsetX : 0;
-const jobOffsetY = typeof data.jobOffsetY === "number" ? data.jobOffsetY : 0.1;
-const jobOffsetZ = typeof data.jobOffsetZ === "number" ? data.jobOffsetZ : 0.3;
-const jobWidth = 1.4 * (data.fontSize ? data.fontSize / 80 : 1);
-const jobHeight = 0.35 * (data.fontSize ? data.fontSize / 80 : 1);
+  // generate name texture (await font rendering)
+  const nameSrc = await createTextTexture(data.name || "NO NAME",nameColor,nameFontSize,nameFontFamily);
+  nPlane.setAttribute("material",{
+    src:nameSrc,
+    transparent:true,
+    shader:"flat"
+  });
 
-const jPlane=document.createElement("a-plane");
+  container.appendChild(nPlane);
 
-jPlane.setAttribute("position",`${jobOffsetX} ${jobOffsetY} ${jobOffsetZ}`);
-jPlane.setAttribute("rotation","-90 0 0");
+  /* 肩書き */
 
-jPlane.setAttribute("width",jobWidth.toFixed(3));
-jPlane.setAttribute("height",jobHeight.toFixed(3));
+  const jobFontFamily = data.font || "sans-serif";
+  const jobFontSize = data.fontSize ? `${Math.max(40, Math.round(data.fontSize * 0.75))}px` : "45px";
+  const jobColor = data.jobColor || "#ffcc00";
+  const jobOffsetX = typeof data.jobOffsetX === "number" ? data.jobOffsetX : 0;
+  const jobOffsetY = typeof data.jobOffsetY === "number" ? data.jobOffsetY : 0.1;
+  const jobOffsetZ = typeof data.jobOffsetZ === "number" ? data.jobOffsetZ : 0.3;
+  const jobWidth = 1.4 * (data.fontSize ? data.fontSize / 80 : 1);
+  const jobHeight = 0.35 * (data.fontSize ? data.fontSize / 80 : 1);
 
+  const jPlane=document.createElement("a-plane");
 
-// generate job/title texture
-const jobSrc = await createTextTexture(data.job || "NO TITLE",jobColor,jobFontSize,jobFontFamily);
-jPlane.setAttribute("material",{
-  src:jobSrc,
-  transparent:true,
-  shader:"flat"
-});
+  jPlane.setAttribute("position",`${jobOffsetX} ${jobOffsetY} ${jobOffsetZ}`);
+  jPlane.setAttribute("rotation","-90 0 0");
 
-container.appendChild(jPlane);
+  jPlane.setAttribute("width",jobWidth.toFixed(3));
+  jPlane.setAttribute("height",jobHeight.toFixed(3));
 
+  // generate job/title texture
+  const jobSrc = await createTextTexture(data.job || "NO TITLE",jobColor,jobFontSize,jobFontFamily);
+  jPlane.setAttribute("material",{
+    src:jobSrc,
+    transparent:true,
+    shader:"flat"
+  });
 
-marker.appendChild(container);
+  container.appendChild(jPlane);
 
-items.push(container);
+  items.push(container);
 
-});
-
-
-updateCarousel();
-
-});
-
-
-function updateCarousel(){
-
-  items.forEach((item,index)=>{
+}
 
     const isCenter=(index===currentIndex);
     const offset=(index-currentIndex)*2.6; // slightly wider spacing for larger images
