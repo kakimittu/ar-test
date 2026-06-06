@@ -341,9 +341,6 @@ while(marker.firstChild){
 marker.removeChild(marker.firstChild);
 }
 
-
-addDecorations(marker);
-
 items=[];
 
 const backgroundPlane = document.createElement("a-plane");
@@ -400,7 +397,7 @@ const nameFontSize = data.fontSize ? `${data.fontSize}px` : "60px";
 const nameColor = data.nameColor || "#00f2ff";
 const nameOffsetX = typeof data.nameOffsetX === "number" ? data.nameOffsetX : 0;
 const nameOffsetY = typeof data.nameOffsetY === "number" ? data.nameOffsetY : 0.1;
-const nameOffsetZ = typeof data.nameOffsetZ === "number" ? data.nameOffsetZ : -1.1;
+const nameOffsetZ = typeof data.nameOffsetZ === "number" ? data.nameOffsetZ : -0.3;
 const nameWidth = 1.8 * (data.fontSize ? data.fontSize / 80 : 1);
 const nameHeight = 0.45 * (data.fontSize ? data.fontSize / 80 : 1);
 
@@ -428,7 +425,7 @@ const jobFontSize = data.fontSize ? `${Math.max(40, Math.round(data.fontSize * 0
 const jobColor = data.jobColor || "#ffcc00";
 const jobOffsetX = typeof data.jobOffsetX === "number" ? data.jobOffsetX : 0;
 const jobOffsetY = typeof data.jobOffsetY === "number" ? data.jobOffsetY : 0.1;
-const jobOffsetZ = typeof data.jobOffsetZ === "number" ? data.jobOffsetZ : 1.1;
+const jobOffsetZ = typeof data.jobOffsetZ === "number" ? data.jobOffsetZ : 0.3;
 const jobWidth = 1.4 * (data.fontSize ? data.fontSize / 80 : 1);
 const jobHeight = 0.35 * (data.fontSize ? data.fontSize / 80 : 1);
 
