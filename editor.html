@@ -274,18 +274,24 @@ function createTextImage(text,color,fontFamily){
 return new Promise(resolve=>{
 
 const canvas=document.createElement("canvas");
+const ctx=canvas.getContext("2d");
+
 canvas.width=1024;
 canvas.height=256;
 
-const ctx=canvas.getContext("2d");
+ctx.clearRect(0,0,1024,256);
 
-ctx.fillStyle="red";
-ctx.fillRect(0,0,1024,256);
+ctx.fillStyle=color;
 
-ctx.fillStyle="white";
-ctx.font="80px sans-serif";
+ctx.font=`bold 80px "${fontFamily}", sans-serif`;
+
 ctx.textAlign="center";
 ctx.textBaseline="middle";
+
+ctx.shadowColor="rgba(0,0,0,0.8)";
+ctx.shadowBlur=10;
+
+console.log("font=",ctx.font);
 
 ctx.fillText(
 text,
