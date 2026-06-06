@@ -96,7 +96,7 @@ label {
 }
 
 /* フォーム要素の共通モダンデザイン */
-input[type="text"], select {
+input[type="text"], select, input[type="color"], input[type="range"] {
   width: 100%;
   padding: 10px 12px;
   background: #202024;
@@ -108,10 +108,63 @@ input[type="text"], select {
   transition: all 0.2s ease;
 }
 
-input[type="text"]:focus, select:focus {
+input[type="range"] {
+  padding: 0;
+  height: 6px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #06b6d4;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #22d3ee;
+  transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #06b6d4;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #22d3ee;
+  transform: scale(1.2);
+}
+
+input[type="text"]:focus, select:focus, input[type="color"]:focus {
   outline: none;
   border-color: #06b6d4;
   box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15);
+}
+
+input[type="color"] {
+  height: 44px;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
 }
 
 /* ファイル入力のカスタム */
@@ -264,6 +317,58 @@ select option {
     </div>
 
     <div class="input-group">
+      <label>お名前の色</label>
+      <input type="color" id="nameColorInput" value="#ffffff">
+    </div>
+
+    <div class="input-group">
+      <label>肩書きの色</label>
+      <input type="color" id="jobColorInput" value="#ffcc00">
+    </div>
+
+    <div class="input-group">
+      <label>文字サイズ</label>
+      <input type="range" id="fontSizeInput" min="40" max="150" value="80" step="5">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="fontSizeDisplay">80px</div>
+    </div>
+
+    <div class="input-group">
+      <label>お名前の位置 X</label>
+      <input type="range" id="nameOffsetXInput" min="-5" max="5" value="-3" step="0.5">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="nameOffsetXDisplay">-3</div>
+    </div>
+
+    <div class="input-group">
+      <label>お名前の位置 Y</label>
+      <input type="range" id="nameOffsetYInput" min="-2" max="2" value="1" step="0.2">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="nameOffsetYDisplay">1</div>
+    </div>
+
+    <div class="input-group">
+      <label>お名前の位置 Z</label>
+      <input type="range" id="nameOffsetZInput" min="-3" max="3" value="-2" step="0.3">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="nameOffsetZDisplay">-2</div>
+    </div>
+
+    <div class="input-group">
+      <label>肩書きの位置 X</label>
+      <input type="range" id="jobOffsetXInput" min="-5" max="5" value="3" step="0.5">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="jobOffsetXDisplay">3</div>
+    </div>
+
+    <div class="input-group">
+      <label>肩書きの位置 Y</label>
+      <input type="range" id="jobOffsetYInput" min="-2" max="2" value="0.5" step="0.2">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="jobOffsetYDisplay">0.5</div>
+    </div>
+
+    <div class="input-group">
+      <label>肩書きの位置 Z</label>
+      <input type="range" id="jobOffsetZInput" min="-3" max="3" value="2" step="0.3">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="jobOffsetZDisplay">2</div>
+    </div>
+
+    <div class="input-group">
       <label>画像</label>
       <input type="file" id="fileInput" accept="image/*" multiple>
       <div id="fileList">未選択</div>
@@ -363,10 +468,27 @@ updatePreview();
 
 };
 
-["nameInput","jobInput","fontSelect"].forEach(id=>{
-document.getElementById(id).addEventListener("input",updatePreview);
-document.getElementById(id).addEventListener("change",updatePreview);
+["nameInput","jobInput","fontSelect","nameColorInput","jobColorInput","fontSizeInput","nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput"].forEach(id=>{
+const el = document.getElementById(id);
+el.addEventListener("input",()=>{
+  updateDisplayValue(id);
+  updatePreview();
 });
+el.addEventListener("change",updatePreview);
+});
+
+function updateDisplayValue(id) {
+  const el = document.getElementById(id);
+  const displayId = id + "Display";
+  const displayEl = document.getElementById(displayId);
+  if (displayEl) {
+    if (id === "fontSizeInput") {
+      displayEl.textContent = el.value + "px";
+    } else {
+      displayEl.textContent = el.value;
+    }
+  }
+}
 
 function processImage(file){
 
@@ -433,8 +555,9 @@ async function waitForFont(fontFamily) {
  * @param {string} text - 表示テキスト
  * @param {string} color - テキスト色
  * @param {string} fontFamily - フォントファミリー名
+ * @param {number} fontSize - フォントサイズ
  */
-async function createTextImage(text, color, fontFamily) {
+async function createTextImage(text, color, fontFamily, fontSize = 80) {
 
   // フォント読み込み完了を待つ
   await waitForFont(fontFamily);
@@ -452,7 +575,7 @@ async function createTextImage(text, color, fontFamily) {
     ctx.fillStyle = color;
 
     // フォント読み込み完了後に設定
-    ctx.font = `bold 80px "${fontFamily}", sans-serif`;
+    ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -460,7 +583,7 @@ async function createTextImage(text, color, fontFamily) {
     ctx.shadowColor = "rgba(0,0,0,0.8)";
     ctx.shadowBlur = 10;
 
-    console.log(`📝 キャンバスに描画: "${text}" | フォント: ${fontFamily}`);
+    console.log(`📝 キャンバスに描画: "${text}" | フォント: ${fontFamily} | サイズ: ${fontSize}px`);
 
     ctx.fillText(
       text,
@@ -485,10 +608,20 @@ async function updatePreview(){
   const nameVal = document.getElementById("nameInput").value || "NAME";
   const jobVal = document.getElementById("jobInput").value || "JOB";
   const fontVal = document.getElementById("fontSelect").value;
+  const fontSizeVal = parseInt(document.getElementById("fontSizeInput").value) || 80;
+  const nameColorVal = document.getElementById("nameColorInput").value || "#ffffff";
+  const jobColorVal = document.getElementById("jobColorInput").value || "#ffcc00";
+  
+  const nameOffsetX = parseFloat(document.getElementById("nameOffsetXInput").value) || -3;
+  const nameOffsetY = parseFloat(document.getElementById("nameOffsetYInput").value) || 1;
+  const nameOffsetZ = parseFloat(document.getElementById("nameOffsetZInput").value) || -2;
+  const jobOffsetX = parseFloat(document.getElementById("jobOffsetXInput").value) || 3;
+  const jobOffsetY = parseFloat(document.getElementById("jobOffsetYInput").value) || 0.5;
+  const jobOffsetZ = parseFloat(document.getElementById("jobOffsetZInput").value) || 2;
 
   // フォント読み込み完了を待機してからテキスト画像を生成
-  const nameImg = await createTextImage(nameVal, "#ffffff", fontVal);
-  const jobImg = await createTextImage(jobVal, "#ffcc00", fontVal);
+  const nameImg = await createTextImage(nameVal, nameColorVal, fontVal, fontSizeVal);
+  const jobImg = await createTextImage(jobVal, jobColorVal, fontVal, fontSizeVal);
 
   const count = imagesBase64.length > 0 ? imagesBase64.length : 1;
 
@@ -518,23 +651,25 @@ async function updatePreview(){
 
     const nameImage = document.createElement("a-image");
 
-    nameImage.setAttribute("color", "red");
-
     nameImage.setAttribute("src", nameImg);
-    nameImage.setAttribute("width", 4);
-    nameImage.setAttribute("height", 1);
+    const nameWidth = 4 * (fontSizeVal / 80);
+    const nameHeight = 1 * (fontSizeVal / 80);
+    nameImage.setAttribute("width", nameWidth);
+    nameImage.setAttribute("height", nameHeight);
     nameImage.setAttribute("rotation", "-90 0 0");
-    nameImage.setAttribute("position", "0 0.1 -2");
+    nameImage.setAttribute("position", `${nameOffsetX} ${nameOffsetY} ${nameOffsetZ}`);
 
     entity.appendChild(nameImage);
 
     const jobImage = document.createElement("a-image");
 
     jobImage.setAttribute("src", jobImg);
-    jobImage.setAttribute("width", 4);
-    jobImage.setAttribute("height", 1);
+    const jobWidth = 4 * (fontSizeVal / 80);
+    const jobHeight = 1 * (fontSizeVal / 80);
+    jobImage.setAttribute("width", jobWidth);
+    jobImage.setAttribute("height", jobHeight);
     jobImage.setAttribute("rotation", "-90 0 0");
-    jobImage.setAttribute("position", "0 0.1 2");
+    jobImage.setAttribute("position", `${jobOffsetX} ${jobOffsetY} ${jobOffsetZ}`);
 
     entity.appendChild(jobImage);
 
@@ -569,6 +704,16 @@ document.getElementById("saveBtn").onclick = async() => {
       job: document.getElementById("jobInput").value,
 
       font: document.getElementById("fontSelect").value,
+      fontSize: parseInt(document.getElementById("fontSizeInput").value),
+      nameColor: document.getElementById("nameColorInput").value,
+      jobColor: document.getElementById("jobColorInput").value,
+      
+      nameOffsetX: parseFloat(document.getElementById("nameOffsetXInput").value),
+      nameOffsetY: parseFloat(document.getElementById("nameOffsetYInput").value),
+      nameOffsetZ: parseFloat(document.getElementById("nameOffsetZInput").value),
+      jobOffsetX: parseFloat(document.getElementById("jobOffsetXInput").value),
+      jobOffsetY: parseFloat(document.getElementById("jobOffsetYInput").value),
+      jobOffsetZ: parseFloat(document.getElementById("jobOffsetZInput").value),
 
       pattUrl: document.getElementById("pattInput").value,
 
