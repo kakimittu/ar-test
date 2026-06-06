@@ -178,22 +178,29 @@ let items=[];
 
 /* 日本語Canvas */
 
-function createTextTexture(text,color,fontSize="50px",fontFamily="sans-serif"){
+async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-serif"){ 
 
-const canvas=document.createElement("canvas");
-canvas.width=512;
-canvas.height=128;
+  const canvas=document.createElement("canvas");
+  canvas.width=512;
+  canvas.height=128;
 
-const ctx=canvas.getContext("2d");
+  const ctx=canvas.getContext("2d");
 
-ctx.clearRect(0,0,512,128);
-ctx.fillStyle=color;
-ctx.font=`bold ${fontSize} "${fontFamily}", sans-serif`;
-ctx.textAlign="center";
-ctx.textBaseline="middle";
-ctx.fillText(text,256,64);
+  // wait for font to be available to avoid fallback rendering
+  try{
+    await document.fonts.load(`bold ${fontSize} "${fontFamily}"`);
+  }catch(e){
+    // ignore and proceed
+  }
 
-return canvas.toDataURL();
+  ctx.clearRect(0,0,512,128);
+  ctx.fillStyle=color;
+  ctx.font=`bold ${fontSize} "${fontFamily}", sans-serif`;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(text,256,64);
+
+  return canvas.toDataURL();
 
 }
 
@@ -382,10 +389,11 @@ aImg.setAttribute("rotation","-90 0 0");
 aImg.setAttribute("material","shader:flat;transparent:true;side:double");
 
 const ratio=ratios[i] || 1;
-const baseW=1.4;
+
+const baseW=1.8; // increased image size for better visibility on mobile
 
 aImg.setAttribute("width",baseW);
-aImg.setAttribute("height",baseW*ratio);
+aImg.setAttribute("height",(baseW*ratio).toFixed(3));
 
 container.appendChild(aImg);
 
@@ -409,10 +417,13 @@ nPlane.setAttribute("rotation","-90 0 0");
 nPlane.setAttribute("width",nameWidth.toFixed(3));
 nPlane.setAttribute("height",nameHeight.toFixed(3));
 
+
+// generate name texture (await font rendering)
+const nameSrc = await createTextTexture(data.name || "NO NAME",nameColor,nameFontSize,nameFontFamily);
 nPlane.setAttribute("material",{
-src:createTextTexture(data.name || "NO NAME",nameColor,nameFontSize,nameFontFamily),
-transparent:true,
-shader:"flat"
+  src:nameSrc,
+  transparent:true,
+  shader:"flat"
 });
 
 container.appendChild(nPlane);
@@ -437,10 +448,13 @@ jPlane.setAttribute("rotation","-90 0 0");
 jPlane.setAttribute("width",jobWidth.toFixed(3));
 jPlane.setAttribute("height",jobHeight.toFixed(3));
 
+
+// generate job/title texture
+const jobSrc = await createTextTexture(data.job || "NO TITLE",jobColor,jobFontSize,jobFontFamily);
 jPlane.setAttribute("material",{
-src:createTextTexture(data.job || "NO TITLE",jobColor,jobFontSize,jobFontFamily),
-transparent:true,
-shader:"flat"
+  src:jobSrc,
+  transparent:true,
+  shader:"flat"
 });
 
 container.appendChild(jPlane);
@@ -460,22 +474,21 @@ updateCarousel();
 
 function updateCarousel(){
 
-items.forEach((item,index)=>{
+  items.forEach((item,index)=>{
 
-const isCenter=(index===currentIndex);
-const offset=(index-currentIndex)*2.2;
+    const isCenter=(index===currentIndex);
+    const offset=(index-currentIndex)*2.6; // slightly wider spacing for larger images
 
-item.setAttribute("visible",Math.abs(index-currentIndex)<=1);
+    // limit visible to near items
+    item.setAttribute("visible", Math.abs(index-currentIndex) <= 1 ? "true" : "false");
 
-item.setAttribute("position",{
-x:offset,
-y:isCenter?0.2:0.1,
-z:0
-});
+    // use string attrs for stability and keep y nearly constant to avoid vertical jitter
+    const yPos = isCenter ? 0.14 : 0.12;
+    item.setAttribute("position", `${offset} ${yPos} 0`);
 
-item.setAttribute("scale",isCenter?"1 1 1":"0.7 0.7 0.7");
+    item.setAttribute("scale", isCenter ? "1 1 1" : "0.75 0.75 0.75");
 
-});
+  });
 
 }
 
