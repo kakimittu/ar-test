@@ -292,7 +292,9 @@ ctx.fillStyle=color;
 
 ctx.font=`bold 80px "${fontFamily}", sans-serif`;
 
-console.log("使用フォント:", ctx.font);
+console.log(
+document.fonts.check('80px "CorporateMincho"')
+);
 
 ctx.textAlign="center";
 ctx.textBaseline="middle";
