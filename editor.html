@@ -11,7 +11,11 @@
 <style>
 @font-face{
   font-family:'CorporateMincho';
-  src:url('./assets/fonts/Corporate-Mincho-ver3-fixed.woff2') format('woff2');
+  src:url('./assets/fonts/Corporate-Mincho-ver3-fixed.woff2') format('woff2'),
+      url('./assets/fonts/Corporate-Mincho-ver3-fixed.woff') format('woff');
+  font-display: swap;
+  font-weight: normal;
+  font-style: normal;
 }
   
 body {
@@ -405,155 +409,188 @@ reader.readAsDataURL(file);
 
 }
 
-function createTextImage(text,color,fontFamily){
+/**
+ * フォント読み込み完了を待機する関数
+ * @param {string} fontFamily - フォントファミリー名
+ */
+async function waitForFont(fontFamily) {
+  try {
+    // フォントが読み込まれるまで待機（最大10秒）
+    const fontLoaded = await Promise.race([
+      document.fonts.load(`bold 80px "${fontFamily}"`),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Font load timeout')), 10000)
+      )
+    ]);
+    console.log(`✓ フォント "${fontFamily}" の読み込み完了`);
+  } catch (e) {
+    console.warn(`⚠ フォント "${fontFamily}" の読み込みに失敗: ${e.message}`);
+  }
+}
 
-return new Promise(resolve=>{
+/**
+ * テキストを画像に変換する関数
+ * @param {string} text - 表示テキスト
+ * @param {string} color - テキスト色
+ * @param {string} fontFamily - フォントファミリー名
+ */
+async function createTextImage(text, color, fontFamily) {
 
-const canvas=document.createElement("canvas");
-const ctx=canvas.getContext("2d");
+  // フォント読み込み完了を待つ
+  await waitForFont(fontFamily);
 
-canvas.width=1024;
-canvas.height=256;
+  return new Promise(resolve => {
 
-ctx.clearRect(0,0,1024,256);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
-ctx.fillStyle=color;
+    canvas.width = 1024;
+    canvas.height = 256;
 
-ctx.font=`bold 80px "${fontFamily}", sans-serif`;
+    ctx.clearRect(0, 0, 1024, 256);
 
-console.log(
-document.fonts.check('80px "CorporateMincho"')
-);
+    ctx.fillStyle = color;
 
-ctx.textAlign="center";
-ctx.textBaseline="middle";
+    // フォント読み込み完了後に設定
+    ctx.font = `bold 80px "${fontFamily}", sans-serif`;
 
-ctx.shadowColor="rgba(0,0,0,0.8)";
-ctx.shadowBlur=10;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-console.log("font=",ctx.font);
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur = 10;
 
-ctx.fillText(
-text,
-canvas.width/2,
-canvas.height/2
-);
+    console.log(`📝 キャンバスに描画: "${text}" | フォント: ${fontFamily}`);
 
-resolve(canvas.toDataURL("image/png"));
+    ctx.fillText(
+      text,
+      canvas.width / 2,
+      canvas.height / 2
+    );
 
-});
+    resolve(canvas.toDataURL("image/png"));
+
+  });
 
 }
 
+/**
+ * プレビューを更新する関数
+ */
 async function updatePreview(){
 
-const container=document.getElementById("dynamic-content");
-container.innerHTML="";
+  const container = document.getElementById("dynamic-content");
+  container.innerHTML = "";
 
-const nameVal=document.getElementById("nameInput").value||"NAME";
-const jobVal=document.getElementById("jobInput").value||"JOB";
-const fontVal=document.getElementById("fontSelect").value;
+  const nameVal = document.getElementById("nameInput").value || "NAME";
+  const jobVal = document.getElementById("jobInput").value || "JOB";
+  const fontVal = document.getElementById("fontSelect").value;
 
-const nameImg=await createTextImage(nameVal,"#ffffff",fontVal);
-const jobImg=await createTextImage(jobVal,"#ffcc00",fontVal);
+  // フォント読み込み完了を待機してからテキスト画像を生成
+  const nameImg = await createTextImage(nameVal, "#ffffff", fontVal);
+  const jobImg = await createTextImage(jobVal, "#ffcc00", fontVal);
 
-const count=imagesBase64.length>0?imagesBase64.length:1;
+  const count = imagesBase64.length > 0 ? imagesBase64.length : 1;
 
-for(let i=0;i<count;i++){
+  for(let i = 0; i < count; i++){
 
-const entity=document.createElement("a-entity");
+    const entity = document.createElement("a-entity");
 
-let posX=(i===0)?0:(i%2===1?Math.ceil(i/2)*4:Math.ceil(i/2)*-4);
+    let posX = (i === 0) ? 0 : (i % 2 === 1 ? Math.ceil(i / 2) * 4 : Math.ceil(i / 2) * -4);
 
-entity.setAttribute("position",`${posX} 0 0`);
+    entity.setAttribute("position", `${posX} 0 0`);
 
-if(imagesBase64[i]){
+    if(imagesBase64[i]){
 
-const img=document.createElement("a-image");
+      const img = document.createElement("a-image");
 
-img.setAttribute("src",imagesBase64[i]);
-img.setAttribute("rotation","-90 0 0");
+      img.setAttribute("src", imagesBase64[i]);
+      img.setAttribute("rotation", "-90 0 0");
 
-const ratio=imageRatios[i]||1;
+      const ratio = imageRatios[i] || 1;
 
-img.setAttribute("width",2.5);
-img.setAttribute("height",2.5*ratio);
+      img.setAttribute("width", 2.5);
+      img.setAttribute("height", 2.5 * ratio);
 
-entity.appendChild(img);
+      entity.appendChild(img);
 
-}
+    }
 
-const nameImage=document.createElement("a-image");
+    const nameImage = document.createElement("a-image");
 
-nameImage.setAttribute("color","red");
+    nameImage.setAttribute("color", "red");
 
-nameImage.setAttribute("src",nameImg);
-console.log("nameImg",nameImg.substring(0,50));
-nameImage.setAttribute("width",4);
-nameImage.setAttribute("height",1);
-nameImage.setAttribute("rotation","-90 0 0");
-nameImage.setAttribute("position","0 0.1 -2");
+    nameImage.setAttribute("src", nameImg);
+    nameImage.setAttribute("width", 4);
+    nameImage.setAttribute("height", 1);
+    nameImage.setAttribute("rotation", "-90 0 0");
+    nameImage.setAttribute("position", "0 0.1 -2");
 
-entity.appendChild(nameImage);
+    entity.appendChild(nameImage);
 
-const jobImage=document.createElement("a-image");
+    const jobImage = document.createElement("a-image");
 
-jobImage.setAttribute("src",jobImg);
-jobImage.setAttribute("width",4);
-jobImage.setAttribute("height",1);
-jobImage.setAttribute("rotation","-90 0 0");
-jobImage.setAttribute("position","0 0.1 2");
+    jobImage.setAttribute("src", jobImg);
+    jobImage.setAttribute("width", 4);
+    jobImage.setAttribute("height", 1);
+    jobImage.setAttribute("rotation", "-90 0 0");
+    jobImage.setAttribute("position", "0 0.1 2");
 
-entity.appendChild(jobImage);
+    entity.appendChild(jobImage);
 
-container.appendChild(entity);
+    container.appendChild(entity);
 
-}
-
-}
-
-window.onload=updatePreview;
-
-document.getElementById("saveBtn").onclick=async()=>{
-
-const markerId=document.getElementById("markerId").value;
-
-const saveBtn=document.getElementById("saveBtn");
-
-saveBtn.disabled=true;
-saveBtn.innerText="保存中...";
-
-try{
-
-await setDoc(doc(db,"arUsers",markerId),{
-
-images:imagesBase64,
-ratios:imageRatios,
-
-name:document.getElementById("nameInput").value,
-job:document.getElementById("jobInput").value,
-
-font:document.getElementById("fontSelect").value,
-
-pattUrl:document.getElementById("pattInput").value,
-
-instagram:document.getElementById("instagramInput")?.value || "",
-x:document.getElementById("xInput")?.value || "",
-youtube:document.getElementById("HPInput")?.value || "",
-line:document.getElementById("lineInput")?.value || ""
-
-});;
-
-alert("保存完了しました");
-
-}catch(e){
-
-alert("エラー："+e.message);
+  }
 
 }
 
-saveBtn.disabled=false;
-saveBtn.innerText="FIRESTOREへ保存";
+window.onload = () => {
+  console.log("🚀 AR EDITOR 初期化開始");
+  updatePreview();
+};
+
+document.getElementById("saveBtn").onclick = async() => {
+
+  const markerId = document.getElementById("markerId").value;
+
+  const saveBtn = document.getElementById("saveBtn");
+
+  saveBtn.disabled = true;
+  saveBtn.innerText = "保存中...";
+
+  try{
+
+    await setDoc(doc(db, "arUsers", markerId), {
+
+      images: imagesBase64,
+      ratios: imageRatios,
+
+      name: document.getElementById("nameInput").value,
+      job: document.getElementById("jobInput").value,
+
+      font: document.getElementById("fontSelect").value,
+
+      pattUrl: document.getElementById("pattInput").value,
+
+      instagram: document.getElementById("instagramInput")?.value || "",
+      x: document.getElementById("xInput")?.value || "",
+      youtube: document.getElementById("HPInput")?.value || "",
+      line: document.getElementById("lineInput")?.value || ""
+
+    });
+
+    alert("✓ 保存完了しました");
+    console.log("💾 Firestore 保存完了");
+
+  }catch(e){
+
+    alert("✗ エラー：" + e.message);
+    console.error("❌ 保存エラー:", e);
+
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.innerText = "FIRESTOREへ保存";
 
 };
 
