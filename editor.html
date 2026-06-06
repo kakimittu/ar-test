@@ -6,92 +6,212 @@
 
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
-<!-- Google Fonts読み込み -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Roboto:wght@400;700&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
 
 <style>
-
- @font-face{
+@font-face{
   font-family:'CorporateMincho';
   src:url('./assets/fonts/Corporate-Mincho-ver3-fixed.woff2') format('woff2');
 }
   
-body{
-margin:0;
-display:flex;
-height:100vh;
-font-family:sans-serif;
-background:#0f0f0f;
-color:#fff;
-overflow:hidden;
+body {
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  font-family: 'Noto Sans JP', 'Roboto', sans-serif;
+  background: #09090b;
+  color: #f4f4f5;
+  overflow: hidden;
 }
 
-#controls{
-width:360px;
-padding:20px;
-background:#1a1a1a;
-overflow-y:auto;
-border-right:1px solid #333;
-box-sizing:border-box;
+/* 左側：コントロールパネル */
+#controls {
+  width: 380px;
+  min-width: 380px;
+  padding: 24px;
+  background: #121214;
+  overflow-y: auto;
+  border-right: 1px solid #27272a;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-#preview{
-flex-grow:1;
-background:#000;
+/* スクロールバーのカスタマイズ */
+#controls::-webkit-scrollbar {
+  width: 6px;
+}
+#controls::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 3px;
 }
 
-h2{
-margin:0 0 20px 0;
-color:#00f2ff;
-font-size:18px;
+/* タイトルスタイル */
+h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #06b6d4; /* 高級感のあるアクア */
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 16px;
 }
 
-.input-group{
-margin-bottom:15px;
+/* セクション（カード）ごとのまとまり */
+.section-box {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-label{
-display:block;
-margin-bottom:5px;
-font-size:12px;
-color:#00f2ff;
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #71717a;
+  margin-bottom: 4px;
+  font-weight: 700;
 }
 
-input[type="text"],input[type="file"],select{
-width:100%;
-padding:10px;
-background:#262626;
-border:1px solid #444;
-color:#fff;
-border-radius:4px;
-box-sizing:border-box;
+/* 入力グループ */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-select{
-cursor:pointer;
+label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #a1a1aa;
 }
 
-select option{
-background:#262626;
-color:#fff;
+/* フォーム要素の共通モダンデザイン */
+input[type="text"], select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #202024;
+  border: 1px solid #3f3f46;
+  color: #fff;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 13px;
+  transition: all 0.2s ease;
 }
 
-.btn{
-width:100%;
-padding:15px;
-border:none;
-border-radius:4px;
-font-weight:bold;
-cursor:pointer;
-margin-top:20px;
-background:#00f2ff;
-color:#000;
+input[type="text"]:focus, select:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15);
 }
 
-#fileList{
-margin-top:5px;
-font-size:11px;
-color:#888;
+/* ファイル入力のカスタム */
+.file-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  background: #202024;
+  border: 1px dashed #3f3f46;
+  color: #a1a1aa;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+input[type="file"]:hover {
+  border-color: #06b6d4;
+}
+
+#fileList {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #71717a;
+  text-align: right;
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+select option {
+  background: #202024;
+  color: #fff;
+}
+
+/* 保存ボタン */
+.btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  margin-top: 10px;
+  background: #06b6d4;
+  color: #09090b;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: #22d3ee;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  background: #27272a;
+  color: #71717a;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 右側：プレビュー */
+#preview {
+  flex-grow: 1;
+  background: #000;
+  position: relative;
+}
+
+/* プレビューエリアに「LIVE PREVIEW」のバッジを載せてプロ感を演出 */
+#preview::before {
+  content: 'LIVE PREVIEW';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 6px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  pointer-events: none;
 }
 </style>
 </head>
@@ -100,67 +220,76 @@ color:#888;
 
 <div id="controls">
 
-<h2>AR EDITOR</h2>
+  <h2>AR EDITOR</h2>
 
-<div class="input-group">
-<label>ドキュメントID</label>
-<input type="text" id="markerId" value="akazawa">
-</div>
+  <div class="section-box">
+    <div class="section-title">System Settings</div>
+    <div class="input-group">
+      <label>ドキュメントID</label>
+      <input type="text" id="markerId" value="akazawa">
+    </div>
 
-<div class="input-group">
-<label>マーカーパス</label>
-<input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt">
-</div>
+    <div class="input-group">
+      <label>マーカーパス</label>
+      <input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt">
+    </div>
+  </div>
 
-<div class="input-group">
-<label>お名前</label>
-<input type="text" id="nameInput" value="赤澤 優子">
-</div>
+  <div class="section-box">
+    <div class="section-title">Profile Content</div>
+    <div class="input-group">
+      <label>お名前</label>
+      <input type="text" id="nameInput" value="赤澤 優子">
+    </div>
 
-<div class="input-group">
-<label>肩書き</label>
-<input type="text" id="jobInput" value="ホーストレーナー">
-</div>
+    <div class="input-group">
+      <label>肩書き</label>
+      <input type="text" id="jobInput" value="ホーストレーナー">
+    </div>
 
-<div class="input-group">
-<label>フォント</label>
-<select id="fontSelect">
-<option value="CorporateMincho">Corporate Mincho</option>
-<option value="Noto Sans JP">Noto Sans JP</option>
-<option value="Roboto">Roboto</option>
-<option value="Playfair Display">Playfair Display</option>
-<option value="Caveat">Caveat</option>
-<option value="Aloha">Aloha</option>
-</select>
-</div>
+    <div class="input-group">
+      <label>フォント</label>
+      <select id="fontSelect">
+        <option value="CorporateMincho">Corporate Mincho</option>
+        <option value="Noto Sans JP">Noto Sans JP</option>
+        <option value="Roboto">Roboto</option>
+        <option value="Playfair Display">Playfair Display</option>
+        <option value="Caveat">Caveat</option>
+        <option value="Aloha">Aloha</option>
+      </select>
+    </div>
 
-<div class="input-group">
-<label>画像</label>
-<input type="file" id="fileInput" accept="image/*" multiple>
-<div id="fileList">未選択</div>
-</div>
+    <div class="input-group">
+      <label>画像</label>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+      <div id="fileList">未選択</div>
+    </div>
+  </div>
 
-<div class="input-group">
-<label>Instagram URL</label>
-<input type="text" id="instagramInput" placeholder="https://instagram.com/">
-</div>
+  <div class="section-box">
+    <div class="section-title">Social Links</div>
+    <div class="input-group">
+      <label>Instagram URL</label>
+      <input type="text" id="instagramInput" placeholder="https://instagram.com/username">
+    </div>
 
-<div class="input-group">
-<label>X URL</label>
-<input type="text" id="xInput" placeholder="https://X.com/">
-</div>
+    <div class="input-group">
+      <label>X URL</label>
+      <input type="text" id="xInput" placeholder="https://x.com/username">
+    </div>
 
-<div class="input-group">
-<label>HP URL</label>
-<input type="text" id="HPInput" placeholder="https://youtube.com/">
-</div>
+    <div class="input-group">
+      <label>HP URL</label>
+      <input type="text" id="HPInput" placeholder="https://example.com">
+    </div>
 
-<div class="input-group">
-<label>LINE URL</label>
-<input type="text" id="lineInput" placeholder="https://line.me/">
-</div>
+    <div class="input-group">
+      <label>LINE URL</label>
+      <input type="text" id="lineInput" placeholder="https://line.me/R/ti/p/...">
+    </div>
+  </div>
 
-<button id="saveBtn" class="btn">FIRESTOREへ保存</button>
+  <button id="saveBtn" class="btn">FIRESTOREへ保存</button>
 
 </div>
 
@@ -194,7 +323,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig={
-apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
+apiKey:"",
 authDomain:"armisetai.firebaseapp.com",
 projectId:"armisetai",
 storageBucket:"armisetai.firebasestorage.app",
@@ -419,7 +548,7 @@ alert("保存完了しました");
 
 }catch(e){
 
-alert("��ラー："+e.message);
+alert("エラー："+e.message);
 
 }
 
