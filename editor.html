@@ -354,8 +354,10 @@ entity.appendChild(img);
 
 const nameImage=document.createElement("a-image");
 
+nameImage.setAttribute("color","red");
+
 nameImage.setAttribute("src",nameImg);
-console.log(nameImg);
+console.log("nameImg",nameImg.substring(0,50));
 nameImage.setAttribute("width",4);
 nameImage.setAttribute("height",1);
 nameImage.setAttribute("rotation","-90 0 0");
