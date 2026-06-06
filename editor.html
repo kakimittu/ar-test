@@ -369,6 +369,59 @@ select option {
     </div>
 
     <div class="input-group">
+      <label>背景タイプ</label>
+      <select id="bgTypeInput">
+        <option value="solid">単色</option>
+        <option value="gradient">グラデーション</option>
+        <option value="image">画像</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>背景色</label>
+      <input type="color" id="bgColorInput" value="#111827">
+    </div>
+
+    <div class="input-group">
+      <label>グラデーション 1</label>
+      <input type="color" id="bgGradientColor1Input" value="#111827">
+    </div>
+
+    <div class="input-group">
+      <label>グラデーション 2</label>
+      <input type="color" id="bgGradientColor2Input" value="#0f172a">
+    </div>
+
+    <div class="input-group">
+      <label>背景画像 URL</label>
+      <input type="text" id="bgImageUrlInput" placeholder="https://example.com/bg.png">
+    </div>
+
+    <div class="input-group">
+      <label>背景パネル不透明度</label>
+      <input type="range" id="bgOpacityInput" min="0.1" max="1" value="0.4" step="0.05">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgOpacityInputDisplay">0.4</div>
+    </div>
+
+    <div class="input-group">
+      <label>背景パネル幅</label>
+      <input type="range" id="bgWidthInput" min="1" max="8" value="4" step="0.2">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgWidthInputDisplay">4</div>
+    </div>
+
+    <div class="input-group">
+      <label>背景パネル高さ</label>
+      <input type="range" id="bgHeightInput" min="0.5" max="4" value="1.8" step="0.1">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgHeightInputDisplay">1.8</div>
+    </div>
+
+    <div class="input-group">
+      <label>背景パネル位置 Y</label>
+      <input type="range" id="bgOffsetYInput" min="-1" max="2" value="0" step="0.1">
+      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgOffsetYDisplay">0</div>
+    </div>
+
+    <div class="input-group">
       <label>画像</label>
       <input type="file" id="fileInput" accept="image/*" multiple>
       <div id="fileList">未選択</div>
@@ -468,7 +521,7 @@ updatePreview();
 
 };
 
-["nameInput","jobInput","fontSelect","nameColorInput","jobColorInput","fontSizeInput","nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput"].forEach(id=>{
+["nameInput","jobInput","fontSelect","nameColorInput","jobColorInput","fontSizeInput","nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput","bgTypeInput","bgColorInput","bgGradientColor1Input","bgGradientColor2Input","bgImageUrlInput","bgOpacityInput","bgWidthInput","bgHeightInput","bgOffsetYInput"].forEach(id=>{
 const el = document.getElementById(id);
 el.addEventListener("input",()=>{
   updateDisplayValue(id);
@@ -618,12 +671,51 @@ async function updatePreview(){
   const jobOffsetX = parseFloat(document.getElementById("jobOffsetXInput").value) || 3;
   const jobOffsetY = parseFloat(document.getElementById("jobOffsetYInput").value) || 0.5;
   const jobOffsetZ = parseFloat(document.getElementById("jobOffsetZInput").value) || 2;
+  const bgTypeVal = document.getElementById("bgTypeInput").value || "solid";
+  const bgColorVal = document.getElementById("bgColorInput").value || "#111827";
+  const bgGradientColor1Val = document.getElementById("bgGradientColor1Input").value || "#111827";
+  const bgGradientColor2Val = document.getElementById("bgGradientColor2Input").value || "#0f172a";
+  const bgImageUrlVal = document.getElementById("bgImageUrlInput").value || "";
+  const bgOpacityVal = parseFloat(document.getElementById("bgOpacityInput").value) || 0.4;
+  const bgWidthVal = parseFloat(document.getElementById("bgWidthInput").value) || 4;
+  const bgHeightVal = parseFloat(document.getElementById("bgHeightInput").value) || 1.8;
+  const bgOffsetYVal = parseFloat(document.getElementById("bgOffsetYInput").value) || 0;
 
   // フォント読み込み完了を待機してからテキスト画像を生成
   const nameImg = await createTextImage(nameVal, nameColorVal, fontVal, fontSizeVal);
   const jobImg = await createTextImage(jobVal, jobColorVal, fontVal, fontSizeVal);
 
   const count = imagesBase64.length > 0 ? imagesBase64.length : 1;
+  const previewBgWidth = Math.max(bgWidthVal, count * 3);
+  const background = document.createElement("a-plane");
+  background.setAttribute("width", previewBgWidth);
+  background.setAttribute("height", bgHeightVal);
+  background.setAttribute("rotation", "-90 0 0");
+  background.setAttribute("position", `0 ${bgOffsetYVal - 0.05} 0`);
+  background.setAttribute("material", {
+    shader: "flat",
+    transparent: true,
+    opacity: bgOpacityVal
+  });
+
+  if(bgTypeVal === "solid"){
+    background.setAttribute("material", {
+      shader: "flat",
+      transparent: true,
+      opacity: bgOpacityVal,
+      color: bgColorVal
+    });
+  } else {
+    const bgTexture = await createBackgroundTexture(bgTypeVal, bgColorVal, bgGradientColor1Val, bgGradientColor2Val, bgImageUrlVal);
+    background.setAttribute("material", {
+      src: bgTexture,
+      shader: "flat",
+      transparent: true,
+      opacity: bgOpacityVal
+    });
+  }
+
+  container.appendChild(background);
 
   for(let i = 0; i < count; i++){
 
@@ -679,6 +771,42 @@ async function updatePreview(){
 
 }
 
+async function createBackgroundTexture(type, color, gradient1, gradient2, imageUrl) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = 1024;
+  canvas.height = 1024;
+
+  if(type === "gradient"){
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    grad.addColorStop(0, gradient1);
+    grad.addColorStop(1, gradient2);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else if(type === "image" && imageUrl){
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error("背景画像の読み込みに失敗しました"));
+      img.src = imageUrl;
+    });
+    const aspect = img.width / img.height;
+    let drawWidth = canvas.width;
+    let drawHeight = canvas.height;
+    if(aspect > 1) drawHeight = canvas.width / aspect;
+    else drawWidth = canvas.height * aspect;
+    const offsetX = (canvas.width - drawWidth) / 2;
+    const offsetY = (canvas.height - drawHeight) / 2;
+    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+  } else {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  return canvas.toDataURL("image/png");
+}
+
 window.onload = () => {
   console.log("🚀 AR EDITOR 初期化開始");
   updatePreview();
@@ -714,6 +842,15 @@ document.getElementById("saveBtn").onclick = async() => {
       jobOffsetX: parseFloat(document.getElementById("jobOffsetXInput").value),
       jobOffsetY: parseFloat(document.getElementById("jobOffsetYInput").value),
       jobOffsetZ: parseFloat(document.getElementById("jobOffsetZInput").value),
+      bgType: document.getElementById("bgTypeInput").value,
+      bgColor: document.getElementById("bgColorInput").value,
+      bgGradientColor1: document.getElementById("bgGradientColor1Input").value,
+      bgGradientColor2: document.getElementById("bgGradientColor2Input").value,
+      bgImageUrl: document.getElementById("bgImageUrlInput").value,
+      bgOpacity: parseFloat(document.getElementById("bgOpacityInput").value),
+      bgWidth: parseFloat(document.getElementById("bgWidthInput").value),
+      bgHeight: parseFloat(document.getElementById("bgHeightInput").value),
+      bgOffsetY: parseFloat(document.getElementById("bgOffsetYInput").value),
 
       pattUrl: document.getElementById("pattInput").value,
 
