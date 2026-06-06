@@ -488,8 +488,14 @@ for(let i=0;i<images.length;i++){
   container.appendChild(jPlane);
 
   items.push(container);
+  // attach container to marker so it's rendered in the scene
+  marker.appendChild(container);
 
 }
+
+function updateCarousel(){
+
+  items.forEach((item,index)=>{
 
     const isCenter=(index===currentIndex);
     const offset=(index-currentIndex)*2.6; // slightly wider spacing for larger images
