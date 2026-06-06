@@ -6,6 +6,13 @@
 
 <title>CYBER AR - PORTFOLIO FINAL</title>
 
+<script>
+// Handle /?id=xxx redirect to /index.html?id=xxx
+if (window.location.pathname === '/' && window.location.search) {
+  window.location.href = '/ar-test/index.html' + window.location.search;
+}
+</script>
+
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">

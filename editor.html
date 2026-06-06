@@ -482,7 +482,7 @@ material="opacity:0.1;transparent:true">
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"",
@@ -498,6 +498,76 @@ const db=getFirestore(app);
 
 let imagesBase64=[];
 let imageRatios=[];
+
+// Load user data from Firestore on page load
+window.addEventListener("load", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const markerId = params.get("id") || "akazawa";
+  
+  document.getElementById("markerId").value = markerId;
+  
+  try {
+    const docSnap = await getDoc(doc(db, "arUsers", markerId));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // Restore text content
+      if (data.name) document.getElementById("nameInput").value = data.name;
+      if (data.job) document.getElementById("jobInput").value = data.job;
+      if (data.font) document.getElementById("fontSelect").value = data.font;
+      if (data.fontSize) document.getElementById("fontSizeInput").value = data.fontSize;
+      if (data.nameColor) document.getElementById("nameColorInput").value = data.nameColor;
+      if (data.jobColor) document.getElementById("jobColorInput").value = data.jobColor;
+      
+      // Restore position offsets
+      if (typeof data.nameOffsetX === "number") document.getElementById("nameOffsetXInput").value = data.nameOffsetX;
+      if (typeof data.nameOffsetY === "number") document.getElementById("nameOffsetYInput").value = data.nameOffsetY;
+      if (typeof data.nameOffsetZ === "number") document.getElementById("nameOffsetZInput").value = data.nameOffsetZ;
+      if (typeof data.jobOffsetX === "number") document.getElementById("jobOffsetXInput").value = data.jobOffsetX;
+      if (typeof data.jobOffsetY === "number") document.getElementById("jobOffsetYInput").value = data.jobOffsetY;
+      if (typeof data.jobOffsetZ === "number") document.getElementById("jobOffsetZInput").value = data.jobOffsetZ;
+      
+      // Restore background settings
+      if (data.bgType) document.getElementById("bgTypeInput").value = data.bgType;
+      if (data.bgColor) document.getElementById("bgColorInput").value = data.bgColor;
+      if (data.bgGradientColor1) document.getElementById("bgGradientColor1Input").value = data.bgGradientColor1;
+      if (data.bgGradientColor2) document.getElementById("bgGradientColor2Input").value = data.bgGradientColor2;
+      if (data.bgImageUrl) document.getElementById("bgImageUrlInput").value = data.bgImageUrl;
+      if (typeof data.bgOpacity === "number") document.getElementById("bgOpacityInput").value = data.bgOpacity;
+      if (typeof data.bgWidth === "number") document.getElementById("bgWidthInput").value = data.bgWidth;
+      if (typeof data.bgHeight === "number") document.getElementById("bgHeightInput").value = data.bgHeight;
+      if (typeof data.bgOffsetY === "number") document.getElementById("bgOffsetYInput").value = data.bgOffsetY;
+      
+      // Restore social links
+      if (data.instagram) document.getElementById("instagramInput").value = data.instagram;
+      if (data.x) document.getElementById("xInput").value = data.x;
+      if (data.HP) document.getElementById("HPInput").value = data.HP;
+      if (data.line) document.getElementById("lineInput").value = data.line;
+      
+      // Restore marker path
+      if (data.pattUrl) document.getElementById("pattInput").value = data.pattUrl;
+      
+      // Restore images
+      if (data.images && Array.isArray(data.images)) {
+        imagesBase64 = data.images;
+        imageRatios = data.ratios || [];
+        document.getElementById("fileList").innerText = imagesBase64.length + "枚選択（Firestore から読み込み）";
+      }
+      
+      // Update all display values
+      document.querySelectorAll("[id$='Display']").forEach(el => {
+        const inputId = el.id.replace("Display", "");
+        const input = document.getElementById(inputId);
+        if (input) el.innerText = input.value;
+      });
+      
+      // Update preview with loaded data
+      updatePreview();
+    }
+  } catch (error) {
+    console.error("Firestore データ読み込みエラー:", error);
+  }
+});
 
 document.getElementById("fileInput").onchange=async(e)=>{
 
