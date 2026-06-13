@@ -6,13 +6,6 @@
 
 <title>CYBER AR - PORTFOLIO FINAL</title>
 
-n<script>
-// Handle /?id=xxx redirect to /index.html?id=xxx
-if (window.location.pathname === '/' && window.location.search) {
-  window.location.href = '/ar-test/index.html' + window.location.search;
-}
-</script>
-
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
@@ -34,7 +27,7 @@ background:#000;
   font-style: normal;
 }
 
-n.hud{
+.hud{
 position:fixed;
 top:20px;
 left:20px;
@@ -187,37 +180,37 @@ let items=[];
 
 async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-serif"){ 
 
-n  const canvas=document.createElement("canvas");
+  const canvas=document.createElement("canvas");
   canvas.width=512;
   canvas.height=128;
 
-n  const ctx=canvas.getContext("2d");
+  const ctx=canvas.getContext("2d");
 
-n  // wait for font to be available to avoid fallback rendering
+  // wait for font to be available to avoid fallback rendering
   try{
     await document.fonts.load(`bold ${fontSize} "${fontFamily}"`);
   }catch(e){
     // ignore and proceed
   }
 
-n  ctx.clearRect(0,0,512,128);
+  ctx.clearRect(0,0,512,128);
   ctx.fillStyle=color;
   ctx.font=`bold ${fontSize} "${fontFamily}", sans-serif`;
   ctx.textAlign="center";
   ctx.textBaseline="middle";
   ctx.fillText(text,256,64);
 
-n  return canvas.toDataURL();
+  return canvas.toDataURL();
 
-n}
+}
 
-nasync function createBackgroundTexture(type, color, gradient1, gradient2, imageUrl){
+async function createBackgroundTexture(type, color, gradient1, gradient2, imageUrl){
   const canvas=document.createElement("canvas");
   const ctx=canvas.getContext("2d");
   canvas.width=1024;
   canvas.height=1024;
 
-n  if(type==="gradient"){
+  if(type==="gradient"){
     const grad=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
     grad.addColorStop(0,gradient1);
     grad.addColorStop(1,gradient2);
@@ -247,71 +240,301 @@ n  if(type==="gradient"){
     ctx.fillRect(0,0,canvas.width,canvas.height);
   }
 
-n  return canvas.toDataURL("image/png");
+  return canvas.toDataURL("image/png");
 }
 
 
 /* サイバー装飾 */
 
-nfunction addDecorations(target){
+function addDecorations(target){
 
-nconst p=document.createElement("a-plane");
+const p=document.createElement("a-plane");
 
-np.setAttribute("color","#ff9900");
+p.setAttribute("color","#ff9900");
 p.setAttribute("width","2.2");
 p.setAttribute("height","1.4");
 
 p.setAttribute("position","0 0.01 0");
 p.setAttribute("rotation","-90 0 0");
 
-np.setAttribute("material","shader:flat;opacity:0.2;transparent:true;blending:additive;");
+p.setAttribute("material","shader:flat;opacity:0.2;transparent:true;blending:additive;");
 
-ntarget.appendChild(p);
+target.appendChild(p);
 
-n["-1.4 0.1 0.6","1.4 0.1 0.6"].forEach(pos=>{
+["-1.4 0.1 0.6","1.4 0.1 0.6"].forEach(pos=>{
 
-nconst c=document.createElement("a-circle");
+const c=document.createElement("a-circle");
 
-nc.setAttribute("radius","0.08");
+c.setAttribute("radius","0.08");
 c.setAttribute("color","#ff8c00");
 
-nc.setAttribute("position",pos);
+c.setAttribute("position",pos);
 c.setAttribute("rotation","-90 0 0");
 
-nc.setAttribute("material","shader:flat;transparent:true;opacity:0.6;blending:additive");
+c.setAttribute("material","shader:flat;transparent:true;opacity:0.6;blending:additive");
 
-ntarget.appendChild(c);
+target.appendChild(c);
 
-n});
+});
 
-n}
+}
 
 
-nwindow.addEventListener("load",()=>{
 
-nconst marker=document.querySelector("a-marker");
+window.addEventListener("load",()=>{
 
-nconst urlParams=new URLSearchParams(window.location.search);
+const marker=document.querySelector("a-marker");
+
+const urlParams=new URLSearchParams(window.location.search);
 const markerId=urlParams.get("id") || "akazawa";
 
-nconst hud=document.querySelector(".hud");
+const hud=document.querySelector(".hud");
 
-nhud.innerHTML=`<div class="rec-dot"></div>REC AR ACTIVE<br>USER:${markerId}`;
-
-n// add editor quick link
-const editBtn=document.createElement('a');
-editBtn.href=`editor.html?id=${markerId}`;
-editBtn.textContent='EDIT';
-editBtn.style.position='fixed';
-editBtn.style.top='20px';
-editBtn.style.right='20px';
-editBtn.style.padding='8px 10px';
-editBtn.style.background='rgba(255,255,255,0.9)';
-editBtn.style.color='#000';
-editBtn.style.borderRadius='6px';
-editBtn.style.zIndex='10003';
-editBtn.style.textDecoration='none';
-editBtn.style.fontFamily='sans-serif';
-document.body.appendChild(editBtn);
+hud.innerHTML=`<div class="rec-dot"></div>REC AR ACTIVE<br>USER:${markerId}`;
 
 
+/* SNSボタン */
+
+const lineBtn=document.getElementById("line-link");
+const xBtn=document.getElementById("x-link");
+const instaBtn=document.getElementById("insta-link");
+
+
+function setSNS(button,url){
+
+if(url && url.trim()!==""){
+
+button.href=url;
+button.style.display="flex";
+
+}else{
+
+button.style.display="none";
+
+}
+
+}
+
+
+/* Firestore */
+
+onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
+
+if(!docSnap.exists()) return;
+
+const data=docSnap.data();
+
+
+setSNS(lineBtn,data.line);
+setSNS(xBtn,data.x);
+setSNS(instaBtn,data.instagram);
+
+marker.setAttribute("url", data.pattUrl || "assets/markers/pattern-AKA2.patt");
+
+const images=data.images || [];
+const ratios=data.ratios || [];
+const bgType = data.bgType || "solid";
+const bgColor = data.bgColor || "#111827";
+const bgGradientColor1 = data.bgGradientColor1 || "#111827";
+const bgGradientColor2 = data.bgGradientColor2 || "#0f172a";
+const bgImageUrl = data.bgImageUrl || "";
+const bgOpacity = typeof data.bgOpacity === "number" ? data.bgOpacity : 0.4;
+const bgWidth = typeof data.bgWidth === "number" ? data.bgWidth : 4;
+const bgHeight = typeof data.bgHeight === "number" ? data.bgHeight : 1.8;
+const bgOffsetY = typeof data.bgOffsetY === "number" ? data.bgOffsetY : 0;
+
+
+while(marker.firstChild){
+marker.removeChild(marker.firstChild);
+}
+
+items=[];
+
+const backgroundPlane = document.createElement("a-plane");
+backgroundPlane.setAttribute("width", Math.max(bgWidth, (images.length || 1) * 3));
+backgroundPlane.setAttribute("height", bgHeight);
+backgroundPlane.setAttribute("rotation", "-90 0 0");
+backgroundPlane.setAttribute("position", `0 ${bgOffsetY - 0.05} 0`);
+backgroundPlane.setAttribute("material", "shader:flat;transparent:true;");
+
+if(bgType === "solid"){
+  backgroundPlane.setAttribute("material", {
+    shader: "flat",
+    transparent: true,
+    opacity: bgOpacity,
+    color: bgColor
+  });
+} else {
+  const bgTexture = await createBackgroundTexture(bgType, bgColor, bgGradientColor1, bgGradientColor2, bgImageUrl);
+  backgroundPlane.setAttribute("material", {
+    src: bgTexture,
+    shader: "flat",
+    transparent: true,
+    opacity: bgOpacity
+  });
+}
+
+marker.appendChild(backgroundPlane);
+
+images.forEach((url,i)=>{
+
+const container=document.createElement("a-entity");
+container.setAttribute("visible","false");
+
+
+const aImg=document.createElement("a-image");
+
+aImg.setAttribute("src",url);
+aImg.setAttribute("rotation","-90 0 0");
+aImg.setAttribute("material","shader:flat;transparent:true;side:double");
+
+const ratio=ratios[i] || 1;
+
+const baseW=1.8; // increased image size for better visibility on mobile
+
+aImg.setAttribute("width",baseW);
+aImg.setAttribute("height",(baseW*ratio).toFixed(3));
+
+container.appendChild(aImg);
+
+
+/* 名前 */
+
+const nameFontFamily = data.font || "sans-serif";
+const nameFontSize = data.fontSize ? `${data.fontSize}px` : "60px";
+const nameColor = data.nameColor || "#00f2ff";
+const nameOffsetX = typeof data.nameOffsetX === "number" ? data.nameOffsetX : 0;
+const nameOffsetY = typeof data.nameOffsetY === "number" ? data.nameOffsetY : 0.1;
+const nameOffsetZ = typeof data.nameOffsetZ === "number" ? data.nameOffsetZ : -0.3;
+const nameWidth = 1.8 * (data.fontSize ? data.fontSize / 80 : 1);
+const nameHeight = 0.45 * (data.fontSize ? data.fontSize / 80 : 1);
+
+const nPlane=document.createElement("a-plane");
+
+nPlane.setAttribute("position",`${nameOffsetX} ${nameOffsetY} ${nameOffsetZ}`);
+nPlane.setAttribute("rotation","-90 0 0");
+
+nPlane.setAttribute("width",nameWidth.toFixed(3));
+nPlane.setAttribute("height",nameHeight.toFixed(3));
+
+
+// generate name texture (await font rendering)
+const nameSrc = await createTextTexture(data.name || "NO NAME",nameColor,nameFontSize,nameFontFamily);
+nPlane.setAttribute("material",{
+  src:nameSrc,
+  transparent:true,
+  shader:"flat"
+});
+
+container.appendChild(nPlane);
+
+
+/* 肩書き */
+
+const jobFontFamily = data.font || "sans-serif";
+const jobFontSize = data.fontSize ? `${Math.max(40, Math.round(data.fontSize * 0.75))}px` : "45px";
+const jobColor = data.jobColor || "#ffcc00";
+const jobOffsetX = typeof data.jobOffsetX === "number" ? data.jobOffsetX : 0;
+const jobOffsetY = typeof data.jobOffsetY === "number" ? data.jobOffsetY : 0.1;
+const jobOffsetZ = typeof data.jobOffsetZ === "number" ? data.jobOffsetZ : 0.3;
+const jobWidth = 1.4 * (data.fontSize ? data.fontSize / 80 : 1);
+const jobHeight = 0.35 * (data.fontSize ? data.fontSize / 80 : 1);
+
+const jPlane=document.createElement("a-plane");
+
+jPlane.setAttribute("position",`${jobOffsetX} ${jobOffsetY} ${jobOffsetZ}`);
+jPlane.setAttribute("rotation","-90 0 0");
+
+jPlane.setAttribute("width",jobWidth.toFixed(3));
+jPlane.setAttribute("height",jobHeight.toFixed(3));
+
+
+// generate job/title texture
+const jobSrc = await createTextTexture(data.job || "NO TITLE",jobColor,jobFontSize,jobFontFamily);
+jPlane.setAttribute("material",{
+  src:jobSrc,
+  transparent:true,
+  shader:"flat"
+});
+
+container.appendChild(jPlane);
+
+
+marker.appendChild(container);
+
+items.push(container);
+
+});
+
+
+updateCarousel();
+
+});
+
+
+function updateCarousel(){
+
+  items.forEach((item,index)=>{
+
+    const isCenter=(index===currentIndex);
+    const offset=(index-currentIndex)*2.6; // slightly wider spacing for larger images
+
+    // limit visible to near items
+    item.setAttribute("visible", Math.abs(index-currentIndex) <= 1 ? "true" : "false");
+
+    // use string attrs for stability and keep y nearly constant to avoid vertical jitter
+    const yPos = isCenter ? 0.14 : 0.12;
+    item.setAttribute("position", `${offset} ${yPos} 0`);
+
+    item.setAttribute("scale", isCenter ? "1 1 1" : "0.75 0.75 0.75");
+
+  });
+
+}
+
+
+/* クリック操作 */
+
+window.addEventListener("click",()=>{
+
+if(items.length===0) return;
+
+currentIndex=(currentIndex+1)%items.length;
+
+updateCarousel();
+
+});
+
+
+/* スワイプ操作 */
+
+let startX=0;
+
+window.addEventListener("touchstart",(e)=>{
+
+startX=e.touches[0].clientX;
+
+});
+
+window.addEventListener("touchend",(e)=>{
+
+let diff=e.changedTouches[0].clientX-startX;
+
+if(Math.abs(diff)>50){
+
+currentIndex=diff>0
+?(currentIndex-1+items.length)%items.length
+:(currentIndex+1)%items.length;
+
+updateCarousel();
+
+}
+
+});
+
+});
+
+</script>
+
+</body>
+</html>
