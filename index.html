@@ -134,19 +134,36 @@ function preloadImage(url) {
   });
 }
 
-/* ---- テキスト → Canvas テクスチャ ---- */
+/* ================================================
+   テキスト → Canvas テクスチャ
+   ・指定フォントサイズで収まらない場合は
+     自動的にサイズを縮小して必ず全文字を表示する
+   ================================================ */
 async function createTextTexture(text, color, fontSize = "50px", fontFamily = "sans-serif") {
   const canvas = document.createElement("canvas");
   canvas.width  = 512;
   canvas.height = 128;
   const ctx = canvas.getContext("2d");
   try { await document.fonts.load(`bold ${fontSize} "${fontFamily}"`); } catch(e) {}
-  ctx.clearRect(0, 0, 512, 128);
+
+  const padding   = 20; // 左右の余白
+  const maxWidth  = canvas.width - padding * 2;
+  let size = parseInt(fontSize, 10) || 50;
+  const minSize = 18; // これ以上は縮小しない下限
+
+  // 収まるサイズまで自動的に縮小
+  while (size > minSize) {
+    ctx.font = `bold ${size}px "${fontFamily}", sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) break;
+    size -= 2;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle    = color;
-  ctx.font         = `bold ${fontSize} "${fontFamily}", sans-serif`;
+  ctx.font         = `bold ${size}px "${fontFamily}", sans-serif`;
   ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, 256, 64);
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2, maxWidth);
   return canvas.toDataURL();
 }
 
