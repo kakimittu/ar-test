@@ -197,6 +197,37 @@ input[type="file"]:hover {
   text-align: right;
 }
 
+/* レイアウトプリセットボタン */
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.preset-btn {
+  padding: 10px 8px;
+  background: #202024;
+  border: 1px solid #3f3f46;
+  color: #d4d4d8;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  border-color: #06b6d4;
+  color: #06b6d4;
+  background: #1a2628;
+}
+
+.preset-btn.active {
+  background: #06b6d4;
+  border-color: #06b6d4;
+  color: #09090b;
+}
+
 select {
   cursor: pointer;
   appearance: none;
@@ -330,6 +361,19 @@ select option {
       <label>文字サイズ</label>
       <input type="range" id="fontSizeInput" min="40" max="150" value="80" step="5">
       <div style="font-size: 11px; color: #71717a; text-align: right;" id="fontSizeDisplay">80px</div>
+    </div>
+
+    <div class="input-group">
+      <label>レイアウトプリセット</label>
+      <div class="preset-grid">
+        <button type="button" class="preset-btn" data-preset="top-bottom">上下配置</button>
+        <button type="button" class="preset-btn" data-preset="left-right">左右配置</button>
+        <button type="button" class="preset-btn" data-preset="center-stack">中央揃え（縦）</button>
+        <button type="button" class="preset-btn" data-preset="diagonal">斜め配置</button>
+      </div>
+      <div style="font-size: 11px; color: #71717a; line-height: 1.5;">
+        プリセットを押すと位置が自動設定されます。その後スライダーで微調整できます。
+      </div>
     </div>
 
     <div class="input-group">
@@ -543,6 +587,59 @@ function updateDisplayValue(id) {
   }
 }
 
+/* ================================================
+   レイアウトプリセット
+   名前・肩書きのオフセット(X/Y/Z)を
+   ワンクリックで分かりやすい配置にセットする
+   ================================================ */
+const LAYOUT_PRESETS = {
+  // 名前が上、肩書きが下（写真の手前/奥に分かれる）
+  "top-bottom": {
+    name: { x: 0,    y: 0.6,  z: -1.2 },
+    job:  { x: 0,    y: 0.6,  z: 1.2  }
+  },
+  // 名前が左、肩書きが右
+  "left-right": {
+    name: { x: -2.2, y: 0.3,  z: 0   },
+    job:  { x: 2.2,  y: 0.1,  z: 0   }
+  },
+  // 名前・肩書きを縦に中央揃え（写真の真下にスタック）
+  "center-stack": {
+    name: { x: 0,    y: -1.1, z: 0   },
+    job:  { x: 0,    y: -1.6, z: 0   }
+  },
+  // 名前を奥、肩書きを手前に斜めに配置（元のデフォルトに近い）
+  "diagonal": {
+    name: { x: -3,   y: 1,    z: -2  },
+    job:  { x: 3,    y: 0.5,  z: 2   }
+  }
+};
+
+function applyPreset(presetKey) {
+  const preset = LAYOUT_PRESETS[presetKey];
+  if (!preset) return;
+
+  document.getElementById("nameOffsetXInput").value = preset.name.x;
+  document.getElementById("nameOffsetYInput").value = preset.name.y;
+  document.getElementById("nameOffsetZInput").value = preset.name.z;
+  document.getElementById("jobOffsetXInput").value  = preset.job.x;
+  document.getElementById("jobOffsetYInput").value  = preset.job.y;
+  document.getElementById("jobOffsetZInput").value  = preset.job.z;
+
+  ["nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput"]
+    .forEach(updateDisplayValue);
+
+  document.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.preset === presetKey);
+  });
+
+  updatePreview();
+}
+
+document.querySelectorAll(".preset-btn").forEach(btn => {
+  btn.addEventListener("click", () => applyPreset(btn.dataset.preset));
+});
+
 function processImage(file){
 
 return new Promise(resolve=>{
@@ -627,8 +724,19 @@ async function createTextImage(text, color, fontFamily, fontSize = 80) {
 
     ctx.fillStyle = color;
 
-    // フォント読み込み完了後に設定
-    ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
+    // 文字が長い場合は自動的にサイズを縮小して全部表示する
+    const padding = 40; // 左右の余白
+    const maxWidth = canvas.width - padding * 2;
+    let size = fontSize;
+    const minSize = 28; // これ以上は縮小しない下限
+
+    while (size > minSize) {
+      ctx.font = `bold ${size}px "${fontFamily}", sans-serif`;
+      if (ctx.measureText(text).width <= maxWidth) break;
+      size -= 2;
+    }
+
+    ctx.font = `bold ${size}px "${fontFamily}", sans-serif`;
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -636,12 +744,13 @@ async function createTextImage(text, color, fontFamily, fontSize = 80) {
     ctx.shadowColor = "rgba(0,0,0,0.8)";
     ctx.shadowBlur = 10;
 
-    console.log(`📝 キャンバスに描画: "${text}" | フォント: ${fontFamily} | サイズ: ${fontSize}px`);
+    console.log(`📝 キャンバスに描画: "${text}" | フォント: ${fontFamily} | 指定サイズ: ${fontSize}px → 実サイズ: ${size}px`);
 
     ctx.fillText(
       text,
       canvas.width / 2,
-      canvas.height / 2
+      canvas.height / 2,
+      maxWidth
     );
 
     resolve(canvas.toDataURL("image/png"));
