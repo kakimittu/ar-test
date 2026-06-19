@@ -54,9 +54,70 @@ body { margin: 0; overflow: hidden; background: #000; }
 .btn-border-shadow:hover { transform: translate(-3px,-3px); }
 .btn-border-shadow:hover::before { top: 0; left: 0; box-shadow: 0 0 0 #78e5e5; }
 .btn-border-shadow img { width: 60%; height: 60%; object-fit: contain; z-index: 1; }
+
+/* ローディング画面 */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  transition: opacity 0.4s ease;
+}
+#loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.loading-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(0,242,255,0.2);
+  border-top-color: #00f2ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  color: #00f2ff;
+  font-family: monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 6px #00f2ff;
+}
+
+/* マーカーを探してくださいのヒント */
+#scan-hint {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #00f2ff;
+  font-family: monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: rgba(0,0,0,0.5);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(0,242,255,0.4);
+  z-index: 10001;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+#scan-hint.hidden { opacity: 0; }
 </style>
 </head>
 <body>
+
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">LOADING CONTENT...</div>
+</div>
+
+<div id="scan-hint" class="hidden">マーカーを画面に映してください</div>
 
 <div class="hud"></div>
 
@@ -108,6 +169,8 @@ const db  = getFirestore(app);
 
 let currentIndex = 0;
 let items = [];
+let contentReady = false; // 全アセットの準備が完了したか
+let isMarkerVisible = false;
 
 /* ================================================
    画像をプリロード → base64 として返す
@@ -198,12 +261,15 @@ async function createBackgroundTexture(type, color, gradient1, gradient2, imageU
   return canvas.toDataURL("image/png");
 }
 
-/* ---- カルーセル位置更新 ---- */
+/* ---- カルーセル位置更新 ----
+   マーカーが見えている時だけ表示する（isMarkerVisible）
+   これにより「マーカー認識後パッと出る」を実現 */
 function updateCarousel() {
   items.forEach((item, index) => {
     const isCenter = (index === currentIndex);
     const offset   = (index - currentIndex) * 2.6;
-    item.setAttribute("visible", Math.abs(index - currentIndex) <= 1 ? "true" : "false");
+    const shouldShow = isMarkerVisible && Math.abs(index - currentIndex) <= 1;
+    item.setAttribute("visible", shouldShow ? "true" : "false");
     item.setAttribute("position", `${offset} ${isCenter ? 0.14 : 0.12} 0`);
     item.setAttribute("scale",    isCenter ? "1 1 1" : "0.75 0.75 0.75");
   });
@@ -318,7 +384,15 @@ async function buildContent(marker, data) {
 
   items = newItems;
   currentIndex = 0;
+  contentReady = true;
   updateCarousel();
+
+  // ローディング画面を隠し、スキャン案内を表示
+  const overlay = document.getElementById("loading-overlay");
+  overlay.classList.add("hidden");
+  if (!isMarkerVisible) {
+    document.getElementById("scan-hint").classList.remove("hidden");
+  }
 }
 
 /* ================================================
@@ -353,12 +427,39 @@ window.addEventListener("load", () => {
     else                   { btn.style.display = "none"; }
   }
 
+  /* ================================================
+     マーカー認識イベント
+     ・markerFound: マーカーが画面に入った瞬間
+       → コンテンツ準備済みなら「即座に」表示
+     ・markerLost : マーカーが画面から外れた瞬間
+       → 非表示にしてリソースを軽くする
+     ================================================ */
+  const scanHint = document.getElementById("scan-hint");
+
+  marker.addEventListener("markerFound", () => {
+    isMarkerVisible = true;
+    scanHint.classList.add("hidden");
+    if (contentReady) updateCarousel(); // 準備済みなら即表示
+  });
+
+  marker.addEventListener("markerLost", () => {
+    isMarkerVisible = false;
+    if (contentReady) {
+      updateCarousel();
+      scanHint.classList.remove("hidden");
+    }
+  });
+
   // Firestoreリアルタイム購読
   // データが変わったときだけ buildContent を呼ぶ（毎フレーム再構築しない）
   let lastDataJson = "";
 
   onSnapshot(doc(db, "arUsers", markerId), async (docSnap) => {
-    if (!docSnap.exists()) return;
+    if (!docSnap.exists()) {
+      // データが無い場合もローディング画面で固まらないようにする
+      document.querySelector(".loading-text").textContent = "DATA NOT FOUND";
+      return;
+    }
     const data = docSnap.data();
 
     // データが実際に変化したときだけ再構築（不要な再描画を防ぐ）
@@ -374,6 +475,9 @@ window.addEventListener("load", () => {
 
     // 全アセットロード完了後に描画
     await buildContent(marker, data);
+  }, (error) => {
+    console.error("Firestore購読エラー:", error);
+    document.querySelector(".loading-text").textContent = "LOAD ERROR";
   });
 
   // タップ/クリックで次の画像へ
