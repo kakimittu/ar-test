@@ -129,7 +129,7 @@ body { margin: 0; overflow: hidden; background: #000; }
 
 <a-scene
   embedded
-  arjs="sourceType:webcam; debugUIEnabled:false; trackingMethod:best;"
+  arjs="sourceType:webcam; debugUIEnabled:false; trackingMethod:best; detectionMode:mono_and_matrix; matrixCodeType:3x3; sourceWidth:1280; sourceHeight:960; displayWidth:1280; displayHeight:960; maxDetectionRate:60;"
   vr-mode-ui="enabled:false"
   renderer="logarithmicDepthBuffer:true; precision:medium;"
 >
@@ -142,9 +142,9 @@ body { margin: 0; overflow: hidden; background: #000; }
     url="assets/markers/pattern-AKA2.patt"
     id="main-marker"
     smooth="true"
-    smoothCount="10"
+    smoothCount="5"
     smoothTolerance="0.01"
-    smoothThreshold="5"
+    smoothThreshold="2"
     emitevents="true"
   ></a-marker>
   <a-entity camera></a-entity>
