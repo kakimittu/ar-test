@@ -246,7 +246,7 @@ function initARScene(mindUrl){
 
   const scene=document.createElement("a-scene");
 
-  scene.setAttribute("mindar-image","imageTargetSrc: "+mindUrl+"; autoStart: true; uiLoading: no; uiError: no; uiScanning: no;");
+  scene.setAttribute("mindar-image","imageTargetSrc: "+mindUrl+"; autoStart: true; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001;");
   scene.setAttribute("vr-mode-ui","enabled: false");
   scene.setAttribute("device-orientation-permission-ui","enabled: false");
 
@@ -448,8 +448,9 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     const nameHeight=0.45*(data.fontSize?data.fontSize/80:1);
 
     const nPlane=document.createElement("a-plane");
-    // AR.jsのnameOffsetZ（横置き奥行き）→ MindARのY（垂直）に変換（反転）
-    nPlane.setAttribute("position",`${nameOffsetX} ${-nameOffsetZ} 0.02`);
+    // AR.js座標(±3程度)→MindAR座標(±1=画像幅)へ0.15倍でスケール変換
+    const S=0.15;
+    nPlane.setAttribute("position",`${nameOffsetX*S} ${-nameOffsetZ*S} 0.02`);
     nPlane.setAttribute("width",nameWidth.toFixed(3));
     nPlane.setAttribute("height",nameHeight.toFixed(3));
 
@@ -469,8 +470,7 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     const jobHeight=0.35*(data.fontSize?data.fontSize/80:1);
 
     const jPlane=document.createElement("a-plane");
-    // AR.jsのjobOffsetZ → MindARのY（反転）
-    jPlane.setAttribute("position",`${jobOffsetX} ${-jobOffsetZ} 0.02`);
+    jPlane.setAttribute("position",`${jobOffsetX*S} ${-jobOffsetZ*S} 0.02`);
     jPlane.setAttribute("width",jobWidth.toFixed(3));
     jPlane.setAttribute("height",jobHeight.toFixed(3));
 
