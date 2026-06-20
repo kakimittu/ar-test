@@ -253,6 +253,12 @@ select option {
   position: relative;
 }
 
+/* A-Frameのタッチイベント乗っ取りを防ぐ */
+#controls {
+  touch-action: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* プレビューエリアに「LIVE PREVIEW」のバッジを載せてプロ感を演出 */
 #preview::before {
   content: 'LIVE PREVIEW';
@@ -287,8 +293,8 @@ select option {
     </div>
 
     <div class="input-group">
-      <label>マーカーパス</label>
-      <input type="text" id="pattInput" value="assets/markers/pattern-AKA2.patt">
+      <label>MindARターゲットURL (.mind)</label>
+      <input type="text" id="mindUrlInput" placeholder="assets/targets/pattern-AKA2.mind">
     </div>
   </div>
 
@@ -460,7 +466,7 @@ select option {
 <a-scene embedded vr-mode-ui="enabled:false">
 
 <a-entity position="0 6 1" rotation="-85 0 0">
-<a-entity camera></a-entity>
+<a-entity camera look-controls="enabled: false"></a-entity>
 </a-entity>
 
 <a-light type="ambient" intensity="1"></a-light>
@@ -481,11 +487,11 @@ material="opacity:0.1;transparent:true">
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig={
-apiKey:"",
+apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
 authDomain:"armisetai.firebaseapp.com",
 projectId:"armisetai",
 storageBucket:"armisetai.firebasestorage.app",
@@ -498,6 +504,76 @@ const db=getFirestore(app);
 
 let imagesBase64=[];
 let imageRatios=[];
+
+// Load user data from Firestore on page load
+window.addEventListener("load", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const markerId = params.get("id") || "akazawa";
+  
+  document.getElementById("markerId").value = markerId;
+  
+  try {
+    const docSnap = await getDoc(doc(db, "arUsers", markerId));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // Restore text content
+      if (data.name) document.getElementById("nameInput").value = data.name;
+      if (data.job) document.getElementById("jobInput").value = data.job;
+      if (data.font) document.getElementById("fontSelect").value = data.font;
+      if (data.fontSize) document.getElementById("fontSizeInput").value = data.fontSize;
+      if (data.nameColor) document.getElementById("nameColorInput").value = data.nameColor;
+      if (data.jobColor) document.getElementById("jobColorInput").value = data.jobColor;
+      
+      // Restore position offsets
+      if (typeof data.nameOffsetX === "number") document.getElementById("nameOffsetXInput").value = data.nameOffsetX;
+      if (typeof data.nameOffsetY === "number") document.getElementById("nameOffsetYInput").value = data.nameOffsetY;
+      if (typeof data.nameOffsetZ === "number") document.getElementById("nameOffsetZInput").value = data.nameOffsetZ;
+      if (typeof data.jobOffsetX === "number") document.getElementById("jobOffsetXInput").value = data.jobOffsetX;
+      if (typeof data.jobOffsetY === "number") document.getElementById("jobOffsetYInput").value = data.jobOffsetY;
+      if (typeof data.jobOffsetZ === "number") document.getElementById("jobOffsetZInput").value = data.jobOffsetZ;
+      
+      // Restore background settings
+      if (data.bgType) document.getElementById("bgTypeInput").value = data.bgType;
+      if (data.bgColor) document.getElementById("bgColorInput").value = data.bgColor;
+      if (data.bgGradientColor1) document.getElementById("bgGradientColor1Input").value = data.bgGradientColor1;
+      if (data.bgGradientColor2) document.getElementById("bgGradientColor2Input").value = data.bgGradientColor2;
+      if (data.bgImageUrl) document.getElementById("bgImageUrlInput").value = data.bgImageUrl;
+      if (typeof data.bgOpacity === "number") document.getElementById("bgOpacityInput").value = data.bgOpacity;
+      if (typeof data.bgWidth === "number") document.getElementById("bgWidthInput").value = data.bgWidth;
+      if (typeof data.bgHeight === "number") document.getElementById("bgHeightInput").value = data.bgHeight;
+      if (typeof data.bgOffsetY === "number") document.getElementById("bgOffsetYInput").value = data.bgOffsetY;
+      
+      // Restore social links
+      if (data.instagram) document.getElementById("instagramInput").value = data.instagram;
+      if (data.x) document.getElementById("xInput").value = data.x;
+      if (data.HP) document.getElementById("HPInput").value = data.HP;
+      if (data.line) document.getElementById("lineInput").value = data.line;
+      
+      // Restore MindAR target URL
+      if (data.mindUrl) document.getElementById("mindUrlInput").value = data.mindUrl;
+      
+      // Restore images
+      if (data.images && Array.isArray(data.images)) {
+        imagesBase64 = data.images;
+        imageRatios = data.ratios || [];
+        document.getElementById("fileList").innerText = imagesBase64.length + "枚選択（Firestore から読み込み）";
+      }
+      
+      // Update all display values
+      document.querySelectorAll("[id$='Display']").forEach(el => {
+        const inputId = el.id.replace("Display", "");
+        const input = document.getElementById(inputId);
+        if (input) el.innerText = input.value;
+      });
+      
+      // Update preview with loaded data
+      updatePreview();
+    }
+  } catch (error) {
+    console.error("Firestore データ読み込みエラー:", error);
+  }
+});
 
 document.getElementById("fileInput").onchange=async(e)=>{
 
@@ -810,6 +886,11 @@ async function createBackgroundTexture(type, color, gradient1, gradient2, imageU
 window.onload = () => {
   console.log("🚀 AR EDITOR 初期化開始");
   updatePreview();
+
+  // A-Frameのタッチイベント乗っ取りからコントロールパネルを保護
+  const controls = document.getElementById("controls");
+  controls.addEventListener("touchstart", e => e.stopPropagation(), { passive: true });
+  controls.addEventListener("touchmove", e => e.stopPropagation(), { passive: true });
 };
 
 document.getElementById("saveBtn").onclick = async() => {
@@ -852,7 +933,7 @@ document.getElementById("saveBtn").onclick = async() => {
       bgHeight: parseFloat(document.getElementById("bgHeightInput").value),
       bgOffsetY: parseFloat(document.getElementById("bgOffsetYInput").value),
 
-      pattUrl: document.getElementById("pattInput").value,
+      mindUrl: document.getElementById("mindUrlInput").value,
 
       instagram: document.getElementById("instagramInput")?.value || "",
       x: document.getElementById("xInput")?.value || "",
