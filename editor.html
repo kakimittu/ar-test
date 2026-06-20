@@ -301,14 +301,73 @@ select option {
   z-index: 10;
   pointer-events: none;
 }
+
+/* ログイン画面 */
+#login-overlay {
+  position: fixed;
+  inset: 0;
+  background: #09090b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+#login-overlay.hidden { display: none; }
+
+#login-box {
+  width: 320px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#login-box h3 {
+  margin: 0 0 4px 0;
+  color: #06b6d4;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+}
+
+#login-error {
+  font-size: 12px;
+  color: #f87171;
+  min-height: 14px;
+}
+
+/* 編集画面本体（ログイン前は隠す） */
+#app-wrapper.hidden { display: none; }
 </style>
 </head>
 
 <body>
 
+<!-- ログイン画面：認証されるまでこれだけが表示される -->
+<div id="login-overlay">
+  <div id="login-box">
+    <h3>AR EDITOR ログイン</h3>
+    <div class="input-group">
+      <label>メールアドレス</label>
+      <input type="text" id="loginEmail" autocomplete="username">
+    </div>
+    <div class="input-group">
+      <label>パスワード</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
+    </div>
+    <div id="login-error"></div>
+    <button id="loginBtn" class="btn" style="margin-top:0;">ログイン</button>
+  </div>
+</div>
+
+<div id="app-wrapper" class="hidden">
+
 <div id="controls">
 
   <h2>AR EDITOR</h2>
+  <button id="logoutBtn" type="button" style="background:transparent;border:1px solid #3f3f46;color:#a1a1aa;border-radius:6px;padding:8px;font-size:11px;cursor:pointer;width:100%;">ログアウト</button>
 
   <div class="section-box">
     <div class="section-title">System Settings</div>
@@ -523,10 +582,13 @@ material="opacity:0.1;transparent:true">
 
 </div>
 
+</div>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
@@ -539,6 +601,52 @@ appId:"1:1006973944547:web:adc5e195039585bbdabbd6"
 
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
+const auth=getAuth(app);
+
+/* ================================================
+   ログインゲート
+   ・認証されていない人には編集画面を一切見せない
+   ・Firestore側のセキュリティルールでも書き込みを
+     「ログイン済みのみ」に制限することが必須（後述）
+   ================================================ */
+const loginOverlay = document.getElementById("login-overlay");
+const appWrapper   = document.getElementById("app-wrapper");
+const loginError   = document.getElementById("login-error");
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginOverlay.classList.add("hidden");
+    appWrapper.classList.remove("hidden");
+  } else {
+    loginOverlay.classList.remove("hidden");
+    appWrapper.classList.add("hidden");
+  }
+});
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  loginError.textContent = "";
+
+  if (!email || !password) {
+    loginError.textContent = "メールアドレスとパスワードを入力してください";
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    loginError.textContent = "ログインに失敗しました（メールアドレスまたはパスワードが違います）";
+    console.error("ログインエラー:", e);
+  }
+});
+
+// Enterキーでもログインできるように
+document.getElementById("loginPassword").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("loginBtn").click();
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
 
 let imagesBase64=[];
 let imageRatios=[];
