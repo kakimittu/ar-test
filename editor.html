@@ -21,17 +21,24 @@ body {
   font-family: 'Noto Sans JP', 'Roboto', sans-serif;
   background: #09090b;
   color: #f4f4f5;
-  overflow-y: auto;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#app-wrapper {
+  display: flex;
+  height: 100vh;
 }
 
 #controls {
-  max-width: 600px;
-  margin: 0 auto;
+  flex: 0 0 480px;
   padding: 24px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 /* スクロールバーのカスタマイズ */
@@ -269,6 +276,165 @@ select option {
   box-shadow: none;
 }
 
+/* ── プレビューパネル ── */
+#preview-panel {
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0d0d0f;
+  border-left: 1px solid #27272a;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.preview-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #71717a;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.phone-frame {
+  width: 260px;
+  height: 528px;
+  background: #1c1c1e;
+  border: 6px solid #3a3a3c;
+  border-radius: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 8px 10px;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 2px #555, 0 20px 60px rgba(0,0,0,0.8), inset 0 0 0 1px #2a2a2a;
+  position: relative;
+}
+
+.phone-notch {
+  width: 70px;
+  height: 10px;
+  background: #111;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.phone-screen {
+  width: 100%;
+  flex: 1;
+  background: #050508;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.phone-home {
+  width: 80px;
+  height: 4px;
+  background: #444;
+  border-radius: 2px;
+  margin-top: 10px;
+  flex-shrink: 0;
+}
+
+#preview-camera-bg {
+  width: 100%;
+  height: 100%;
+  background: #080810;
+  position: relative;
+  overflow: hidden;
+}
+
+#preview-camera-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(0,242,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,242,255,0.025) 1px, transparent 1px);
+  background-size: 18px 18px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#preview-photo {
+  position: absolute;
+  object-fit: cover;
+  display: none;
+  z-index: 2;
+}
+
+#preview-bg-panel {
+  position: absolute;
+  border-radius: 4px;
+  z-index: 3;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+#preview-name {
+  position: absolute;
+  z-index: 5;
+  font-weight: bold;
+  white-space: nowrap;
+  text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+#preview-job {
+  position: absolute;
+  z-index: 5;
+  font-weight: bold;
+  white-space: nowrap;
+  text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+.scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,242,255,0.5), transparent);
+  z-index: 10;
+  animation: scan 3s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scan {
+  0%   { top: 0;    opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.hud-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  z-index: 10;
+  pointer-events: none;
+}
+.hud-corner.tl { top: 6px;    left: 6px;  border-top: 2px solid rgba(0,242,255,0.8); border-left: 2px solid rgba(0,242,255,0.8); }
+.hud-corner.tr { top: 6px;    right: 6px; border-top: 2px solid rgba(0,242,255,0.8); border-right: 2px solid rgba(0,242,255,0.8); }
+.hud-corner.bl { bottom: 6px; left: 6px;  border-bottom: 2px solid rgba(0,242,255,0.8); border-left: 2px solid rgba(0,242,255,0.8); }
+.hud-corner.br { bottom: 6px; right: 6px; border-bottom: 2px solid rgba(0,242,255,0.8); border-right: 2px solid rgba(0,242,255,0.8); }
+
+.preview-hint {
+  margin-top: 14px;
+  font-size: 11px;
+  color: #52525b;
+  text-align: center;
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  body { overflow-y: auto; overflow-x: hidden; height: auto; }
+  #app-wrapper { flex-direction: column; height: auto; }
+  #controls { flex: none; width: 100%; height: auto; overflow-y: visible; }
+  #preview-panel { height: 640px; border-left: none; border-top: 1px solid #27272a; flex: none; width: 100%; }
+}
 
 </style>
 </head>
@@ -470,6 +636,29 @@ select option {
 
 </div>
 
+<!-- スマホプレビューパネル -->
+<div id="preview-panel">
+  <div class="preview-label">スマホプレビュー</div>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div id="preview-camera-bg">
+        <div class="scan-line"></div>
+        <div class="hud-corner tl"></div>
+        <div class="hud-corner tr"></div>
+        <div class="hud-corner bl"></div>
+        <div class="hud-corner br"></div>
+        <img id="preview-photo" src="" alt="">
+        <div id="preview-bg-panel"></div>
+        <div id="preview-name">名前</div>
+        <div id="preview-job">肩書き</div>
+      </div>
+    </div>
+    <div class="phone-home"></div>
+  </div>
+  <div class="preview-hint">スライダーを動かすと<br>リアルタイムで更新されます</div>
+</div>
+
 </div>
 
 <script type="module">
@@ -510,11 +699,13 @@ imageRatios.push(result.ratio);
 
 }
 
+updatePreview();
+
 };
 
 ["fontSizeInput","nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput","bgOpacityInput","bgWidthInput","bgHeightInput","bgOffsetYInput"].forEach(id=>{
 const el = document.getElementById(id);
-el.addEventListener("input",()=>{ updateDisplayValue(id); });
+el.addEventListener("input",()=>{ updateDisplayValue(id); updatePreview(); });
 });
 
 function updateDisplayValue(id) {
@@ -581,8 +772,19 @@ function applyPreset(presetKey) {
 }
 
 document.querySelectorAll(".preset-btn").forEach(btn => {
-  btn.addEventListener("click", () => applyPreset(btn.dataset.preset));
+  btn.addEventListener("click", () => { applyPreset(btn.dataset.preset); updatePreview(); });
 });
+
+// テキスト・色・フォント変更でもプレビューを更新
+["nameInput","jobInput","fontSelect","nameColorInput","jobColorInput",
+ "bgTypeInput","bgColorInput","bgGradientColor1Input","bgGradientColor2Input"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener("input", updatePreview);
+  if(el) el.addEventListener("change", updatePreview);
+});
+
+// 初期プレビュー
+requestAnimationFrame(updatePreview);
 
 function processImage(file){
 
@@ -625,236 +827,100 @@ reader.readAsDataURL(file);
 
 }
 
-/* --- 以下プレビュー用関数（削除済み） --- */
-async function waitForFont(fontFamily) {
-  try {
-    // フォントが読み込まれるまで待機（最大10秒）
-    const fontLoaded = await Promise.race([
-      document.fonts.load(`bold 80px "${fontFamily}"`),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Font load timeout')), 10000)
-      )
-    ]);
-    console.log(`✓ フォント "${fontFamily}" の読み込み完了`);
-  } catch (e) {
-    console.warn(`⚠ フォント "${fontFamily}" の読み込みに失敗: ${e.message}`);
-  }
-}
+/* ── CSS ベースのリアルタイムプレビュー ── */
+function updatePreview() {
+  const screen = document.getElementById("preview-camera-bg");
+  if (!screen) return;
 
-/**
- * テキストを画像に変換する関数
- * @param {string} text - 表示テキスト
- * @param {string} color - テキスト色
- * @param {string} fontFamily - フォントファミリー名
- * @param {number} fontSize - フォントサイズ
- */
-async function createTextImage(text, color, fontFamily, fontSize = 80) {
+  const screenW = screen.offsetWidth || 244;
+  const screenH = screen.offsetHeight || 462;
+  const cx = screenW / 2;
+  const cy = screenH / 2;
 
-  // フォント読み込み完了を待つ
-  await waitForFont(fontFamily);
+  // index.html に合わせたスケール変換
+  // 1 MindAR unit = 画像幅 = screenW / 1.8 px
+  const pxPerUnit = screenW / 1.8;
+  const S = 0.15;
 
-  return new Promise(resolve => {
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = 1024;
-    canvas.height = 256;
-
-    ctx.clearRect(0, 0, 1024, 256);
-
-    ctx.fillStyle = color;
-
-    // 文字が長い場合は自動的にサイズを縮小して全部表示する
-    const padding = 40; // 左右の余白
-    const maxWidth = canvas.width - padding * 2;
-    let size = fontSize;
-    const minSize = 28; // これ以上は縮小しない下限
-
-    while (size > minSize) {
-      ctx.font = `bold ${size}px "${fontFamily}", sans-serif`;
-      if (ctx.measureText(text).width <= maxWidth) break;
-      size -= 2;
-    }
-
-    ctx.font = `bold ${size}px "${fontFamily}", sans-serif`;
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    ctx.shadowColor = "rgba(0,0,0,0.8)";
-    ctx.shadowBlur = 10;
-
-    console.log(`📝 キャンバスに描画: "${text}" | フォント: ${fontFamily} | 指定サイズ: ${fontSize}px → 実サイズ: ${size}px`);
-
-    ctx.fillText(
-      text,
-      canvas.width / 2,
-      canvas.height / 2,
-      maxWidth
-    );
-
-    resolve(canvas.toDataURL("image/png"));
-
-  });
-
-}
-
-/**
- * プレビューを更新する関数
- */
-async function updatePreview(){
-
-  const container = document.getElementById("dynamic-content");
-  container.innerHTML = "";
-
-  const nameVal = document.getElementById("nameInput").value || "NAME";
-  const jobVal = document.getElementById("jobInput").value || "JOB";
-  const fontVal = document.getElementById("fontSelect").value;
+  const nameVal     = document.getElementById("nameInput").value || "名前";
+  const jobVal      = document.getElementById("jobInput").value  || "肩書き";
+  const fontVal     = document.getElementById("fontSelect").value;
   const fontSizeVal = parseInt(document.getElementById("fontSizeInput").value) || 80;
-  const nameColorVal = document.getElementById("nameColorInput").value || "#ffffff";
-  const jobColorVal = document.getElementById("jobColorInput").value || "#ffcc00";
-  
-  const nameOffsetX = parseFloat(document.getElementById("nameOffsetXInput").value) || -3;
-  const nameOffsetY = parseFloat(document.getElementById("nameOffsetYInput").value) || 1;
-  const nameOffsetZ = parseFloat(document.getElementById("nameOffsetZInput").value) || -2;
-  const jobOffsetX = parseFloat(document.getElementById("jobOffsetXInput").value) || 3;
-  const jobOffsetY = parseFloat(document.getElementById("jobOffsetYInput").value) || 0.5;
-  const jobOffsetZ = parseFloat(document.getElementById("jobOffsetZInput").value) || 2;
-  const bgTypeVal = document.getElementById("bgTypeInput").value || "solid";
-  const bgColorVal = document.getElementById("bgColorInput").value || "#111827";
-  const bgGradientColor1Val = document.getElementById("bgGradientColor1Input").value || "#111827";
-  const bgGradientColor2Val = document.getElementById("bgGradientColor2Input").value || "#0f172a";
-  const bgImageUrlVal = document.getElementById("bgImageUrlInput").value || "";
-  const bgOpacityVal = parseFloat(document.getElementById("bgOpacityInput").value) || 0.4;
-  const bgWidthVal = parseFloat(document.getElementById("bgWidthInput").value) || 4;
-  const bgHeightVal = parseFloat(document.getElementById("bgHeightInput").value) || 1.8;
-  const bgOffsetYVal = parseFloat(document.getElementById("bgOffsetYInput").value) || 0;
+  const nameColor   = document.getElementById("nameColorInput").value;
+  const jobColor    = document.getElementById("jobColorInput").value;
 
-  // フォント読み込み完了を待機してからテキスト画像を生成
-  const nameImg = await createTextImage(nameVal, nameColorVal, fontVal, fontSizeVal);
-  const jobImg = await createTextImage(jobVal, jobColorVal, fontVal, fontSizeVal);
+  const nameOffsetX = parseFloat(document.getElementById("nameOffsetXInput").value) || 0;
+  const nameOffsetZ = parseFloat(document.getElementById("nameOffsetZInput").value) || 0;
+  const jobOffsetX  = parseFloat(document.getElementById("jobOffsetXInput").value)  || 0;
+  const jobOffsetZ  = parseFloat(document.getElementById("jobOffsetZInput").value)  || 0;
 
-  const count = imagesBase64.length > 0 ? imagesBase64.length : 1;
-  const previewBgWidth = Math.max(bgWidthVal, count * 3);
-  const background = document.createElement("a-plane");
-  background.setAttribute("width", previewBgWidth);
-  background.setAttribute("height", bgHeightVal);
-  background.setAttribute("rotation", "-90 0 0");
-  background.setAttribute("position", `0 ${bgOffsetYVal - 0.05} 0`);
-  background.setAttribute("material", {
-    shader: "flat",
-    transparent: true,
-    opacity: bgOpacityVal
-  });
+  const bgType       = document.getElementById("bgTypeInput").value;
+  const bgColor      = document.getElementById("bgColorInput").value;
+  const bgGrad1      = document.getElementById("bgGradientColor1Input").value;
+  const bgGrad2      = document.getElementById("bgGradientColor2Input").value;
+  const bgOpacity    = parseFloat(document.getElementById("bgOpacityInput").value);
+  const bgOffsetY    = parseFloat(document.getElementById("bgOffsetYInput").value) || 0;
 
-  if(bgTypeVal === "solid"){
-    background.setAttribute("material", {
-      shader: "flat",
-      transparent: true,
-      opacity: bgOpacityVal,
-      color: bgColorVal
-    });
+  // index.html の座標式と同じ変換:
+  //   posX = nameOffsetX * S
+  //   posY = -nameOffsetZ * S  (A-Frame Y上 → 画面Y下 → 符号反転)
+  const nameScreenX = cx + nameOffsetX * S * pxPerUnit;
+  const nameScreenY = cy + nameOffsetZ  * S * pxPerUnit;
+  const jobScreenX  = cx + jobOffsetX  * S * pxPerUnit;
+  const jobScreenY  = cy + jobOffsetZ  * S * pxPerUnit;
+
+  // プレビュー内フォントサイズ（AR 80px ≒ プレビュー 14px 相当）
+  const previewFontSize = Math.max(9, Math.round(fontSizeVal * 0.175));
+
+  const nameEl = document.getElementById("preview-name");
+  nameEl.textContent      = nameVal;
+  nameEl.style.color      = nameColor;
+  nameEl.style.fontFamily = `"${fontVal}", sans-serif`;
+  nameEl.style.fontSize   = previewFontSize + "px";
+  nameEl.style.left       = nameScreenX + "px";
+  nameEl.style.top        = nameScreenY + "px";
+  nameEl.style.transform  = "translate(-50%, -50%)";
+
+  const jobEl = document.getElementById("preview-job");
+  jobEl.textContent      = jobVal;
+  jobEl.style.color      = jobColor;
+  jobEl.style.fontFamily = `"${fontVal}", sans-serif`;
+  jobEl.style.fontSize   = Math.round(previewFontSize * 0.78) + "px";
+  jobEl.style.left       = jobScreenX + "px";
+  jobEl.style.top        = jobScreenY + "px";
+  jobEl.style.transform  = "translate(-50%, -50%)";
+
+  // 背景パネル（index.html の baseW*1.2 幅に対応）
+  const ratio   = imageRatios[0] || 1;
+  const bgW     = screenW * 0.9;
+  const photoH  = bgW * ratio;
+  const bgH     = photoH * 1.2 + screenH * 0.06;
+  const bgTop   = cy - bgH / 2 + bgOffsetY * S * pxPerUnit;
+
+  const bgEl = document.getElementById("preview-bg-panel");
+  bgEl.style.width   = bgW + "px";
+  bgEl.style.height  = bgH + "px";
+  bgEl.style.left    = (cx - bgW / 2) + "px";
+  bgEl.style.top     = bgTop + "px";
+  bgEl.style.opacity = bgOpacity;
+  bgEl.style.background = bgType === "gradient"
+    ? `linear-gradient(135deg, ${bgGrad1}, ${bgGrad2})`
+    : bgColor;
+
+  // 写真
+  const photoEl = document.getElementById("preview-photo");
+  if (imagesBase64.length > 0) {
+    const photoW = bgW * 0.88;
+    const actualH = photoW * ratio;
+    photoEl.src            = imagesBase64[0];
+    photoEl.style.display  = "block";
+    photoEl.style.width    = photoW + "px";
+    photoEl.style.height   = actualH + "px";
+    photoEl.style.left     = (cx - photoW / 2) + "px";
+    photoEl.style.top      = (cy - actualH / 2) + "px";
   } else {
-    const bgTexture = await createBackgroundTexture(bgTypeVal, bgColorVal, bgGradientColor1Val, bgGradientColor2Val, bgImageUrlVal);
-    background.setAttribute("material", {
-      src: bgTexture,
-      shader: "flat",
-      transparent: true,
-      opacity: bgOpacityVal
-    });
+    photoEl.style.display = "none";
   }
-
-  container.appendChild(background);
-
-  for(let i = 0; i < count; i++){
-
-    const entity = document.createElement("a-entity");
-
-    let posX = (i === 0) ? 0 : (i % 2 === 1 ? Math.ceil(i / 2) * 4 : Math.ceil(i / 2) * -4);
-
-    entity.setAttribute("position", `${posX} 0 0`);
-
-    if(imagesBase64[i]){
-
-      const img = document.createElement("a-image");
-
-      img.setAttribute("src", imagesBase64[i]);
-      img.setAttribute("rotation", "-90 0 0");
-
-      const ratio = imageRatios[i] || 1;
-
-      img.setAttribute("width", 2.5);
-      img.setAttribute("height", 2.5 * ratio);
-
-      entity.appendChild(img);
-
-    }
-
-    const nameImage = document.createElement("a-image");
-
-    nameImage.setAttribute("src", nameImg);
-    const nameWidth = 4 * (fontSizeVal / 80);
-    const nameHeight = 1 * (fontSizeVal / 80);
-    nameImage.setAttribute("width", nameWidth);
-    nameImage.setAttribute("height", nameHeight);
-    nameImage.setAttribute("rotation", "-90 0 0");
-    nameImage.setAttribute("position", `${nameOffsetX} ${nameOffsetY} ${nameOffsetZ}`);
-
-    entity.appendChild(nameImage);
-
-    const jobImage = document.createElement("a-image");
-
-    jobImage.setAttribute("src", jobImg);
-    const jobWidth = 4 * (fontSizeVal / 80);
-    const jobHeight = 1 * (fontSizeVal / 80);
-    jobImage.setAttribute("width", jobWidth);
-    jobImage.setAttribute("height", jobHeight);
-    jobImage.setAttribute("rotation", "-90 0 0");
-    jobImage.setAttribute("position", `${jobOffsetX} ${jobOffsetY} ${jobOffsetZ}`);
-
-    entity.appendChild(jobImage);
-
-    container.appendChild(entity);
-
-  }
-
-}
-
-async function createBackgroundTexture(type, color, gradient1, gradient2, imageUrl) {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  canvas.width = 1024;
-  canvas.height = 1024;
-
-  if(type === "gradient"){
-    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    grad.addColorStop(0, gradient1);
-    grad.addColorStop(1, gradient2);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if(type === "image" && imageUrl){
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new Error("背景画像の読み込みに失敗しました"));
-      img.src = imageUrl;
-    });
-    const aspect = img.width / img.height;
-    let drawWidth = canvas.width;
-    let drawHeight = canvas.height;
-    if(aspect > 1) drawHeight = canvas.width / aspect;
-    else drawWidth = canvas.height * aspect;
-    const offsetX = (canvas.width - drawWidth) / 2;
-    const offsetY = (canvas.height - drawHeight) / 2;
-    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-  } else {
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
-  return canvas.toDataURL("image/png");
 }
 
 document.getElementById("saveBtn").onclick = async() => {

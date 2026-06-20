@@ -272,7 +272,7 @@ function updateCarousel(){
   items.forEach((item,index)=>{
 
     const isCenter=(index===currentIndex);
-    const offset=(index-currentIndex)*2.6;
+    const offset=(index-currentIndex)*2.0; // 画像幅1.8+余白0.2
 
     item.setAttribute("visible",Math.abs(index-currentIndex)<=1?"true":"false");
     item.setAttribute("position",`${offset} 0 0`);
@@ -388,11 +388,12 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
   items=[];
   currentIndex=0;
 
-  // 背景
+  // 背景（MindARスケール: 1unit=画像幅。大きすぎると遠近で歪むので適切なサイズに）
+  const baseW=1.8;
   const backgroundPlane=document.createElement("a-plane");
-  backgroundPlane.setAttribute("width",Math.max(bgWidth,(images.length||1)*3));
-  backgroundPlane.setAttribute("height",bgHeight);
-  backgroundPlane.setAttribute("position",`0 ${bgOffsetY} -0.001`);
+  backgroundPlane.setAttribute("width", baseW*1.2);
+  backgroundPlane.setAttribute("height", baseW*(ratios[0]||1)*1.2+0.3);
+  backgroundPlane.setAttribute("position",`0 ${bgOffsetY*0.15} -0.001`);
 
   if(bgType==="solid"){
     backgroundPlane.setAttribute("material",{
@@ -429,7 +430,6 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     aImg.setAttribute("material","shader:flat;transparent:true;side:double");
 
     const ratio=ratios[i]||1;
-    const baseW=1.8;
 
     aImg.setAttribute("width",baseW);
     aImg.setAttribute("height",(baseW*ratio).toFixed(3));
@@ -444,12 +444,11 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     const nameColor=data.nameColor||"#00f2ff";
     const nameOffsetX=typeof data.nameOffsetX==="number"?data.nameOffsetX:0;
     const nameOffsetZ=typeof data.nameOffsetZ==="number"?data.nameOffsetZ:-0.3;
-    const nameWidth=1.8*(data.fontSize?data.fontSize/80:1);
-    const nameHeight=0.45*(data.fontSize?data.fontSize/80:1);
+    const S=0.15; // AR.js→MindARスケール変換係数
+    const nameWidth=1.8*(data.fontSize?data.fontSize/80:1)*S;
+    const nameHeight=0.45*(data.fontSize?data.fontSize/80:1)*S;
 
     const nPlane=document.createElement("a-plane");
-    // AR.js座標(±3程度)→MindAR座標(±1=画像幅)へ0.15倍でスケール変換
-    const S=0.15;
     nPlane.setAttribute("position",`${nameOffsetX*S} ${-nameOffsetZ*S} 0.02`);
     nPlane.setAttribute("width",nameWidth.toFixed(3));
     nPlane.setAttribute("height",nameHeight.toFixed(3));
@@ -466,8 +465,8 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     const jobColor=data.jobColor||"#ffcc00";
     const jobOffsetX=typeof data.jobOffsetX==="number"?data.jobOffsetX:0;
     const jobOffsetZ=typeof data.jobOffsetZ==="number"?data.jobOffsetZ:0.3;
-    const jobWidth=1.4*(data.fontSize?data.fontSize/80:1);
-    const jobHeight=0.35*(data.fontSize?data.fontSize/80:1);
+    const jobWidth=1.4*(data.fontSize?data.fontSize/80:1)*S;
+    const jobHeight=0.35*(data.fontSize?data.fontSize/80:1)*S;
 
     const jPlane=document.createElement("a-plane");
     jPlane.setAttribute("position",`${jobOffsetX*S} ${-jobOffsetZ*S} 0.02`);
