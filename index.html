@@ -35,7 +35,7 @@ body { margin: 0; overflow: hidden; background: #000; }
   position: fixed; bottom: 25px; right: 25px;
   display: flex; flex-direction: row-reverse; gap: 20px; z-index: 10002;
 }
-#insta-link, #x-link, #line-link { display: none; }
+#insta-link, #x-link, #line-link, #hp-link { display: none; }
 
 .btn-border-shadow {
   position: relative; display: flex;
@@ -122,6 +122,7 @@ body { margin: 0; overflow: hidden; background: #000; }
 <div class="hud"></div>
 
 <div class="sns-container">
+  <a href="#" id="hp-link"    target="_blank" class="btn-border-shadow"><img src="assets/icons/HP.png" alt="HP"></a>
   <a href="#" id="line-link"  target="_blank" class="btn-border-shadow"><img src="assets/icons/LINE.png" alt="LINE"></a>
   <a href="#" id="x-link"    target="_blank" class="btn-border-shadow"><img src="assets/icons/X.png" alt="X"></a>
   <a href="#" id="insta-link" target="_blank" class="btn-border-shadow"><img src="assets/icons/instagram.png" alt="Instagram"></a>
@@ -436,18 +437,32 @@ window.addEventListener("load", () => {
      ================================================ */
   const scanHint = document.getElementById("scan-hint");
 
+  // ちらつき防止用：markerLost を一定時間（猶予）待ってから反映する
+  // 手ブレや照明の揺れで一瞬だけ認識が外れても、すぐには消さない
+  let lostTimer = null;
+  const LOST_GRACE_MS = 400; // この時間内に再認識したら「消えた」扱いにしない
+
   marker.addEventListener("markerFound", () => {
+    // 消去予約が入っていればキャンセル（＝チラつき防止の核心部分）
+    if (lostTimer) {
+      clearTimeout(lostTimer);
+      lostTimer = null;
+    }
     isMarkerVisible = true;
     scanHint.classList.add("hidden");
     if (contentReady) updateCarousel(); // 準備済みなら即表示
   });
 
   marker.addEventListener("markerLost", () => {
-    isMarkerVisible = false;
-    if (contentReady) {
-      updateCarousel();
-      scanHint.classList.remove("hidden");
-    }
+    if (lostTimer) clearTimeout(lostTimer);
+    lostTimer = setTimeout(() => {
+      isMarkerVisible = false;
+      if (contentReady) {
+        updateCarousel();
+        scanHint.classList.remove("hidden");
+      }
+      lostTimer = null;
+    }, LOST_GRACE_MS);
   });
 
   // Firestoreリアルタイム購読
@@ -470,6 +485,7 @@ window.addEventListener("load", () => {
     setSNS("line-link",  data.line      || "");
     setSNS("x-link",     data.x         || "");
     setSNS("insta-link", data.instagram || "");
+    setSNS("hp-link",    data.youtube   || ""); // editor.html ではHP URLが"youtube"フィールドに保存される
 
     marker.setAttribute("url", data.pattUrl || "assets/markers/pattern-AKA2.patt");
 
