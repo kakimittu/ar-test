@@ -188,40 +188,6 @@ return canvas.toDataURL();
 }
 
 
-/* サイバー装飾 */
-
-function addDecorations(target){
-
-const p=document.createElement("a-plane");
-
-p.setAttribute("color","#ff9900");
-p.setAttribute("width","2.2");
-p.setAttribute("height","1.4");
-
-p.setAttribute("position","0 0.01 0");
-p.setAttribute("rotation","-90 0 0");
-
-p.setAttribute("material","shader:flat;opacity:0.2;transparent:true;blending:additive;");
-
-target.appendChild(p);
-
-["-1.4 0.1 0.6","1.4 0.1 0.6"].forEach(pos=>{
-
-const c=document.createElement("a-circle");
-
-c.setAttribute("radius","0.08");
-c.setAttribute("color","#ff8c00");
-
-c.setAttribute("position",pos);
-c.setAttribute("rotation","-90 0 0");
-
-c.setAttribute("material","shader:flat;transparent:true;opacity:0.6;blending:additive");
-
-target.appendChild(c);
-
-});
-
-}
 
 
 
@@ -282,76 +248,79 @@ while(marker.firstChild){
 marker.removeChild(marker.firstChild);
 }
 
-
-addDecorations(marker);
-
 items=[];
 
+const baseW=1.3;
+const maxRatio=ratios.length>0?Math.max(...ratios):1;
 
 images.forEach((url,i)=>{
 
 const container=document.createElement("a-entity");
 container.setAttribute("visible","false");
 
+const ratio=ratios[i]||1;
+
+// シアン枠：4本のプレーンで画像を囲む
+const th=0.018;
+const imgH=baseW*ratio;
+const bMat="color: #00f2ff; opacity: 0.9; shader: flat";
+[
+  [baseW+th*2, th, 0,               imgH/2+th/2],
+  [baseW+th*2, th, 0,             -(imgH/2+th/2)],
+  [th, imgH+th*2,  baseW/2+th/2,               0],
+  [th, imgH+th*2, -(baseW/2+th/2),             0],
+].forEach(([w,h,x,y])=>{
+  const strip=document.createElement("a-plane");
+  strip.setAttribute("rotation","-90 0 0");
+  strip.setAttribute("width",w.toFixed(3));
+  strip.setAttribute("height",h.toFixed(3));
+  strip.setAttribute("position",`${x.toFixed(3)} 0.03 ${y.toFixed(3)}`);
+  strip.setAttribute("material",bMat);
+  container.appendChild(strip);
+});
 
 const aImg=document.createElement("a-image");
-
 aImg.setAttribute("src",url);
 aImg.setAttribute("rotation","-90 0 0");
 aImg.setAttribute("material","shader:flat;transparent:true;side:double");
-
-const ratio=ratios[i] || 1;
-const baseW=1.4;
-
 aImg.setAttribute("width",baseW);
-aImg.setAttribute("height",baseW*ratio);
-
+aImg.setAttribute("height",(baseW*ratio).toFixed(3));
+aImg.setAttribute("position","0 0.02 0");
 container.appendChild(aImg);
 
-
-/* 名前 */
-
-const nPlane=document.createElement("a-plane");
-
-nPlane.setAttribute("position","0 0.1 -1.1");
-nPlane.setAttribute("rotation","-90 0 0");
-
-nPlane.setAttribute("width","1.8");
-nPlane.setAttribute("height","0.45");
-
-nPlane.setAttribute("material",{
-src:createTextTexture(data.name || "NO NAME","#00f2ff","60px"),
-transparent:true,
-shader:"flat"
-});
-
-container.appendChild(nPlane);
-
-
-/* 肩書き */
-
-const jPlane=document.createElement("a-plane");
-
-jPlane.setAttribute("position","0 0.1 1.1");
-jPlane.setAttribute("rotation","-90 0 0");
-
-jPlane.setAttribute("width","1.4");
-jPlane.setAttribute("height","0.35");
-
-jPlane.setAttribute("material",{
-src:createTextTexture(data.job || "NO TITLE","#ffcc00","45px"),
-transparent:true,
-shader:"flat"
-});
-
-container.appendChild(jPlane);
-
-
 marker.appendChild(container);
-
 items.push(container);
 
 });
+
+// テキストエリア（画像の下に固定）
+const nameColor=data.nameColor||"#00f2ff";
+const jobColor=data.jobColor||"#ffcc00";
+const imgEdgeZ=baseW*maxRatio/2;
+
+const textBg=document.createElement("a-plane");
+textBg.setAttribute("rotation","-90 0 0");
+textBg.setAttribute("width",(baseW+0.025).toFixed(3));
+textBg.setAttribute("height","0.55");
+textBg.setAttribute("position",`0 0.01 ${(imgEdgeZ+0.28).toFixed(3)}`);
+textBg.setAttribute("material","color: #000814; opacity: 0.8; shader: flat");
+marker.appendChild(textBg);
+
+const nPlane=document.createElement("a-plane");
+nPlane.setAttribute("rotation","-90 0 0");
+nPlane.setAttribute("width",(baseW*0.65).toFixed(3));
+nPlane.setAttribute("height",((baseW*0.65)/4).toFixed(3));
+nPlane.setAttribute("position",`0 0.02 ${(imgEdgeZ+0.12).toFixed(3)}`);
+nPlane.setAttribute("material",{src:createTextTexture(data.name||"NO NAME",nameColor,"60px"),transparent:true,shader:"flat"});
+marker.appendChild(nPlane);
+
+const jPlane=document.createElement("a-plane");
+jPlane.setAttribute("rotation","-90 0 0");
+jPlane.setAttribute("width",(baseW*0.53).toFixed(3));
+jPlane.setAttribute("height",((baseW*0.53)/4).toFixed(3));
+jPlane.setAttribute("position",`0 0.02 ${(imgEdgeZ+0.40).toFixed(3)}`);
+jPlane.setAttribute("material",{src:createTextTexture(data.job||"NO TITLE",jobColor,"45px"),transparent:true,shader:"flat"});
+marker.appendChild(jPlane);
 
 
 updateCarousel();
@@ -364,7 +333,7 @@ function updateCarousel(){
 items.forEach((item,index)=>{
 
 const isCenter=(index===currentIndex);
-const offset=(index-currentIndex)*2.2;
+const offset=(index-currentIndex)*1.5; // 画像幅1.3+余白0.2
 
 item.setAttribute("visible",Math.abs(index-currentIndex)<=1);
 

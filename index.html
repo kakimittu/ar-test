@@ -246,7 +246,7 @@ function initARScene(mindUrl){
 
   const scene=document.createElement("a-scene");
 
-  scene.setAttribute("mindar-image","imageTargetSrc: "+mindUrl+"; autoStart: true; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001;");
+  scene.setAttribute("mindar-image","imageTargetSrc: "+mindUrl+"; autoStart: true; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 20;");
   scene.setAttribute("vr-mode-ui","enabled: false");
   scene.setAttribute("device-orientation-permission-ui","enabled: false");
 
@@ -257,6 +257,7 @@ function initARScene(mindUrl){
 
   arTarget=document.createElement("a-entity");
   arTarget.setAttribute("mindar-image-target","targetIndex: 0");
+  arTarget.setAttribute("animation__found","property: scale; from: 0.85 0.85 0.85; to: 1 1 1; dur: 250; easing: easeOutQuad; startEvents: targetFound");
   scene.appendChild(arTarget);
 
   document.body.appendChild(scene);
@@ -272,7 +273,7 @@ function updateCarousel(){
   items.forEach((item,index)=>{
 
     const isCenter=(index===currentIndex);
-    const offset=(index-currentIndex)*2.0; // 画像幅1.8+余白0.2
+    const offset=(index-currentIndex)*1.5; // 画像幅1.3+余白0.2
 
     item.setAttribute("visible",Math.abs(index-currentIndex)<=1?"true":"false");
     item.setAttribute("position",`${offset} 0 0`);
@@ -388,99 +389,93 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
   items=[];
   currentIndex=0;
 
-  // 背景（MindARスケール: 1unit=画像幅。大きすぎると遠近で歪むので適切なサイズに）
-  const baseW=1.8;
-  const backgroundPlane=document.createElement("a-plane");
-  backgroundPlane.setAttribute("width", baseW*1.2);
-  backgroundPlane.setAttribute("height", baseW*(ratios[0]||1)*1.2+0.3);
-  backgroundPlane.setAttribute("position",`0 ${bgOffsetY*0.15} -0.001`);
-
-  if(bgType==="solid"){
-    backgroundPlane.setAttribute("material",{
-      shader:"flat",
-      transparent:true,
-      opacity:bgOpacity,
-      color:bgColor
-    });
-  } else {
-    const bgTexture=await createBackgroundTexture(bgType,bgColor,bgGradientColor1,bgGradientColor2,bgImageUrl);
-    backgroundPlane.setAttribute("material",{
-      src:bgTexture,
-      shader:"flat",
-      transparent:true,
-      opacity:bgOpacity
-    });
-  }
-
-  arTarget.appendChild(backgroundPlane);
+  const baseW=1.3;
+  const maxRatio=ratios.length>0?Math.max(...ratios):1;
+  const imgBottom=-(baseW*maxRatio/2);
 
   // 各画像スライド
-  // MindAR座標系: X=右, Y=上, Z=カメラ方向
-  // AR.jsのZ軸（横置きマーカーの奥行き=視覚上の上下）をMindARのY軸に変換（反転）
-
   for(let i=0;i<images.length;i++){
 
     const url=images[i];
+    const ratio=ratios[i]||1;
 
     const container=document.createElement("a-entity");
     container.setAttribute("visible","false");
 
+    // シアン枠：4本のプレーンで画像を囲む（確実に表示される方式）
+    const th=0.018;
+    const imgH=baseW*ratio;
+    const bMat="color: #00f2ff; opacity: 0.9; shader: flat";
+    [
+      [baseW+th*2, th, 0,               imgH/2+th/2],
+      [baseW+th*2, th, 0,             -(imgH/2+th/2)],
+      [th, imgH+th*2,  baseW/2+th/2,               0],
+      [th, imgH+th*2, -(baseW/2+th/2),             0],
+    ].forEach(([w,h,x,y])=>{
+      const strip=document.createElement("a-plane");
+      strip.setAttribute("width",w.toFixed(3));
+      strip.setAttribute("height",h.toFixed(3));
+      strip.setAttribute("position",`${x.toFixed(3)} ${y.toFixed(3)} 0.012`);
+      strip.setAttribute("material",bMat);
+      container.appendChild(strip);
+    });
+
     const aImg=document.createElement("a-image");
     aImg.setAttribute("src",url);
     aImg.setAttribute("material","shader:flat;transparent:true;side:double");
-
-    const ratio=ratios[i]||1;
-
     aImg.setAttribute("width",baseW);
     aImg.setAttribute("height",(baseW*ratio).toFixed(3));
     aImg.setAttribute("position","0 0 0.01");
     container.appendChild(aImg);
 
-
-    /* 名前 */
-
-    const nameFontFamily=data.font||"sans-serif";
-    const nameFontSize=data.fontSize?`${data.fontSize}px`:"60px";
-    const nameColor=data.nameColor||"#00f2ff";
-    const nameOffsetX=typeof data.nameOffsetX==="number"?data.nameOffsetX:0;
-    const nameOffsetZ=typeof data.nameOffsetZ==="number"?data.nameOffsetZ:-0.3;
-    const S=0.15; // AR.js→MindARスケール変換係数
-    const nameWidth=1.8*(data.fontSize?data.fontSize/80:1)*S;
-    const nameHeight=0.45*(data.fontSize?data.fontSize/80:1)*S;
-
-    const nPlane=document.createElement("a-plane");
-    nPlane.setAttribute("position",`${nameOffsetX*S} ${-nameOffsetZ*S} 0.02`);
-    nPlane.setAttribute("width",nameWidth.toFixed(3));
-    nPlane.setAttribute("height",nameHeight.toFixed(3));
-
-    const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily);
-    nPlane.setAttribute("material",{src:nameSrc,transparent:true,shader:"flat"});
-    container.appendChild(nPlane);
-
-
-    /* 肩書き */
-
-    const jobFontFamily=data.font||"sans-serif";
-    const jobFontSize=data.fontSize?`${Math.max(40,Math.round(data.fontSize*0.75))}px`:"45px";
-    const jobColor=data.jobColor||"#ffcc00";
-    const jobOffsetX=typeof data.jobOffsetX==="number"?data.jobOffsetX:0;
-    const jobOffsetZ=typeof data.jobOffsetZ==="number"?data.jobOffsetZ:0.3;
-    const jobWidth=1.4*(data.fontSize?data.fontSize/80:1)*S;
-    const jobHeight=0.35*(data.fontSize?data.fontSize/80:1)*S;
-
-    const jPlane=document.createElement("a-plane");
-    jPlane.setAttribute("position",`${jobOffsetX*S} ${-jobOffsetZ*S} 0.02`);
-    jPlane.setAttribute("width",jobWidth.toFixed(3));
-    jPlane.setAttribute("height",jobHeight.toFixed(3));
-
-    const jobSrc=await createTextTexture(data.job||"NO TITLE",jobColor,jobFontSize,jobFontFamily);
-    jPlane.setAttribute("material",{src:jobSrc,transparent:true,shader:"flat"});
-    container.appendChild(jPlane);
-
     items.push(container);
     arTarget.appendChild(container);
 
   }
+
+  // テキストエリア（画像の下に固定、カルーセルには含まない）
+  const nameFontFamily=data.font||"sans-serif";
+  const nameFontSize=data.fontSize?`${data.fontSize}px`:"60px";
+  const nameColor=data.nameColor||"#00f2ff";
+  const jobFontFamily=data.font||"sans-serif";
+  const jobFontSize=data.fontSize?`${Math.max(40,Math.round(data.fontSize*0.75))}px`:"45px";
+  const jobColor=data.jobColor||"#ffcc00";
+
+  const nameW=baseW*0.65;
+  const nameH=nameW/4;
+  const jobW=baseW*0.53;
+  const jobH=jobW/4;
+  const pad=0.05;
+
+  const nameY=imgBottom-pad-nameH/2;
+  const jobY=nameY-nameH/2-0.025-jobH/2;
+  const bgH=pad+nameH+0.025+jobH+pad*0.5;
+
+  // テキスト背景
+  const textBg=document.createElement("a-plane");
+  textBg.setAttribute("width",(baseW+0.025).toFixed(3));
+  textBg.setAttribute("height",bgH.toFixed(3));
+  textBg.setAttribute("position",`0 ${(imgBottom-bgH/2).toFixed(3)} -0.001`);
+  textBg.setAttribute("material","color: #000814; opacity: 0.8; shader: flat");
+  arTarget.appendChild(textBg);
+
+  // 名前
+  const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily);
+  const nPlane=document.createElement("a-plane");
+  nPlane.setAttribute("width",nameW.toFixed(3));
+  nPlane.setAttribute("height",nameH.toFixed(3));
+  nPlane.setAttribute("position",`0 ${nameY.toFixed(3)} 0.002`);
+  nPlane.setAttribute("material",{src:nameSrc,transparent:true,shader:"flat"});
+  arTarget.appendChild(nPlane);
+
+  // 肩書き
+  const jobSrc=await createTextTexture(data.job||"NO TITLE",jobColor,jobFontSize,jobFontFamily);
+  const jPlane=document.createElement("a-plane");
+  jPlane.setAttribute("width",jobW.toFixed(3));
+  jPlane.setAttribute("height",jobH.toFixed(3));
+  jPlane.setAttribute("position",`0 ${jobY.toFixed(3)} 0.002`);
+  jPlane.setAttribute("material",{src:jobSrc,transparent:true,shader:"flat"});
+  arTarget.appendChild(jPlane);
 
   updateCarousel();
 
