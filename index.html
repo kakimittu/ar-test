@@ -240,6 +240,38 @@ async function createBackgroundTexture(type,color,gradient1,gradient2,imageUrl){
 }
 
 
+/* 丸角フレームテクスチャ生成 */
+
+function createRoundedFrameTexture(ratio){
+  const W=512;
+  const H=Math.round(512*(ratio||1));
+  const canvas=document.createElement("canvas");
+  canvas.width=W;
+  canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,W,H);
+  const bpx=24;
+  const r=36;
+  const half=bpx/2;
+  ctx.strokeStyle="rgba(0,242,255,0.93)";
+  ctx.lineWidth=bpx;
+  ctx.lineJoin="round";
+  ctx.beginPath();
+  ctx.moveTo(r+half,half);
+  ctx.lineTo(W-r-half,half);
+  ctx.arcTo(W-half,half,W-half,r+half,r);
+  ctx.lineTo(W-half,H-r-half);
+  ctx.arcTo(W-half,H-half,W-r-half,H-half,r);
+  ctx.lineTo(r+half,H-half);
+  ctx.arcTo(half,H-half,half,H-r-half,r);
+  ctx.lineTo(half,r+half);
+  ctx.arcTo(half,half,r+half,half,r);
+  ctx.closePath();
+  ctx.stroke();
+  return canvas.toDataURL();
+}
+
+
 /* MindAR シーン初期化 */
 
 function initARScene(mindUrl){
@@ -402,23 +434,14 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     const container=document.createElement("a-entity");
     container.setAttribute("visible","false");
 
-    // シアン枠：4本のプレーンで画像を囲む（確実に表示される方式）
-    const th=0.018;
-    const imgH=baseW*ratio;
-    const bMat="color: #00f2ff; opacity: 0.9; shader: flat";
-    [
-      [baseW+th*2, th, 0,               imgH/2+th/2],
-      [baseW+th*2, th, 0,             -(imgH/2+th/2)],
-      [th, imgH+th*2,  baseW/2+th/2,               0],
-      [th, imgH+th*2, -(baseW/2+th/2),             0],
-    ].forEach(([w,h,x,y])=>{
-      const strip=document.createElement("a-plane");
-      strip.setAttribute("width",w.toFixed(3));
-      strip.setAttribute("height",h.toFixed(3));
-      strip.setAttribute("position",`${x.toFixed(3)} ${y.toFixed(3)} 0.012`);
-      strip.setAttribute("material",bMat);
-      container.appendChild(strip);
-    });
+    // 丸角シアンフレーム（canvasテクスチャ）
+    const frameSrc=createRoundedFrameTexture(ratio);
+    const frame=document.createElement("a-plane");
+    frame.setAttribute("width",baseW.toFixed(3));
+    frame.setAttribute("height",(baseW*ratio).toFixed(3));
+    frame.setAttribute("position","0 0 0.015");
+    frame.setAttribute("material",{src:frameSrc,transparent:true,shader:"flat"});
+    container.appendChild(frame);
 
     const aImg=document.createElement("a-image");
     aImg.setAttribute("src",url);
