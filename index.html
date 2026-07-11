@@ -35,30 +35,94 @@ background:#000;
   font-style: normal;
 }
 
-.hud{
+:root{
+--accent:#D99A3E;
+--ink:#F6F1E4;
+}
+
+/* HUD: マーカー検出中（未ロック） */
+.hud-scan{
+position:fixed;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+pointer-events:none;
+z-index:10001;
+}
+
+.reticle{
+position:relative;
+width:120px;
+height:120px;
+margin-bottom:14px;
+}
+
+.reticle .corner{
+position:absolute;
+width:18px;
+height:18px;
+border-color:var(--accent);
+opacity:.85;
+}
+.reticle .corner.tl{top:0;left:0;border-top:2px solid;border-left:2px solid;}
+.reticle .corner.tr{top:0;right:0;border-top:2px solid;border-right:2px solid;}
+.reticle .corner.bl{bottom:0;left:0;border-bottom:2px solid;border-left:2px solid;}
+.reticle .corner.br{bottom:0;right:0;border-bottom:2px solid;border-right:2px solid;}
+
+.scanline{
+position:absolute;
+left:8%;
+right:8%;
+height:1px;
+top:12%;
+background:linear-gradient(90deg,transparent,rgba(217,154,62,0.85),transparent);
+animation:scanmove 2.4s ease-in-out infinite;
+}
+
+@keyframes scanmove{
+0%,100%{top:12%;}
+50%{top:88%;}
+}
+
+@media (prefers-reduced-motion:reduce){
+.scanline{animation:none; top:50%;}
+}
+
+.scan-status{
+font-family:monospace;
+font-size:11px;
+letter-spacing:.14em;
+text-transform:uppercase;
+color:var(--accent);
+text-shadow:0 0 6px rgba(217,154,62,.6);
+}
+
+/* HUD: マーカーロック後 */
+.hud-locked{
 position:fixed;
 top:20px;
 left:20px;
-color:#00f2ff;
+display:none;
+align-items:center;
+gap:6px;
 font-family:monospace;
-font-size:12px;
+font-size:11px;
+letter-spacing:.1em;
+text-transform:uppercase;
+color:rgba(246,241,228,.85);
 pointer-events:none;
 z-index:10001;
-text-shadow:0 0 5px #00f2ff;
 }
 
-.rec-dot{
-display:inline-block;
-width:10px;
-height:10px;
-background:red;
+.pulse-dot{
+width:7px;
+height:7px;
 border-radius:50%;
-margin-right:5px;
-animation:blink 1s infinite;
-}
-
-@keyframes blink{
-50%{opacity:0;}
+background:var(--accent);
+box-shadow:0 0 6px var(--accent);
+flex-shrink:0;
 }
 
 
@@ -70,7 +134,7 @@ bottom:25px;
 right:25px;
 display:flex;
 flex-direction:row-reverse;
-gap:20px;
+gap:14px;
 z-index:10002;
 }
 
@@ -81,47 +145,27 @@ display:none;
 }
 
 .btn-border-shadow{
-position:relative;
 display:flex;
 justify-content:center;
 align-items:center;
-width:50px;
-height:50px;
+width:28px;
+height:28px;
 cursor:pointer;
 text-decoration:none;
-background:rgba(255,255,255,0.85);
+background:rgba(0,0,0,0.35);
+border:1px solid rgba(255,255,255,0.55);
 border-radius:50%;
-}
-
-.btn-border-shadow:before{
-position:absolute;
-top:-6px;
-left:-6px;
-width:100%;
-height:100%;
-content:"";
-transition:all .3s ease;
-border:3px solid #000;
-border-radius:50%;
-box-shadow:3px 3px 0 #78e5e5;
-box-sizing:content-box;
+transition:background .2s ease;
 }
 
 .btn-border-shadow:hover{
-transform:translate(-3px,-3px);
-}
-
-.btn-border-shadow:hover:before{
-top:0;
-left:0;
-box-shadow:0 0 0 #78e5e5;
+background:rgba(0,0,0,0.55);
 }
 
 .btn-border-shadow img{
-width:60%;
-height:60%;
+width:55%;
+height:55%;
 object-fit:contain;
-z-index:1;
 }
 
 </style>
@@ -129,7 +173,18 @@ z-index:1;
 
 <body>
 
-<div class="hud"></div>
+<div class="hud-scan" id="hudScan">
+<div class="reticle">
+<span class="corner tl"></span><span class="corner tr"></span>
+<span class="corner bl"></span><span class="corner br"></span>
+<span class="scanline"></span>
+</div>
+<div class="scan-status">Searching Marker…</div>
+</div>
+
+<div class="hud-locked" id="hudLocked">
+<span class="pulse-dot"></span>Tracking
+</div>
 
 
 <div class="sns-container">
@@ -173,11 +228,14 @@ let currentIndex=0;
 let items=[];
 let arTarget=null;
 let sceneInitialized=false;
+let dotsPlane=null;
+let hudScan=null;
+let hudLocked=null;
 
 
 /* 日本語Canvas */
 
-async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-serif"){
+async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-serif",align="center"){
 
   const canvas=document.createElement("canvas");
   canvas.width=512;
@@ -192,12 +250,98 @@ async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-ser
   ctx.clearRect(0,0,512,128);
   ctx.fillStyle=color;
   ctx.font=`bold ${fontSize} "${fontFamily}", sans-serif`;
-  ctx.textAlign="center";
   ctx.textBaseline="middle";
-  ctx.fillText(text,256,64);
+
+  if(align==="left"){
+    ctx.textAlign="left";
+    ctx.fillText(text,28,64);
+  }else{
+    ctx.textAlign="center";
+    ctx.fillText(text,256,64);
+  }
 
   return canvas.toDataURL();
 
+}
+
+
+/* 肩書き（先頭にアクセントの小さな四角） */
+
+async function createJobTexture(text,color,accentColor,fontSize="45px",fontFamily="sans-serif"){
+
+  const canvas=document.createElement("canvas");
+  canvas.width=512;
+  canvas.height=128;
+
+  const ctx=canvas.getContext("2d");
+
+  try{
+    await document.fonts.load(`500 ${fontSize} "${fontFamily}"`);
+  }catch(e){}
+
+  ctx.clearRect(0,0,512,128);
+
+  ctx.fillStyle=accentColor;
+  ctx.fillRect(28,59,10,10);
+
+  ctx.fillStyle=color;
+  ctx.font=`500 ${fontSize} "${fontFamily}", sans-serif`;
+  ctx.textAlign="left";
+  ctx.textBaseline="middle";
+  ctx.fillText(text,50,64);
+
+  return canvas.toDataURL();
+
+}
+
+
+/* 写真下部のグラデーションスクリム */
+
+function createScrimTexture(ratio){
+  const W=512;
+  const H=Math.round(512*(ratio||1));
+  const canvas=document.createElement("canvas");
+  canvas.width=W;
+  canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,W,H);
+  const grad=ctx.createLinearGradient(0,H*0.58,0,H);
+  grad.addColorStop(0,"rgba(10,8,4,0)");
+  grad.addColorStop(0.45,"rgba(10,8,4,0.6)");
+  grad.addColorStop(1,"rgba(10,8,4,0.92)");
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+  return canvas.toDataURL();
+}
+
+
+/* カルーセル位置インジケータ */
+
+function createDotsTexture(count,activeIndex){
+  const W=512, H=40, gap=10;
+  const canvas=document.createElement("canvas");
+  canvas.width=W;
+  canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,W,H);
+  const segW=(W-gap*(count-1))/count;
+  for(let i=0;i<count;i++){
+    const x=i*(segW+gap);
+    ctx.fillStyle=i===activeIndex?"#F6F1E4":"rgba(255,255,255,0.35)";
+    roundRect(ctx,x,H/2-3,segW,6,3);
+    ctx.fill();
+  }
+  return canvas.toDataURL();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
 }
 
 async function createBackgroundTexture(type,color,gradient1,gradient2,imageUrl){
@@ -240,38 +384,6 @@ async function createBackgroundTexture(type,color,gradient1,gradient2,imageUrl){
 }
 
 
-/* 丸角フレームテクスチャ生成 */
-
-function createRoundedFrameTexture(ratio){
-  const W=512;
-  const H=Math.round(512*(ratio||1));
-  const canvas=document.createElement("canvas");
-  canvas.width=W;
-  canvas.height=H;
-  const ctx=canvas.getContext("2d");
-  ctx.clearRect(0,0,W,H);
-  const bpx=24;
-  const r=36;
-  const half=bpx/2;
-  ctx.strokeStyle="rgba(0,242,255,0.93)";
-  ctx.lineWidth=bpx;
-  ctx.lineJoin="round";
-  ctx.beginPath();
-  ctx.moveTo(r+half,half);
-  ctx.lineTo(W-r-half,half);
-  ctx.arcTo(W-half,half,W-half,r+half,r);
-  ctx.lineTo(W-half,H-r-half);
-  ctx.arcTo(W-half,H-half,W-r-half,H-half,r);
-  ctx.lineTo(r+half,H-half);
-  ctx.arcTo(half,H-half,half,H-r-half,r);
-  ctx.lineTo(half,r+half);
-  ctx.arcTo(half,half,r+half,half,r);
-  ctx.closePath();
-  ctx.stroke();
-  return canvas.toDataURL();
-}
-
-
 /* MindAR シーン初期化 */
 
 function initARScene(mindUrl){
@@ -291,6 +403,16 @@ function initARScene(mindUrl){
   arTarget.setAttribute("mindar-image-target","targetIndex: 0");
   arTarget.setAttribute("animation__found","property: scale; from: 0.85 0.85 0.85; to: 1 1 1; dur: 250; easing: easeOutQuad; startEvents: targetFound");
   scene.appendChild(arTarget);
+
+  arTarget.addEventListener("targetFound",()=>{
+    hudScan.style.display="none";
+    hudLocked.style.display="flex";
+  });
+
+  arTarget.addEventListener("targetLost",()=>{
+    hudScan.style.display="flex";
+    hudLocked.style.display="none";
+  });
 
   document.body.appendChild(scene);
   sceneInitialized=true;
@@ -313,6 +435,10 @@ function updateCarousel(){
 
   });
 
+  if(dotsPlane){
+    dotsPlane.setAttribute("material","src",createDotsTexture(items.length,currentIndex));
+  }
+
 }
 
 
@@ -321,8 +447,8 @@ window.addEventListener("load",()=>{
 const urlParams=new URLSearchParams(window.location.search);
 const markerId=urlParams.get("id")||"akazawa";
 
-const hud=document.querySelector(".hud");
-hud.innerHTML=`<div class="rec-dot"></div>REC AR ACTIVE<br>USER:${markerId}`;
+hudScan=document.getElementById("hudScan");
+hudLocked=document.getElementById("hudLocked");
 
 const editBtn=document.createElement('a');
 editBtn.href=`editor.html?id=${markerId}`;
@@ -423,82 +549,75 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
 
   const baseW=1.3;
   const maxRatio=ratios.length>0?Math.max(...ratios):1;
-  const imgBottom=-(baseW*maxRatio/2);
 
-  // 各画像スライド
+  const nameFontFamily=data.font||"sans-serif";
+  const nameFontSize=data.fontSize?`${data.fontSize}px`:"56px";
+  const nameColor=data.nameColor||"#F6F1E4";
+  const jobFontFamily=data.font||"sans-serif";
+  const jobFontSize=data.fontSize?`${Math.max(30,Math.round(data.fontSize*0.6))}px`:"34px";
+  const jobColor=data.jobColor||"#CBB99E";
+  const accentColor=data.accentColor||"#D99A3E";
+
+  dotsPlane=null;
+
+  // 各画像スライド（写真に重ねて左寄せキャプション）
   for(let i=0;i<images.length;i++){
 
     const url=images[i];
     const ratio=ratios[i]||1;
+    const imgH=baseW*ratio;
 
     const container=document.createElement("a-entity");
     container.setAttribute("visible","false");
-
-    // 丸角シアンフレーム（canvasテクスチャ）
-    const frameSrc=createRoundedFrameTexture(ratio);
-    const frame=document.createElement("a-plane");
-    frame.setAttribute("width",baseW.toFixed(3));
-    frame.setAttribute("height",(baseW*ratio).toFixed(3));
-    frame.setAttribute("position","0 0 0.015");
-    frame.setAttribute("material",{src:frameSrc,transparent:true,shader:"flat"});
-    container.appendChild(frame);
 
     const aImg=document.createElement("a-image");
     aImg.setAttribute("src",url);
     aImg.setAttribute("material","shader:flat;transparent:true;side:double");
     aImg.setAttribute("width",baseW);
-    aImg.setAttribute("height",(baseW*ratio).toFixed(3));
+    aImg.setAttribute("height",imgH.toFixed(3));
     aImg.setAttribute("position","0 0 0.01");
     container.appendChild(aImg);
+
+    // 写真下部のグラデーションスクリム
+    const scrim=document.createElement("a-plane");
+    scrim.setAttribute("width",baseW.toFixed(3));
+    scrim.setAttribute("height",imgH.toFixed(3));
+    scrim.setAttribute("position","0 0 0.015");
+    scrim.setAttribute("material",{src:createScrimTexture(ratio),transparent:true,shader:"flat"});
+    container.appendChild(scrim);
+
+    // 名前
+    const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily,"left");
+    const nPlane=document.createElement("a-plane");
+    nPlane.setAttribute("width",baseW.toFixed(3));
+    nPlane.setAttribute("height","0.16");
+    nPlane.setAttribute("position",`0 ${(-(imgH/2)+0.30).toFixed(3)} 0.02`);
+    nPlane.setAttribute("material",{src:nameSrc,transparent:true,shader:"flat"});
+    container.appendChild(nPlane);
+
+    // 肩書き
+    const jobSrc=await createJobTexture(data.job||"NO TITLE",jobColor,accentColor,jobFontSize,jobFontFamily);
+    const jPlane=document.createElement("a-plane");
+    jPlane.setAttribute("width",baseW.toFixed(3));
+    jPlane.setAttribute("height","0.11");
+    jPlane.setAttribute("position",`0 ${(-(imgH/2)+0.12).toFixed(3)} 0.021`);
+    jPlane.setAttribute("material",{src:jobSrc,transparent:true,shader:"flat"});
+    container.appendChild(jPlane);
 
     items.push(container);
     arTarget.appendChild(container);
 
   }
 
-  // テキストエリア（画像の下に固定、カルーセルには含まない）
-  const nameFontFamily=data.font||"sans-serif";
-  const nameFontSize=data.fontSize?`${data.fontSize}px`:"60px";
-  const nameColor=data.nameColor||"#00f2ff";
-  const jobFontFamily=data.font||"sans-serif";
-  const jobFontSize=data.fontSize?`${Math.max(40,Math.round(data.fontSize*0.75))}px`:"45px";
-  const jobColor=data.jobColor||"#ffcc00";
-
-  const nameW=baseW*0.65;
-  const nameH=nameW/4;
-  const jobW=baseW*0.53;
-  const jobH=jobW/4;
-  const pad=0.05;
-
-  const nameY=imgBottom-pad-nameH/2;
-  const jobY=nameY-nameH/2-0.025-jobH/2;
-  const bgH=pad+nameH+0.025+jobH+pad*0.5;
-
-  // テキスト背景
-  const textBg=document.createElement("a-plane");
-  textBg.setAttribute("width",(baseW+0.025).toFixed(3));
-  textBg.setAttribute("height",bgH.toFixed(3));
-  textBg.setAttribute("position",`0 ${(imgBottom-bgH/2).toFixed(3)} -0.001`);
-  textBg.setAttribute("material","color: #000814; opacity: 0.8; shader: flat");
-  arTarget.appendChild(textBg);
-
-  // 名前
-  const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily);
-  const nPlane=document.createElement("a-plane");
-  nPlane.setAttribute("width",nameW.toFixed(3));
-  nPlane.setAttribute("height",nameH.toFixed(3));
-  nPlane.setAttribute("position",`0 ${nameY.toFixed(3)} 0.002`);
-  nPlane.setAttribute("material",{src:nameSrc,transparent:true,shader:"flat"});
-  arTarget.appendChild(nPlane);
-
-  // 肩書き
-  const jobSrc=await createTextTexture(data.job||"NO TITLE",jobColor,jobFontSize,jobFontFamily);
-  const jPlane=document.createElement("a-plane");
-  jPlane.setAttribute("width",jobW.toFixed(3));
-  jPlane.setAttribute("height",jobH.toFixed(3));
-  jPlane.setAttribute("position",`0 ${jobY.toFixed(3)} 0.002`);
-  jPlane.setAttribute("material",{src:jobSrc,transparent:true,shader:"flat"});
-  arTarget.appendChild(jPlane);
+  // カルーセル位置インジケータ（写真が複数あるときのみ）
+  if(images.length>1){
+    dotsPlane=document.createElement("a-plane");
+    dotsPlane.setAttribute("width",(baseW*0.5).toFixed(3));
+    dotsPlane.setAttribute("height","0.05");
+    dotsPlane.setAttribute("position",`0 ${((baseW*maxRatio)/2-0.12).toFixed(3)} 0.02`);
+    dotsPlane.setAttribute("material",{src:createDotsTexture(images.length,currentIndex),transparent:true,shader:"flat"});
+    arTarget.appendChild(dotsPlane);
+  }
 
   updateCarousel();
 
