@@ -235,11 +235,14 @@ let hudLocked=null;
 
 /* 日本語Canvas */
 
-async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-serif",align="center"){
+async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-serif",align="center",aspect=4){
+
+  const H=128;
+  const W=Math.round(H*aspect);
 
   const canvas=document.createElement("canvas");
-  canvas.width=512;
-  canvas.height=128;
+  canvas.width=W;
+  canvas.height=H;
 
   const ctx=canvas.getContext("2d");
 
@@ -247,17 +250,17 @@ async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-ser
     await document.fonts.load(`bold ${fontSize} "${fontFamily}"`);
   }catch(e){}
 
-  ctx.clearRect(0,0,512,128);
+  ctx.clearRect(0,0,W,H);
   ctx.fillStyle=color;
   ctx.font=`bold ${fontSize} "${fontFamily}", sans-serif`;
   ctx.textBaseline="middle";
 
   if(align==="left"){
     ctx.textAlign="left";
-    ctx.fillText(text,28,64);
+    ctx.fillText(text,28,H/2);
   }else{
     ctx.textAlign="center";
-    ctx.fillText(text,256,64);
+    ctx.fillText(text,W/2,H/2);
   }
 
   return canvas.toDataURL();
@@ -267,11 +270,14 @@ async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-ser
 
 /* 肩書き（先頭にアクセントの小さな四角） */
 
-async function createJobTexture(text,color,accentColor,fontSize="45px",fontFamily="sans-serif"){
+async function createJobTexture(text,color,accentColor,fontSize="45px",fontFamily="sans-serif",aspect=4){
+
+  const H=128;
+  const W=Math.round(H*aspect);
 
   const canvas=document.createElement("canvas");
-  canvas.width=512;
-  canvas.height=128;
+  canvas.width=W;
+  canvas.height=H;
 
   const ctx=canvas.getContext("2d");
 
@@ -279,16 +285,16 @@ async function createJobTexture(text,color,accentColor,fontSize="45px",fontFamil
     await document.fonts.load(`500 ${fontSize} "${fontFamily}"`);
   }catch(e){}
 
-  ctx.clearRect(0,0,512,128);
+  ctx.clearRect(0,0,W,H);
 
   ctx.fillStyle=accentColor;
-  ctx.fillRect(28,59,10,10);
+  ctx.fillRect(28,H/2-5,10,10);
 
   ctx.fillStyle=color;
   ctx.font=`500 ${fontSize} "${fontFamily}", sans-serif`;
   ctx.textAlign="left";
   ctx.textBaseline="middle";
-  ctx.fillText(text,50,64);
+  ctx.fillText(text,50,H/2);
 
   return canvas.toDataURL();
 
@@ -587,19 +593,21 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     container.appendChild(scrim);
 
     // 名前
-    const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily,"left");
+    const nameH=0.16;
+    const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily,"left",baseW/nameH);
     const nPlane=document.createElement("a-plane");
     nPlane.setAttribute("width",baseW.toFixed(3));
-    nPlane.setAttribute("height","0.16");
+    nPlane.setAttribute("height",nameH.toFixed(3));
     nPlane.setAttribute("position",`0 ${(-(imgH/2)+0.30).toFixed(3)} 0.02`);
     nPlane.setAttribute("material",{src:nameSrc,transparent:true,shader:"flat"});
     container.appendChild(nPlane);
 
     // 肩書き
-    const jobSrc=await createJobTexture(data.job||"NO TITLE",jobColor,accentColor,jobFontSize,jobFontFamily);
+    const jobH=0.11;
+    const jobSrc=await createJobTexture(data.job||"NO TITLE",jobColor,accentColor,jobFontSize,jobFontFamily,baseW/jobH);
     const jPlane=document.createElement("a-plane");
     jPlane.setAttribute("width",baseW.toFixed(3));
-    jPlane.setAttribute("height","0.11");
+    jPlane.setAttribute("height",jobH.toFixed(3));
     jPlane.setAttribute("position",`0 ${(-(imgH/2)+0.12).toFixed(3)} 0.021`);
     jPlane.setAttribute("material",{src:jobSrc,transparent:true,shader:"flat"});
     container.appendChild(jPlane);
