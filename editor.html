@@ -15,7 +15,7 @@
   font-weight: normal;
   font-style: normal;
 }
-  
+
 body {
   margin: 0;
   font-family: 'Noto Sans JP', 'Roboto', sans-serif;
@@ -196,37 +196,6 @@ input[type="file"]:hover {
   text-align: right;
 }
 
-/* レイアウトプリセットボタン */
-.preset-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.preset-btn {
-  padding: 10px 8px;
-  background: #202024;
-  border: 1px solid #3f3f46;
-  color: #d4d4d8;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.preset-btn:hover {
-  border-color: #06b6d4;
-  color: #06b6d4;
-  background: #1a2628;
-}
-
-.preset-btn.active {
-  background: #06b6d4;
-  border-color: #06b6d4;
-  color: #09090b;
-}
-
 select {
   cursor: pointer;
   appearance: none;
@@ -369,11 +338,12 @@ select option {
   z-index: 2;
 }
 
-#preview-bg-panel {
+#preview-scrim {
   position: absolute;
-  border-radius: 4px;
   z-index: 3;
-  transition: background 0.2s, opacity 0.2s;
+  display: none;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(10,8,4,0) 58%, rgba(10,8,4,0.6) 77%, rgba(10,8,4,0.92) 100%);
 }
 
 #preview-name {
@@ -381,17 +351,31 @@ select option {
   z-index: 5;
   font-weight: bold;
   white-space: nowrap;
+  text-align: left;
   text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8);
   pointer-events: none;
+  transform: translateY(-50%);
 }
 
 #preview-job {
   position: absolute;
   z-index: 5;
-  font-weight: bold;
+  font-weight: 500;
   white-space: nowrap;
+  text-align: left;
   text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8);
   pointer-events: none;
+  transform: translateY(-50%);
+  padding-left: 14px;
+}
+
+#preview-job-dot {
+  position: absolute;
+  z-index: 5;
+  width: 6px;
+  height: 6px;
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .scan-line {
@@ -495,111 +479,14 @@ select option {
     </div>
 
     <div class="input-group">
+      <label>アクセントカラー</label>
+      <input type="color" id="accentColorInput" value="#D99A3E">
+    </div>
+
+    <div class="input-group">
       <label>文字サイズ</label>
       <input type="range" id="fontSizeInput" min="40" max="150" value="80" step="5">
       <div style="font-size: 11px; color: #71717a; text-align: right;" id="fontSizeDisplay">80px</div>
-    </div>
-
-    <div class="input-group">
-      <label>レイアウトプリセット</label>
-      <div class="preset-grid">
-        <button type="button" class="preset-btn" data-preset="top-bottom">上下配置</button>
-        <button type="button" class="preset-btn" data-preset="left-right">左右配置</button>
-        <button type="button" class="preset-btn" data-preset="center-stack">中央揃え（縦）</button>
-        <button type="button" class="preset-btn" data-preset="diagonal">斜め配置</button>
-      </div>
-      <div style="font-size: 11px; color: #71717a; line-height: 1.5;">
-        プリセットを押すと位置が自動設定されます。その後スライダーで微調整できます。
-      </div>
-    </div>
-
-    <div class="input-group">
-      <label>お名前の位置 X</label>
-      <input type="range" id="nameOffsetXInput" min="-5" max="5" value="-3" step="0.5">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="nameOffsetXDisplay">-3</div>
-    </div>
-
-    <div class="input-group">
-      <label>お名前の位置 Y</label>
-      <input type="range" id="nameOffsetYInput" min="-2" max="2" value="1" step="0.2">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="nameOffsetYDisplay">1</div>
-    </div>
-
-    <div class="input-group">
-      <label>お名前の位置 Z</label>
-      <input type="range" id="nameOffsetZInput" min="-3" max="3" value="-2" step="0.3">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="nameOffsetZDisplay">-2</div>
-    </div>
-
-    <div class="input-group">
-      <label>肩書きの位置 X</label>
-      <input type="range" id="jobOffsetXInput" min="-5" max="5" value="3" step="0.5">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="jobOffsetXDisplay">3</div>
-    </div>
-
-    <div class="input-group">
-      <label>肩書きの位置 Y</label>
-      <input type="range" id="jobOffsetYInput" min="-2" max="2" value="0.5" step="0.2">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="jobOffsetYDisplay">0.5</div>
-    </div>
-
-    <div class="input-group">
-      <label>肩書きの位置 Z</label>
-      <input type="range" id="jobOffsetZInput" min="-3" max="3" value="2" step="0.3">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="jobOffsetZDisplay">2</div>
-    </div>
-
-    <div class="input-group">
-      <label>背景タイプ</label>
-      <select id="bgTypeInput">
-        <option value="solid">単色</option>
-        <option value="gradient">グラデーション</option>
-        <option value="image">画像</option>
-      </select>
-    </div>
-
-    <div class="input-group">
-      <label>背景色</label>
-      <input type="color" id="bgColorInput" value="#111827">
-    </div>
-
-    <div class="input-group">
-      <label>グラデーション 1</label>
-      <input type="color" id="bgGradientColor1Input" value="#111827">
-    </div>
-
-    <div class="input-group">
-      <label>グラデーション 2</label>
-      <input type="color" id="bgGradientColor2Input" value="#0f172a">
-    </div>
-
-    <div class="input-group">
-      <label>背景画像 URL</label>
-      <input type="text" id="bgImageUrlInput" placeholder="https://example.com/bg.png">
-    </div>
-
-    <div class="input-group">
-      <label>背景パネル不透明度</label>
-      <input type="range" id="bgOpacityInput" min="0.1" max="1" value="0.4" step="0.05">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgOpacityInputDisplay">0.4</div>
-    </div>
-
-    <div class="input-group">
-      <label>背景パネル幅</label>
-      <input type="range" id="bgWidthInput" min="1" max="8" value="4" step="0.2">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgWidthInputDisplay">4</div>
-    </div>
-
-    <div class="input-group">
-      <label>背景パネル高さ</label>
-      <input type="range" id="bgHeightInput" min="0.5" max="4" value="1.8" step="0.1">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgHeightInputDisplay">1.8</div>
-    </div>
-
-    <div class="input-group">
-      <label>背景パネル位置 Y</label>
-      <input type="range" id="bgOffsetYInput" min="-1" max="2" value="0" step="0.1">
-      <div style="font-size: 11px; color: #71717a; text-align: right;" id="bgOffsetYDisplay">0</div>
     </div>
 
     <div class="input-group">
@@ -649,14 +536,15 @@ select option {
         <div class="hud-corner bl"></div>
         <div class="hud-corner br"></div>
         <img id="preview-photo" src="" alt="">
-        <div id="preview-bg-panel"></div>
+        <div id="preview-scrim"></div>
         <div id="preview-name">名前</div>
+        <div id="preview-job-dot"></div>
         <div id="preview-job">肩書き</div>
       </div>
     </div>
     <div class="phone-home"></div>
   </div>
-  <div class="preview-hint">スライダーを動かすと<br>リアルタイムで更新されます</div>
+  <div class="preview-hint">index.html と同じ「写真下部に名前・肩書き」<br>レイアウトのプレビューです</div>
 </div>
 
 </div>
@@ -664,7 +552,7 @@ select option {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyAHJPzHf4QR3V4GOcd0l3s-_VvSSYeWZAA",
@@ -680,13 +568,16 @@ const db=getFirestore(app);
 
 let imagesBase64=[];
 let imageRatios=[];
+let photosChanged=false;
 
 document.getElementById("fileInput").onchange=async(e)=>{
 
+const files=[...e.target.files];
+if(files.length===0) return;
+
+photosChanged=true;
 imagesBase64=[];
 imageRatios=[];
-
-const files=[...e.target.files];
 
 document.getElementById("fileList").innerText=files.length+"枚選択";
 
@@ -703,14 +594,14 @@ updatePreview();
 
 };
 
-["fontSizeInput","nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput","bgOpacityInput","bgWidthInput","bgHeightInput","bgOffsetYInput"].forEach(id=>{
+["fontSizeInput"].forEach(id=>{
 const el = document.getElementById(id);
 el.addEventListener("input",()=>{ updateDisplayValue(id); updatePreview(); });
 });
 
 function updateDisplayValue(id) {
   const el = document.getElementById(id);
-  const displayId = id + "Display";
+  const displayId = id.replace(/Input$/, "") + "Display";
   const displayEl = document.getElementById(displayId);
   if (displayEl) {
     if (id === "fontSizeInput") {
@@ -721,70 +612,12 @@ function updateDisplayValue(id) {
   }
 }
 
-/* ================================================
-   レイアウトプリセット
-   名前・肩書きのオフセット(X/Y/Z)を
-   ワンクリックで分かりやすい配置にセットする
-   ================================================ */
-const LAYOUT_PRESETS = {
-  // 名前が上、肩書きが下（写真の手前/奥に分かれる）
-  "top-bottom": {
-    name: { x: 0,    y: 0.6,  z: -1.2 },
-    job:  { x: 0,    y: 0.6,  z: 1.2  }
-  },
-  // 名前が左、肩書きが右
-  "left-right": {
-    name: { x: -2.2, y: 0.3,  z: 0   },
-    job:  { x: 2.2,  y: 0.1,  z: 0   }
-  },
-  // 名前・肩書きを縦に中央揃え（写真の真下にスタック）
-  "center-stack": {
-    name: { x: 0,    y: -1.1, z: 0   },
-    job:  { x: 0,    y: -1.6, z: 0   }
-  },
-  // 名前を奥、肩書きを手前に斜めに配置（元のデフォルトに近い）
-  "diagonal": {
-    name: { x: -3,   y: 1,    z: -2  },
-    job:  { x: 3,    y: 0.5,  z: 2   }
-  }
-};
-
-function applyPreset(presetKey) {
-  const preset = LAYOUT_PRESETS[presetKey];
-  if (!preset) return;
-
-  document.getElementById("nameOffsetXInput").value = preset.name.x;
-  document.getElementById("nameOffsetYInput").value = preset.name.y;
-  document.getElementById("nameOffsetZInput").value = preset.name.z;
-  document.getElementById("jobOffsetXInput").value  = preset.job.x;
-  document.getElementById("jobOffsetYInput").value  = preset.job.y;
-  document.getElementById("jobOffsetZInput").value  = preset.job.z;
-
-  ["nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput"]
-    .forEach(updateDisplayValue);
-
-  document.querySelectorAll(".preset-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.preset === presetKey);
-  });
-
-  ["nameOffsetXInput","nameOffsetYInput","nameOffsetZInput","jobOffsetXInput","jobOffsetYInput","jobOffsetZInput"]
-    .forEach(updateDisplayValue);
-}
-
-document.querySelectorAll(".preset-btn").forEach(btn => {
-  btn.addEventListener("click", () => { applyPreset(btn.dataset.preset); updatePreview(); });
-});
-
 // テキスト・色・フォント変更でもプレビューを更新
-["nameInput","jobInput","fontSelect","nameColorInput","jobColorInput",
- "bgTypeInput","bgColorInput","bgGradientColor1Input","bgGradientColor2Input"].forEach(id=>{
+["nameInput","jobInput","fontSelect","nameColorInput","jobColorInput","accentColorInput"].forEach(id=>{
   const el=document.getElementById(id);
   if(el) el.addEventListener("input", updatePreview);
   if(el) el.addEventListener("change", updatePreview);
 });
-
-// 初期プレビュー
-requestAnimationFrame(updatePreview);
 
 function processImage(file){
 
@@ -827,20 +660,14 @@ reader.readAsDataURL(file);
 
 }
 
-/* ── CSS ベースのリアルタイムプレビュー ── */
+/* ── CSS ベースのリアルタイムプレビュー ──
+   index.html の実レイアウト（写真下部に名前・肩書き＋グラデーションスクリム）に合わせる */
 function updatePreview() {
   const screen = document.getElementById("preview-camera-bg");
   if (!screen) return;
 
   const screenW = screen.offsetWidth || 244;
   const screenH = screen.offsetHeight || 462;
-  const cx = screenW / 2;
-  const cy = screenH / 2;
-
-  // index.html に合わせたスケール変換
-  // 1 MindAR unit = 画像幅 = screenW / 1.8 px
-  const pxPerUnit = screenW / 1.8;
-  const S = 0.15;
 
   const nameVal     = document.getElementById("nameInput").value || "名前";
   const jobVal      = document.getElementById("jobInput").value  || "肩書き";
@@ -848,80 +675,101 @@ function updatePreview() {
   const fontSizeVal = parseInt(document.getElementById("fontSizeInput").value) || 80;
   const nameColor   = document.getElementById("nameColorInput").value;
   const jobColor    = document.getElementById("jobColorInput").value;
+  const accentColor = document.getElementById("accentColorInput").value;
 
-  const nameOffsetX = parseFloat(document.getElementById("nameOffsetXInput").value) || 0;
-  const nameOffsetZ = parseFloat(document.getElementById("nameOffsetZInput").value) || 0;
-  const jobOffsetX  = parseFloat(document.getElementById("jobOffsetXInput").value)  || 0;
-  const jobOffsetZ  = parseFloat(document.getElementById("jobOffsetZInput").value)  || 0;
+  const ratio  = imageRatios[0] || 1;
+  const photoW = screenW * 0.86;
+  const photoH = photoW * ratio;
+  const left   = (screenW - photoW) / 2;
+  const top    = Math.max(0, (screenH - photoH) / 2);
 
-  const bgType       = document.getElementById("bgTypeInput").value;
-  const bgColor      = document.getElementById("bgColorInput").value;
-  const bgGrad1      = document.getElementById("bgGradientColor1Input").value;
-  const bgGrad2      = document.getElementById("bgGradientColor2Input").value;
-  const bgOpacity    = parseFloat(document.getElementById("bgOpacityInput").value);
-  const bgOffsetY    = parseFloat(document.getElementById("bgOffsetYInput").value) || 0;
+  const photoEl = document.getElementById("preview-photo");
+  if (imagesBase64.length > 0) {
+    photoEl.src = imagesBase64[0];
+    photoEl.style.display = "block";
+  } else {
+    photoEl.style.display = "none";
+  }
+  photoEl.style.width  = photoW + "px";
+  photoEl.style.height = photoH + "px";
+  photoEl.style.left   = left + "px";
+  photoEl.style.top    = top + "px";
 
-  // index.html の座標式と同じ変換:
-  //   posX = nameOffsetX * S
-  //   posY = -nameOffsetZ * S  (A-Frame Y上 → 画面Y下 → 符号反転)
-  const nameScreenX = cx + nameOffsetX * S * pxPerUnit;
-  const nameScreenY = cy + nameOffsetZ  * S * pxPerUnit;
-  const jobScreenX  = cx + jobOffsetX  * S * pxPerUnit;
-  const jobScreenY  = cy + jobOffsetZ  * S * pxPerUnit;
+  const scrimEl = document.getElementById("preview-scrim");
+  scrimEl.style.display = "block";
+  scrimEl.style.width  = photoW + "px";
+  scrimEl.style.height = photoH + "px";
+  scrimEl.style.left   = left + "px";
+  scrimEl.style.top    = top + "px";
 
-  // プレビュー内フォントサイズ（AR 80px ≒ プレビュー 14px 相当）
-  const previewFontSize = Math.max(9, Math.round(fontSizeVal * 0.175));
+  const previewFontSize = Math.max(9, Math.round(fontSizeVal * 0.16));
+  const nameX = left + photoW * 0.06;
+  const nameY = top + photoH * 0.80;
+  const jobY  = top + photoH * 0.90;
 
   const nameEl = document.getElementById("preview-name");
   nameEl.textContent      = nameVal;
   nameEl.style.color      = nameColor;
   nameEl.style.fontFamily = `"${fontVal}", sans-serif`;
   nameEl.style.fontSize   = previewFontSize + "px";
-  nameEl.style.left       = nameScreenX + "px";
-  nameEl.style.top        = nameScreenY + "px";
-  nameEl.style.transform  = "translate(-50%, -50%)";
+  nameEl.style.left       = nameX + "px";
+  nameEl.style.top        = nameY + "px";
+
+  const dotEl = document.getElementById("preview-job-dot");
+  dotEl.style.background = accentColor;
+  dotEl.style.left = nameX + "px";
+  dotEl.style.top  = jobY + "px";
 
   const jobEl = document.getElementById("preview-job");
   jobEl.textContent      = jobVal;
   jobEl.style.color      = jobColor;
   jobEl.style.fontFamily = `"${fontVal}", sans-serif`;
   jobEl.style.fontSize   = Math.round(previewFontSize * 0.78) + "px";
-  jobEl.style.left       = jobScreenX + "px";
-  jobEl.style.top        = jobScreenY + "px";
-  jobEl.style.transform  = "translate(-50%, -50%)";
+  jobEl.style.left       = nameX + "px";
+  jobEl.style.top        = jobY + "px";
+}
 
-  // 背景パネル（index.html の baseW*1.2 幅に対応）
-  const ratio   = imageRatios[0] || 1;
-  const bgW     = screenW * 0.9;
-  const photoH  = bgW * ratio;
-  const bgH     = photoH * 1.2 + screenH * 0.06;
-  const bgTop   = cy - bgH / 2 + bgOffsetY * S * pxPerUnit;
+/* 起動時：URLパラメータ ?id= を markerId に反映し、
+   Firestore の既存データを全フォームへ読み込む */
+async function loadExistingData(markerId) {
+  try {
+    const snap = await getDoc(doc(db, "arUsers", markerId));
+    if (!snap.exists()) return;
+    const data = snap.data();
 
-  const bgEl = document.getElementById("preview-bg-panel");
-  bgEl.style.width   = bgW + "px";
-  bgEl.style.height  = bgH + "px";
-  bgEl.style.left    = (cx - bgW / 2) + "px";
-  bgEl.style.top     = bgTop + "px";
-  bgEl.style.opacity = bgOpacity;
-  bgEl.style.background = bgType === "gradient"
-    ? `linear-gradient(135deg, ${bgGrad1}, ${bgGrad2})`
-    : bgColor;
+    document.getElementById("mindUrlInput").value  = data.mindUrl    ?? "";
+    document.getElementById("nameInput").value      = data.name       ?? document.getElementById("nameInput").value;
+    document.getElementById("jobInput").value        = data.job        ?? document.getElementById("jobInput").value;
+    document.getElementById("fontSelect").value       = data.font       ?? document.getElementById("fontSelect").value;
+    document.getElementById("nameColorInput").value    = data.nameColor  ?? document.getElementById("nameColorInput").value;
+    document.getElementById("jobColorInput").value      = data.jobColor   ?? document.getElementById("jobColorInput").value;
+    document.getElementById("accentColorInput").value    = data.accentColor ?? document.getElementById("accentColorInput").value;
+    document.getElementById("fontSizeInput").value        = data.fontSize  ?? document.getElementById("fontSizeInput").value;
+    document.getElementById("instagramInput").value        = data.instagram ?? "";
+    document.getElementById("xInput").value                  = data.x         ?? "";
+    document.getElementById("HPInput").value                  = data.hp        ?? "";
+    document.getElementById("lineInput").value                 = data.line      ?? "";
 
-  // 写真
-  const photoEl = document.getElementById("preview-photo");
-  if (imagesBase64.length > 0) {
-    const photoW = bgW * 0.88;
-    const actualH = photoW * ratio;
-    photoEl.src            = imagesBase64[0];
-    photoEl.style.display  = "block";
-    photoEl.style.width    = photoW + "px";
-    photoEl.style.height   = actualH + "px";
-    photoEl.style.left     = (cx - photoW / 2) + "px";
-    photoEl.style.top      = (cy - actualH / 2) + "px";
-  } else {
-    photoEl.style.display = "none";
+    if (Array.isArray(data.images) && data.images.length > 0) {
+      imagesBase64 = data.images;
+      imageRatios  = data.ratios || [];
+      document.getElementById("fileList").innerText = imagesBase64.length + "枚（保存済み）";
+    }
+
+    updateDisplayValue("fontSizeInput");
+  } catch (e) {
+    console.error("既存データの読み込みに失敗しました:", e);
   }
 }
+
+window.addEventListener("load", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const idParam = params.get("id");
+  if (idParam) document.getElementById("markerId").value = idParam;
+
+  await loadExistingData(document.getElementById("markerId").value);
+  updatePreview();
+});
 
 document.getElementById("saveBtn").onclick = async() => {
 
@@ -934,10 +782,7 @@ document.getElementById("saveBtn").onclick = async() => {
 
   try{
 
-    await setDoc(doc(db, "arUsers", markerId), {
-
-      images: imagesBase64,
-      ratios: imageRatios,
+    const payload = {
 
       name: document.getElementById("nameInput").value,
       job: document.getElementById("jobInput").value,
@@ -946,31 +791,24 @@ document.getElementById("saveBtn").onclick = async() => {
       fontSize: parseInt(document.getElementById("fontSizeInput").value),
       nameColor: document.getElementById("nameColorInput").value,
       jobColor: document.getElementById("jobColorInput").value,
-      
-      nameOffsetX: parseFloat(document.getElementById("nameOffsetXInput").value),
-      nameOffsetY: parseFloat(document.getElementById("nameOffsetYInput").value),
-      nameOffsetZ: parseFloat(document.getElementById("nameOffsetZInput").value),
-      jobOffsetX: parseFloat(document.getElementById("jobOffsetXInput").value),
-      jobOffsetY: parseFloat(document.getElementById("jobOffsetYInput").value),
-      jobOffsetZ: parseFloat(document.getElementById("jobOffsetZInput").value),
-      bgType: document.getElementById("bgTypeInput").value,
-      bgColor: document.getElementById("bgColorInput").value,
-      bgGradientColor1: document.getElementById("bgGradientColor1Input").value,
-      bgGradientColor2: document.getElementById("bgGradientColor2Input").value,
-      bgImageUrl: document.getElementById("bgImageUrlInput").value,
-      bgOpacity: parseFloat(document.getElementById("bgOpacityInput").value),
-      bgWidth: parseFloat(document.getElementById("bgWidthInput").value),
-      bgHeight: parseFloat(document.getElementById("bgHeightInput").value),
-      bgOffsetY: parseFloat(document.getElementById("bgOffsetYInput").value),
+      accentColor: document.getElementById("accentColorInput").value,
 
       mindUrl: document.getElementById("mindUrlInput").value,
 
       instagram: document.getElementById("instagramInput")?.value || "",
       x: document.getElementById("xInput")?.value || "",
-      youtube: document.getElementById("HPInput")?.value || "",
+      hp: document.getElementById("HPInput")?.value || "",
       line: document.getElementById("lineInput")?.value || ""
 
-    });
+    };
+
+    // 写真を選び直した時だけ images/ratios を送信する（既存写真を消さない）
+    if (photosChanged) {
+      payload.images = imagesBase64;
+      payload.ratios = imageRatios;
+    }
+
+    await setDoc(doc(db, "arUsers", markerId), payload, { merge: true });
 
     alert("✓ 保存完了しました");
     console.log("💾 Firestore 保存完了");

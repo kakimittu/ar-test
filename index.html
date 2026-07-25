@@ -140,7 +140,8 @@ z-index:10002;
 
 #insta-link,
 #x-link,
-#line-link{
+#line-link,
+#hp-link{
 display:none;
 }
 
@@ -199,6 +200,10 @@ object-fit:contain;
 
 <a href="#" id="insta-link" target="_blank" class="btn-border-shadow">
 <img src="assets/icons/instagram.png">
+</a>
+
+<a href="#" id="hp-link" target="_blank" class="btn-border-shadow">
+<svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 6 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-6-3.8-9s1.3-6.3 3.8-9z"/></svg>
 </a>
 
 </div>
@@ -350,46 +355,6 @@ function roundRect(ctx,x,y,w,h,r){
   ctx.closePath();
 }
 
-async function createBackgroundTexture(type,color,gradient1,gradient2,imageUrl){
-  const canvas=document.createElement("canvas");
-  const ctx=canvas.getContext("2d");
-  canvas.width=1024;
-  canvas.height=1024;
-
-  if(type==="gradient"){
-    const grad=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-    grad.addColorStop(0,gradient1);
-    grad.addColorStop(1,gradient2);
-    ctx.fillStyle=grad;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  } else if(type==="image" && imageUrl){
-    const img=new Image();
-    img.crossOrigin="anonymous";
-    await new Promise((resolve,reject)=>{
-      img.onload=resolve;
-      img.onerror=()=>reject(new Error("背景画像の読み込みに失敗しました"));
-      img.src=imageUrl;
-    });
-    const aspect=img.width/img.height;
-    let drawW=canvas.width;
-    let drawH=canvas.height;
-    if(aspect>1){
-      drawH=canvas.width/aspect;
-    } else {
-      drawW=canvas.height*aspect;
-    }
-    const ox=(canvas.width-drawW)/2;
-    const oy=(canvas.height-drawH)/2;
-    ctx.drawImage(img,ox,oy,drawW,drawH);
-  } else {
-    ctx.fillStyle=color;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
-
-  return canvas.toDataURL("image/png");
-}
-
-
 /* MindAR シーン初期化 */
 
 function initARScene(mindUrl){
@@ -456,20 +421,22 @@ const markerId=urlParams.get("id")||"akazawa";
 hudScan=document.getElementById("hudScan");
 hudLocked=document.getElementById("hudLocked");
 
-const editBtn=document.createElement('a');
-editBtn.href=`editor.html?id=${markerId}`;
-editBtn.textContent='EDIT';
-editBtn.style.position='fixed';
-editBtn.style.top='20px';
-editBtn.style.right='20px';
-editBtn.style.padding='8px 10px';
-editBtn.style.background='rgba(255,255,255,0.9)';
-editBtn.style.color='#000';
-editBtn.style.borderRadius='6px';
-editBtn.style.zIndex='10003';
-editBtn.style.textDecoration='none';
-editBtn.style.fontFamily='sans-serif';
-document.body.appendChild(editBtn);
+if(urlParams.get("edit")==="1"){
+  const editBtn=document.createElement('a');
+  editBtn.href=`editor.html?id=${markerId}`;
+  editBtn.textContent='EDIT';
+  editBtn.style.position='fixed';
+  editBtn.style.top='20px';
+  editBtn.style.right='20px';
+  editBtn.style.padding='8px 10px';
+  editBtn.style.background='rgba(255,255,255,0.9)';
+  editBtn.style.color='#000';
+  editBtn.style.borderRadius='6px';
+  editBtn.style.zIndex='10003';
+  editBtn.style.textDecoration='none';
+  editBtn.style.fontFamily='sans-serif';
+  document.body.appendChild(editBtn);
+}
 
 
 /* SNSボタン */
@@ -477,6 +444,7 @@ document.body.appendChild(editBtn);
 const lineBtn=document.getElementById("line-link");
 const xBtn=document.getElementById("x-link");
 const instaBtn=document.getElementById("insta-link");
+const hpBtn=document.getElementById("hp-link");
 
 function setSNS(button,url){
   if(url&&url.trim()!==""){
@@ -486,6 +454,11 @@ function setSNS(button,url){
     button.style.display="none";
   }
 }
+
+// SNSボタンのタップでカルーセルが進まないようにする
+document.querySelectorAll(".sns-container a").forEach(btn=>{
+  btn.addEventListener("click",(e)=>e.stopPropagation());
+});
 
 
 /* クリック操作 */
@@ -527,6 +500,7 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
   setSNS(lineBtn,data.line);
   setSNS(xBtn,data.x);
   setSNS(instaBtn,data.instagram);
+  setSNS(hpBtn,data.hp);
 
   // シーン未初期化の場合はmindUrlを使って初期化
   if(!sceneInitialized){
@@ -536,15 +510,6 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
 
   const images=data.images||[];
   const ratios=data.ratios||[];
-  const bgType=data.bgType||"solid";
-  const bgColor=data.bgColor||"#111827";
-  const bgGradientColor1=data.bgGradientColor1||"#111827";
-  const bgGradientColor2=data.bgGradientColor2||"#0f172a";
-  const bgImageUrl=data.bgImageUrl||"";
-  const bgOpacity=typeof data.bgOpacity==="number"?data.bgOpacity:0.4;
-  const bgWidth=typeof data.bgWidth==="number"?data.bgWidth:4;
-  const bgHeight=typeof data.bgHeight==="number"?data.bgHeight:1.8;
-  const bgOffsetY=typeof data.bgOffsetY==="number"?data.bgOffsetY:0;
 
   // ARコンテンツをリセット
   while(arTarget.firstChild){
