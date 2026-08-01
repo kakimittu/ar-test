@@ -275,7 +275,7 @@ async function createTextTexture(text,color,fontSize="50px",fontFamily="sans-ser
 
 /* 肩書き（先頭にアクセントの小さな四角） */
 
-async function createJobTexture(text,color,accentColor,fontSize="45px",fontFamily="sans-serif",aspect=4){
+async function createJobTexture(text,color,accentColor,fontSize="45px",fontFamily="sans-serif",aspect=4,align="left"){
 
   const H=128;
   const W=Math.round(H*aspect);
@@ -291,39 +291,50 @@ async function createJobTexture(text,color,accentColor,fontSize="45px",fontFamil
   }catch(e){}
 
   ctx.clearRect(0,0,W,H);
+  ctx.font=`500 ${fontSize} "${fontFamily}", sans-serif`;
+
+  const squareSize=10;
+  const gap=14;
+  let squareX=28;
+  let textX=50;
+
+  if(align==="center"){
+    const textWidth=ctx.measureText(text).width;
+    const totalWidth=squareSize+gap+textWidth;
+    squareX=(W-totalWidth)/2;
+    textX=squareX+squareSize+gap;
+  }
 
   ctx.fillStyle=accentColor;
-  ctx.fillRect(28,H/2-5,10,10);
+  ctx.fillRect(squareX,H/2-squareSize/2,squareSize,squareSize);
 
   ctx.fillStyle=color;
-  ctx.font=`500 ${fontSize} "${fontFamily}", sans-serif`;
   ctx.textAlign="left";
   ctx.textBaseline="middle";
-  ctx.fillText(text,50,H/2);
+  ctx.fillText(text,textX,H/2);
 
   return canvas.toDataURL();
 
 }
 
 
-/* 写真下部のグラデーションスクリム */
+/* 名札の下に落ちる影（浮遊していることを示す） */
 
-function createScrimTexture(ratio){
-  const W=512;
-  const H=Math.round(512*(ratio||1));
+function createShadowTexture(){
+  const W=512,H=128;
   const canvas=document.createElement("canvas");
   canvas.width=W;
   canvas.height=H;
   const ctx=canvas.getContext("2d");
-  ctx.clearRect(0,0,W,H);
-  const grad=ctx.createLinearGradient(0,H*0.58,0,H);
-  grad.addColorStop(0,"rgba(10,8,4,0)");
-  grad.addColorStop(0.45,"rgba(10,8,4,0.6)");
-  grad.addColorStop(1,"rgba(10,8,4,0.92)");
+  const grad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W/2);
+  grad.addColorStop(0,"rgba(0,0,0,0.5)");
+  grad.addColorStop(1,"rgba(0,0,0,0)");
   ctx.fillStyle=grad;
   ctx.fillRect(0,0,W,H);
   return canvas.toDataURL();
 }
+
+const SHADOW_TEXTURE=createShadowTexture();
 
 
 /* カルーセル位置インジケータ */
@@ -531,7 +542,7 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
 
   dotsPlane=null;
 
-  // 各画像スライド（写真に重ねて左寄せキャプション）
+  // 各画像スライド（写真の上に浮く名札）
   for(let i=0;i<images.length;i++){
 
     const url=images[i];
@@ -549,33 +560,40 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     aImg.setAttribute("position","0 0 0.01");
     container.appendChild(aImg);
 
-    // 写真下部のグラデーションスクリム
-    const scrim=document.createElement("a-plane");
-    scrim.setAttribute("width",baseW.toFixed(3));
-    scrim.setAttribute("height",imgH.toFixed(3));
-    scrim.setAttribute("position","0 0 0.015");
-    scrim.setAttribute("material",{src:createScrimTexture(ratio),transparent:true,shader:"flat"});
-    container.appendChild(scrim);
+    // 写真上部に落ちる影（名札が浮いていることを示す）
+    const shadow=document.createElement("a-plane");
+    shadow.setAttribute("width",(baseW*0.55).toFixed(3));
+    shadow.setAttribute("height","0.05");
+    shadow.setAttribute("position",`0 ${(imgH/2-0.10).toFixed(3)} 0.012`);
+    shadow.setAttribute("material",{src:SHADOW_TEXTURE,transparent:true,shader:"flat"});
+    container.appendChild(shadow);
+
+    // 写真の上に浮く名札（ゆっくり上下にゆれる）
+    const plateGroup=document.createElement("a-entity");
+    const plateY=imgH/2+0.20;
+    plateGroup.setAttribute("position",`0 ${plateY.toFixed(3)} 0.02`);
+    plateGroup.setAttribute("animation","property: position; dir: alternate; loop: true; dur: 2200; easing: easeInOutSine; to: 0 " + (plateY+0.035).toFixed(3) + " 0.02");
+    container.appendChild(plateGroup);
 
     // 名前
     const nameH=0.16;
-    const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily,"left",baseW/nameH);
+    const nameSrc=await createTextTexture(data.name||"NO NAME",nameColor,nameFontSize,nameFontFamily,"center",baseW/nameH);
     const nPlane=document.createElement("a-plane");
     nPlane.setAttribute("width",baseW.toFixed(3));
     nPlane.setAttribute("height",nameH.toFixed(3));
-    nPlane.setAttribute("position",`0 ${(-(imgH/2)+0.30).toFixed(3)} 0.02`);
+    nPlane.setAttribute("position","0 0.05 0");
     nPlane.setAttribute("material",{src:nameSrc,transparent:true,shader:"flat"});
-    container.appendChild(nPlane);
+    plateGroup.appendChild(nPlane);
 
     // 肩書き
     const jobH=0.11;
-    const jobSrc=await createJobTexture(data.job||"NO TITLE",jobColor,accentColor,jobFontSize,jobFontFamily,baseW/jobH);
+    const jobSrc=await createJobTexture(data.job||"NO TITLE",jobColor,accentColor,jobFontSize,jobFontFamily,baseW/jobH,"center");
     const jPlane=document.createElement("a-plane");
     jPlane.setAttribute("width",baseW.toFixed(3));
     jPlane.setAttribute("height",jobH.toFixed(3));
-    jPlane.setAttribute("position",`0 ${(-(imgH/2)+0.12).toFixed(3)} 0.021`);
+    jPlane.setAttribute("position","0 -0.06 0.001");
     jPlane.setAttribute("material",{src:jobSrc,transparent:true,shader:"flat"});
-    container.appendChild(jPlane);
+    plateGroup.appendChild(jPlane);
 
     items.push(container);
     arTarget.appendChild(container);
