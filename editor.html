@@ -338,44 +338,64 @@ select option {
   z-index: 2;
 }
 
-#preview-scrim {
+/* 写真上部に落ちる、名札が浮いていることを示す影 */
+#preview-shadow {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   display: none;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(10,8,4,0) 58%, rgba(10,8,4,0.6) 77%, rgba(10,8,4,0.92) 100%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.5), transparent 72%);
+  filter: blur(2px);
+}
+
+/* 写真の上に浮く名札（index.html の plateGroup と同じ考え方） */
+#preview-plate-anchor {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  pointer-events: none;
+}
+
+.preview-plate-center {
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.preview-plate-bob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 6px;
+  animation: previewBob 2.2s ease-in-out infinite;
+}
+
+@keyframes previewBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
 }
 
 #preview-name {
-  position: absolute;
-  z-index: 5;
   font-weight: bold;
   white-space: nowrap;
-  text-align: left;
-  text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8);
-  pointer-events: none;
-  transform: translateY(-50%);
+  text-align: center;
+  text-shadow: 0 0 10px rgba(0,0,0,0.6);
 }
 
 #preview-job {
-  position: absolute;
-  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 500;
   white-space: nowrap;
-  text-align: left;
-  text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8);
-  pointer-events: none;
-  transform: translateY(-50%);
-  padding-left: 14px;
+  text-shadow: 0 0 10px rgba(0,0,0,0.6);
 }
 
 #preview-job-dot {
-  position: absolute;
-  z-index: 5;
-  width: 6px;
-  height: 6px;
-  pointer-events: none;
-  transform: translateY(-50%);
+  flex-shrink: 0;
 }
 
 .scan-line {
@@ -628,15 +648,20 @@ select option {
         <div class="hud-corner bl"></div>
         <div class="hud-corner br"></div>
         <img id="preview-photo" src="" alt="">
-        <div id="preview-scrim"></div>
-        <div id="preview-name">名前</div>
-        <div id="preview-job-dot"></div>
-        <div id="preview-job">肩書き</div>
+        <div id="preview-shadow"></div>
+        <div id="preview-plate-anchor">
+          <div class="preview-plate-center">
+            <div class="preview-plate-bob">
+              <div id="preview-name">名前</div>
+              <div id="preview-job"><span id="preview-job-dot"></span><span id="preview-job-text">肩書き</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="phone-home"></div>
   </div>
-  <div class="preview-hint">index.html と同じ「写真下部に名前・肩書き」<br>レイアウトのプレビューです</div>
+  <div class="preview-hint">index.html と同じ、写真の上にゆらゆら浮かぶ<br>名札レイアウトのプレビューです</div>
 </div>
 
 </div>
@@ -791,7 +816,7 @@ reader.readAsDataURL(file);
 }
 
 /* ── CSS ベースのリアルタイムプレビュー ──
-   index.html の実レイアウト（写真下部に名前・肩書き＋グラデーションスクリム）に合わせる */
+   index.html の実レイアウト（写真は無加工のまま、上に浮く名札＋影）に合わせる */
 function updatePreview() {
   const screen = document.getElementById("preview-camera-bg");
   if (!screen) return;
@@ -811,7 +836,10 @@ function updatePreview() {
   const photoW = screenW * 0.86;
   const photoH = photoW * ratio;
   const left   = (screenW - photoW) / 2;
-  const top    = Math.max(0, (screenH - photoH) / 2);
+
+  // 名札＋影のぶん、写真の上に一定の余白を確保してから残りを中央寄せする
+  const extraTop = photoW * 0.32;
+  const top = extraTop + Math.max(0, (screenH - extraTop - photoH) / 2);
 
   const photoEl = document.getElementById("preview-photo");
   if (imagesBase64.length > 0) {
@@ -825,38 +853,45 @@ function updatePreview() {
   photoEl.style.left   = left + "px";
   photoEl.style.top    = top + "px";
 
-  const scrimEl = document.getElementById("preview-scrim");
-  scrimEl.style.display = "block";
-  scrimEl.style.width  = photoW + "px";
-  scrimEl.style.height = photoH + "px";
-  scrimEl.style.left   = left + "px";
-  scrimEl.style.top    = top + "px";
+  // 影：写真の上端近くに落とす
+  const shadowEl = document.getElementById("preview-shadow");
+  const shadowW  = photoW * 0.5;
+  const shadowH  = Math.max(8, photoW * 0.045);
+  shadowEl.style.display = imagesBase64.length > 0 ? "block" : "none";
+  shadowEl.style.width  = shadowW + "px";
+  shadowEl.style.height = shadowH + "px";
+  shadowEl.style.left   = (left + photoW / 2 - shadowW / 2) + "px";
+  shadowEl.style.top    = (top + photoH * 0.06) + "px";
+
+  // 名札：写真の外側・上に浮かせる（index.html の plateGroup と同じ考え方）
+  const gapPx = photoW * (0.20 / 1.3);
+  const plateAnchorEl = document.getElementById("preview-plate-anchor");
+  plateAnchorEl.style.display = "block";
+  plateAnchorEl.style.left = (left + photoW / 2) + "px";
+  plateAnchorEl.style.top  = (top - gapPx) + "px";
 
   const previewFontSize = Math.max(9, Math.round(fontSizeVal * 0.16));
-  const nameX = left + photoW * 0.06;
-  const nameY = top + photoH * 0.80;
-  const jobY  = top + photoH * 0.90;
 
   const nameEl = document.getElementById("preview-name");
   nameEl.textContent      = nameVal;
   nameEl.style.color      = nameColor;
   nameEl.style.fontFamily = `"${fontVal}", sans-serif`;
   nameEl.style.fontSize   = previewFontSize + "px";
-  nameEl.style.left       = nameX + "px";
-  nameEl.style.top        = nameY + "px";
+
+  const jobFontSize = Math.round(previewFontSize * 0.78);
 
   const dotEl = document.getElementById("preview-job-dot");
   dotEl.style.background = accentColor;
-  dotEl.style.left = nameX + "px";
-  dotEl.style.top  = jobY + "px";
+  dotEl.style.width  = Math.max(4, Math.round(jobFontSize * 0.3)) + "px";
+  dotEl.style.height = Math.max(4, Math.round(jobFontSize * 0.3)) + "px";
+
+  const jobTextEl = document.getElementById("preview-job-text");
+  jobTextEl.textContent = jobVal;
 
   const jobEl = document.getElementById("preview-job");
-  jobEl.textContent      = jobVal;
   jobEl.style.color      = jobColor;
   jobEl.style.fontFamily = `"${fontVal}", sans-serif`;
-  jobEl.style.fontSize   = Math.round(previewFontSize * 0.78) + "px";
-  jobEl.style.left       = nameX + "px";
-  jobEl.style.top        = jobY + "px";
+  jobEl.style.fontSize   = jobFontSize + "px";
 }
 
 /* 起動時：URLパラメータ ?id= を markerId に反映し、
