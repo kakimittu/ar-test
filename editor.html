@@ -609,6 +609,18 @@ select option {
   </div>
 
   <div class="section-box">
+    <div class="section-title">Effect</div>
+    <div class="input-group">
+      <label>エフェクト</label>
+      <select id="effectTemplateSelect"></select>
+    </div>
+    <div class="input-group">
+      <label>エフェクトの色</label>
+      <input type="color" id="effectColorInput" value="#FFD44D">
+    </div>
+  </div>
+
+  <div class="section-box">
     <div class="section-title">Social Links</div>
     <div class="input-group">
       <label>Instagram URL</label>
@@ -688,6 +700,47 @@ const auth=getAuth(app);
 let imagesBase64=[];
 let imageRatios=[];
 let photosChanged=false;
+let FX_TEMPLATES={
+  none: { label: "なし", color: "#FFFFFF" },
+  sparkle_gold: { label: "キラキラ", color: "#FFD44D" },
+  doodle_blue: { label: "手描き落書き", color: "#2B6BFF" },
+  petal_pink: { label: "花びらが舞う", color: "#FF9EC4" },
+  halo_white: { label: "光の輪", color: "#FFFFFF" },
+  confetti_party: { label: "紙吹雪", color: "#FF6B6B" }
+};
+
+async function loadFxTemplates() {
+  try {
+    const res = await fetch("./fx-ar-standalone.html");
+    const html = await res.text();
+    const match = html.match(/const FX_TEMPLATES = (\{[\s\S]*?\n\});\s*function buildFx/);
+    if (!match) return;
+    const parsed = Function(`"use strict"; return (${match[1]});`)();
+    FX_TEMPLATES = { none: { label: "なし", color: "#FFFFFF" }, ...parsed };
+    const select = document.getElementById("effectTemplateSelect");
+    if (!select) return;
+    select.innerHTML = "";
+    Object.entries(FX_TEMPLATES).forEach(([key, tpl]) => {
+      const option = document.createElement("option");
+      option.value = key;
+      option.textContent = tpl.label || key;
+      select.appendChild(option);
+    });
+  } catch (e) {
+    console.error("FXテンプレートの読み込みに失敗しました:", e);
+  }
+}
+
+function syncEffectColorFromTemplate() {
+  const select = document.getElementById("effectTemplateSelect");
+  const colorInput = document.getElementById("effectColorInput");
+  if (!select || !colorInput) return;
+  const selected = select.value;
+  const tpl = FX_TEMPLATES[selected] || FX_TEMPLATES.none;
+  colorInput.value = tpl.color || "#FFFFFF";
+}
+
+document.getElementById("effectTemplateSelect")?.addEventListener("change", syncEffectColorFromTemplate);
 
 document.getElementById("fileInput").onchange=async(e)=>{
 
@@ -732,6 +785,8 @@ function resetFormForNewEntry() {
   document.getElementById("jobColorInput").value = "#ffcc00";
   document.getElementById("accentColorInput").value = "#D99A3E";
   document.getElementById("fontSizeInput").value = "80";
+  document.getElementById("effectTemplateSelect").value = "none";
+  document.getElementById("effectColorInput").value = "#FFFFFF";
   document.getElementById("instagramInput").value = "";
   document.getElementById("xInput").value = "";
   document.getElementById("HPInput").value = "";
@@ -910,6 +965,18 @@ async function loadExistingData(markerId) {
     document.getElementById("jobColorInput").value      = data.jobColor   ?? document.getElementById("jobColorInput").value;
     document.getElementById("accentColorInput").value    = data.accentColor ?? document.getElementById("accentColorInput").value;
     document.getElementById("fontSizeInput").value        = data.fontSize  ?? document.getElementById("fontSizeInput").value;
+
+    const effect = data.effect && typeof data.effect === "object" ? data.effect : null;
+    const effectTemplateId = effect?.templateId || "none";
+    const effectSelect = document.getElementById("effectTemplateSelect");
+    if (effectSelect) {
+      effectSelect.value = Object.prototype.hasOwnProperty.call(FX_TEMPLATES, effectTemplateId) ? effectTemplateId : "none";
+    }
+    const effectColorInput = document.getElementById("effectColorInput");
+    if (effectColorInput) {
+      effectColorInput.value = effect?.color || FX_TEMPLATES[effectTemplateId]?.color || "#FFFFFF";
+    }
+
     document.getElementById("instagramInput").value        = data.instagram ?? "";
     document.getElementById("xInput").value                  = data.x         ?? "";
     document.getElementById("HPInput").value                  = data.hp        ?? "";
@@ -966,6 +1033,7 @@ async function bootEditor() {
   const idParam = params.get("id");
   if (idParam) document.getElementById("markerId").value = idParam;
 
+  await loadFxTemplates();
   await loadExistingData(document.getElementById("markerId").value);
   updatePreview();
 }
@@ -1004,6 +1072,11 @@ document.getElementById("saveBtn").onclick = async() => {
       accentColor: document.getElementById("accentColorInput").value,
 
       mindUrl: document.getElementById("mindUrlInput").value,
+
+      effect: {
+        templateId: document.getElementById("effectTemplateSelect").value,
+        color: document.getElementById("effectColorInput").value
+      },
 
       instagram: document.getElementById("instagramInput")?.value || "",
       x: document.getElementById("xInput")?.value || "",
