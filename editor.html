@@ -338,6 +338,33 @@ select option {
   z-index: 2;
 }
 
+#preview-effect {
+  position: absolute;
+  inset: 0;
+  display: none;
+  z-index: 3;
+  pointer-events: none;
+}
+
+#preview-effect span {
+  position: absolute;
+  color: var(--preview-effect-color, #FFD44D);
+  font-size: 28px;
+  line-height: 1;
+  text-shadow: 0 0 10px currentColor;
+  animation: preview-effect-twinkle 1.6s ease-in-out infinite alternate;
+}
+
+#preview-effect span:nth-child(1) { left: 12%; top: 28%; }
+#preview-effect span:nth-child(2) { right: 12%; top: 35%; animation-delay: .35s; }
+#preview-effect span:nth-child(3) { left: 20%; bottom: 25%; animation-delay: .7s; }
+#preview-effect span:nth-child(4) { right: 20%; bottom: 22%; animation-delay: 1s; }
+
+@keyframes preview-effect-twinkle {
+  from { transform: scale(.7) rotate(0deg); opacity: .35; }
+  to { transform: scale(1.15) rotate(25deg); opacity: 1; }
+}
+
 /* 写真上部に落ちる、名札が浮いていることを示す影 */
 #preview-shadow {
   position: absolute;
@@ -660,6 +687,7 @@ select option {
         <div class="hud-corner bl"></div>
         <div class="hud-corner br"></div>
         <img id="preview-photo" src="" alt="">
+        <div id="preview-effect" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span><span>✦</span></div>
         <div id="preview-shadow"></div>
         <div id="preview-plate-anchor">
           <div class="preview-plate-center">
@@ -744,9 +772,11 @@ function syncEffectColorFromTemplate() {
   const selected = select.value;
   const tpl = FX_TEMPLATES[selected] || FX_TEMPLATES.none;
   colorInput.value = tpl.color || "#FFFFFF";
+  updatePreview();
 }
 
 document.getElementById("effectTemplateSelect")?.addEventListener("change", syncEffectColorFromTemplate);
+document.getElementById("effectColorInput")?.addEventListener("input", updatePreview);
 
 document.getElementById("fileInput").onchange=async(e)=>{
 
@@ -892,6 +922,8 @@ function updatePreview() {
   const nameColor   = document.getElementById("nameColorInput").value;
   const jobColor    = document.getElementById("jobColorInput").value;
   const accentColor = document.getElementById("accentColorInput").value;
+  const effectTemplate = document.getElementById("effectTemplateSelect")?.value || "none";
+  const effectColor = document.getElementById("effectColorInput")?.value || "#FFD44D";
 
   const ratio  = imageRatios[0] || 1;
   const photoW = screenW * 0.86;
@@ -913,6 +945,10 @@ function updatePreview() {
   photoEl.style.height = photoH + "px";
   photoEl.style.left   = left + "px";
   photoEl.style.top    = top + "px";
+
+  const effectEl = document.getElementById("preview-effect");
+  effectEl.style.display = effectTemplate === "none" ? "none" : "block";
+  effectEl.style.setProperty("--preview-effect-color", effectColor);
 
   // 影：写真の上端近くに落とす
   const shadowEl = document.getElementById("preview-shadow");
