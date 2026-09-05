@@ -358,6 +358,11 @@ select option {
 #preview-effect span:nth-child(1) { left: 12%; top: 28%; }
 #preview-effect span:nth-child(2) { right: 12%; top: 35%; animation-delay: .35s; }
 #preview-effect span:nth-child(3) { left: 20%; bottom: 25%; animation-delay: .7s; }
+#preview-effect.doodle span { font-size: 34px; text-shadow: none; }
+#preview-effect.petal span { font-size: 25px; }
+#preview-effect.halo { inset: 12%; border: 3px solid var(--preview-effect-color, #FFFFFF); border-radius: 50%; box-shadow: 0 0 18px var(--preview-effect-color, #FFFFFF); }
+#preview-effect.halo span { display: none; }
+#preview-effect.confetti span { font-size: 18px; text-shadow: none; }
 #preview-effect span:nth-child(4) { right: 20%; bottom: 22%; animation-delay: 1s; }
 
 @keyframes preview-effect-twinkle {
@@ -949,6 +954,20 @@ function updatePreview() {
   const effectEl = document.getElementById("preview-effect");
   effectEl.style.display = effectTemplate === "none" ? "none" : "block";
   effectEl.style.setProperty("--preview-effect-color", effectColor);
+  effectEl.className = effectTemplate === "doodle_blue" ? "doodle"
+    : effectTemplate === "petal_pink" ? "petal"
+    : effectTemplate === "halo_white" ? "halo"
+    : effectTemplate === "confetti_party" ? "confetti"
+    : "sparkle";
+  const effectSymbols = {
+    sparkle_gold: ["✦", "✦", "✦", "✦"],
+    doodle_blue: ["~", "✧", "〰", "✧"],
+    petal_pink: ["❀", "✿", "❀", "✿"],
+    confetti_party: ["■", "▪", "■", "▪"]
+  };
+  [...effectEl.children].forEach((span, index) => {
+    span.textContent = (effectSymbols[effectTemplate] || effectSymbols.sparkle_gold)[index];
+  });
 
   // 影：写真の上端近くに落とす
   const shadowEl = document.getElementById("preview-shadow");
