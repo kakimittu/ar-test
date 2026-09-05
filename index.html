@@ -239,6 +239,7 @@ let hudScan=null;
 let hudLocked=null;
 let SPRITE_DATA={};
 let FX_TEMPLATES={};
+let buildFx=null;
 
 function registerFxAssets() {
   const scene = document.querySelector('a-scene');
@@ -264,7 +265,7 @@ async function loadFxDefinitions() {
     const res = await fetch('./fx-ar-standalone.html');
     const html = await res.text();
 
-    const snippet = html.match(/const SPRITE_DATA = [\s\S]*?\nconst FX_TEMPLATES = [\s\S]*?\nfunction buildFx\(container, tpl, color\)\{[\s\S]*?\n\}\n\n\/\* --- パラメータ取得/);
+    const snippet = html.match(/const SPRITE_DATA = [\s\S]*?const FX_TEMPLATES = [\s\S]*?function buildFx\(container, tpl, color\)\{[\s\S]*?\r?\n\}\r?\n\r?\n\/\* ---/);
     if (!snippet) {
       console.warn('FX定義のブロック抽出に失敗しました。');
       return;
@@ -275,6 +276,7 @@ async function loadFxDefinitions() {
     const fxData = fxScope();
     SPRITE_DATA = fxData.SPRITE_DATA;
     FX_TEMPLATES = fxData.FX_TEMPLATES;
+    buildFx = fxData.buildFx;
     registerFxAssets();
   } catch (e) {
     console.error('FX定義の読込に失敗しました:', e);
@@ -290,6 +292,8 @@ function renderEffect(effectData) {
   while (effectLayer.firstChild) effectLayer.removeChild(effectLayer.firstChild);
 
   if (!effectData || !effectData.templateId || effectData.templateId === 'none') return;
+
+  if (typeof buildFx !== 'function') return;
 
   const tpl = FX_TEMPLATES[effectData.templateId] || FX_TEMPLATES.sparkle_gold;
   const color = effectData.color || tpl.color;

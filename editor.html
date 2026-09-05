@@ -709,6 +709,18 @@ let FX_TEMPLATES={
   confetti_party: { label: "紙吹雪", color: "#FF6B6B" }
 };
 
+function populateFxTemplateSelect() {
+  const select = document.getElementById("effectTemplateSelect");
+  if (!select) return;
+  select.innerHTML = "";
+  Object.entries(FX_TEMPLATES).forEach(([key, tpl]) => {
+    const option = document.createElement("option");
+    option.value = key;
+    option.textContent = tpl.label || key;
+    select.appendChild(option);
+  });
+}
+
 async function loadFxTemplates() {
   try {
     const res = await fetch("./fx-ar-standalone.html");
@@ -717,19 +729,13 @@ async function loadFxTemplates() {
     if (!match) return;
     const parsed = Function(`"use strict"; return (${match[1]});`)();
     FX_TEMPLATES = { none: { label: "なし", color: "#FFFFFF" }, ...parsed };
-    const select = document.getElementById("effectTemplateSelect");
-    if (!select) return;
-    select.innerHTML = "";
-    Object.entries(FX_TEMPLATES).forEach(([key, tpl]) => {
-      const option = document.createElement("option");
-      option.value = key;
-      option.textContent = tpl.label || key;
-      select.appendChild(option);
-    });
+    populateFxTemplateSelect();
   } catch (e) {
     console.error("FXテンプレートの読み込みに失敗しました:", e);
   }
 }
+
+populateFxTemplateSelect();
 
 function syncEffectColorFromTemplate() {
   const select = document.getElementById("effectTemplateSelect");
