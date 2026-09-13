@@ -4,10 +4,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // arUsers: index.html は誰でも閲覧できる必要があるので読み取りは公開。
-    // 書き込み（編集・作成）は editor.html でログインした管理者だけに限定する。
+    // 書き込み（編集・作成）は指定した管理者UIDだけに限定する。
     match /arUsers/{markerId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.uid == 'ここにUIDを入れる';
     }
 
   }
