@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>AR EDITOR</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500&family=Playfair+Display:ital,wght@0,700;1,500;1,700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
 
 <style>
 @font-face{
@@ -351,6 +351,17 @@ select option {
   z-index: 1;
 }
 
+
+/* フォトフレーム：プレビュー */
+#preview-frame { position:absolute; display:none; z-index:2; }
+#preview-frame img.pf { position:absolute; left:0; top:0; width:100%; height:100%; display:block; }
+#preview-frame .pf-win { position:absolute; overflow:hidden; background:#222; }
+#preview-frame .pf-win img { width:100%; height:100%; object-fit:cover; display:block; }
+#preview-frame .pf-text { position:absolute; transform:translate(-50%,-50%); white-space:nowrap; line-height:1; pointer-events:none; }
+.frame-chips { display:flex; gap:8px; flex-wrap:wrap; }
+.frame-chips button { width:26px; height:26px; border-radius:50%; border:2px solid #202024; box-shadow:0 0 0 1px #3f3f46; cursor:pointer; padding:0; }
+.frame-chips button.on { box-shadow:0 0 0 2px #fff; }
+
 #preview-photo {
   position: absolute;
   object-fit: cover;
@@ -632,9 +643,55 @@ select option {
     </div>
 
     <div class="input-group">
+      <label>表示する内容</label>
+      <select id="mediaTypeSelect">
+        <option value="photo">写真</option>
+        <option value="video">動画（1本・ループ再生・音なし）</option>
+      </select>
+    </div>
+
+    <div class="input-group" id="imageGroup">
       <label>画像</label>
       <input type="file" id="fileInput" accept="image/*" multiple>
       <div id="fileList">未選択</div>
+    </div>
+
+    <div class="input-group" id="videoGroup" style="display:none;">
+      <label>動画のURL (.mp4)</label>
+      <input type="text" id="videoUrlInput" placeholder="assets/videos/sample.mp4">
+      <div style="font-size: 11px; color: #71717a;">動画は GitHub の assets/videos フォルダに入れてから、ここにパスを入力します。音は再生されません。</div>
+      <div id="videoInfo" style="font-size: 11px; color: #71717a; margin-top: 4px;">未設定</div>
+      <video id="videoPreview" muted loop playsinline style="display:none; width:100%; max-height:260px; margin-top:6px; border-radius:6px; background:#000;"></video>
+    </div>
+  </div>
+
+  <div class="section-box">
+    <div class="section-title">Photo Frame</div>
+    <div class="input-group">
+      <label>フォトフレーム</label>
+      <select id="frameSelect">
+        <option value="none">なし（今までの名札表示）</option>
+        <option value="botanical">ボタニカル</option>
+        <option value="gold">ゴールド</option>
+      </select>
+    </div>
+    <div id="frameOptions" style="display:none; flex-direction:column; gap:14px;">
+      <div class="input-group">
+        <label>推し色</label>
+        <div class="frame-chips" id="frameChips"></div>
+      </div>
+      <div class="input-group">
+        <label><input type="checkbox" id="frameTextOnInput" checked> フレーム下の文字を表示する</label>
+      </div>
+      <div class="input-group" id="frameTextGroup">
+        <label>フレーム下の文字</label>
+        <input type="text" id="frameTextInput" placeholder="名前など（空欄で非表示）">
+      </div>
+      <div class="input-group" id="frameSubGroup" style="display:none;">
+        <label>小さい文字（ゴールドのみ）</label>
+        <input type="text" id="frameSubInput" placeholder="肩書きなど（空欄で非表示）">
+      </div>
+      <div style="font-size:11px; color:#71717a;">フレームを使うと、写真の上の名前・肩書きの名札は表示されません。写真はフレームの窓に合わせて中央が切り取られます。</div>
     </div>
   </div>
 
@@ -691,6 +748,14 @@ select option {
         <div class="hud-corner bl"></div>
         <div class="hud-corner br"></div>
         <img id="preview-photo" src="" alt="">
+        <div id="preview-frame">
+          <img class="pf" id="pf-back" alt="">
+          <div class="pf-win" id="pf-win"><img id="pf-photo" alt=""></div>
+          <img class="pf" id="pf-mid" alt="">
+          <img class="pf" id="pf-front" alt="">
+          <div class="pf-text" id="pf-text-main"></div>
+          <div class="pf-text" id="pf-text-sub"></div>
+        </div>
         <canvas id="preview-effect-canvas" aria-hidden="true"></canvas>
         <div id="preview-shadow"></div>
         <div id="preview-plate-anchor">
@@ -732,6 +797,7 @@ const auth=getAuth(app);
 let imagesBase64=[];
 let imageRatios=[];
 let photosChanged=false;
+let videoRatio = null; // 動画の縦横比（高さ÷幅）
 const FIRESTORE_DOCUMENT_LIMIT=1048576;
 const FIRESTORE_WARNING_LIMIT=900*1024;
 /* --- エフェクト定義はこのファイルに直接埋め込み（外部fetch不要） --- */
@@ -1337,6 +1403,12 @@ function resetFormForNewEntry() {
   document.getElementById("fontSizeInput").value = "80";
   document.getElementById("effectTemplateSelect").value = "none";
   document.getElementById("effectColorInput").value = "#FFFFFF";
+  document.getElementById("frameSelect").value = "none";
+  document.getElementById("frameTextOnInput").checked = true;
+  document.getElementById("frameTextInput").value = "";
+  document.getElementById("frameSubInput").value = "";
+  frameColorKey = "base";
+  syncFrameUI(false);
   document.getElementById("instagramInput").value = "";
   document.getElementById("xInput").value = "";
   document.getElementById("HPInput").value = "";
@@ -1345,6 +1417,10 @@ function resetFormForNewEntry() {
   imageRatios = [];
   photosChanged = false;
   document.getElementById("fileList").innerText = "未選択";
+  document.getElementById("mediaTypeSelect").value = "photo";
+  document.getElementById("videoUrlInput").value = "";
+  videoRatio = null;
+  syncMediaUI();
   updateDisplayValue("fontSizeInput");
   updatePreview();
 }
@@ -1410,30 +1486,6 @@ ratio:ratio
 
 };
 
-function getUtf8ByteLength(value){
-  return new TextEncoder().encode(value).length;
-}
-
-function formatBytes(bytes){
-  return `${(bytes/1024).toFixed(1)}KB`;
-}
-
-function showSaveMessage(message,type){
-  const el=document.getElementById("saveMessage");
-  el.textContent=message;
-  el.className=type;
-  el.style.display="block";
-}
-
-function isFirestoreSizeError(error){
-  const message=String(error?.message||error||"").toLowerCase();
-  return error?.code==="resource-exhausted"
-    || message.includes("1 mib")
-    || message.includes("maximum allowed size")
-    || message.includes("too large")
-    || message.includes("document size");
-}
-
 img.src=e.target.result;
 
 };
@@ -1446,6 +1498,112 @@ reader.readAsDataURL(file);
 
 /* ── CSS ベースのリアルタイムプレビュー ──
    index.html の実レイアウト（写真は無加工のまま、上に浮く名札＋影）に合わせる */
+/* ===== フォトフレーム（index.html と同じ素材・同じ配置） ===== */
+const FRAME_HEX = {
+  botanical:{base:"#E9A6B5",pink:"#FF6FAE",red:"#FF4B5C",orange:"#FF9A3C",yellow:"#FFD23F",green:"#3CC47C",cyan:"#4FC3F7",blue:"#3D6BFF",purple:"#9B6BFF"},
+  gold:{base:"#7FB8E6",pink:"#FF6FAE",red:"#FF4B5C",orange:"#FF9A3C",yellow:"#FFD23F",green:"#3CC47C",cyan:"#4FC3F7",blue:"#3D6BFF",purple:"#9B6BFF"}
+};
+const FRAME_CHIP_NAMES = {base:"基本",pink:"ピンク",red:"赤",orange:"オレンジ",yellow:"黄",green:"緑",cyan:"水色",blue:"青",purple:"紫"};
+const FRAME_TEXT_DEFS = {
+  botanical:{main:{x:450,y:1140,size:56}},
+  gold:{main:{x:450,y:1126,size:56},sub:{x:450,y:1178,size:32}}
+};
+let frameColorKey = "base";
+
+function mixHex(a,b,t){
+  const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);
+  const m=(sh)=>Math.round(((pa>>sh)&255)*t+((pb>>sh)&255)*(1-t));
+  return "#"+((1<<24)|(m(16)<<16)|(m(8)<<8)|m(0)).toString(16).slice(1);
+}
+
+function renderFrameChips(){
+  const box=document.getElementById("frameChips");
+  const fk=document.getElementById("frameSelect").value;
+  const map=FRAME_HEX[fk]||FRAME_HEX.botanical;
+  box.innerHTML="";
+  Object.keys(map).forEach(k=>{
+    const b=document.createElement("button");
+    b.type="button"; b.title=FRAME_CHIP_NAMES[k]; b.style.background=map[k];
+    if(k===frameColorKey) b.className="on";
+    b.onclick=()=>{ frameColorKey=k; renderFrameChips(); updatePreview(); };
+    box.appendChild(b);
+  });
+}
+
+function syncFrameUI(prefill){
+  const fk=document.getElementById("frameSelect").value;
+  const on=fk!=="none";
+  document.getElementById("frameOptions").style.display=on?"flex":"none";
+  document.getElementById("frameSubGroup").style.display=(fk==="gold")?"flex":"none";
+  if(on){
+    if(!FRAME_HEX[fk][frameColorKey]) frameColorKey="base";
+    renderFrameChips();
+    if(prefill){
+      const t=document.getElementById("frameTextInput");
+      if(!t.value) t.value=document.getElementById("nameInput").value||"";
+      const sb=document.getElementById("frameSubInput");
+      if(fk==="gold"&&!sb.value) sb.value=document.getElementById("jobInput").value||"";
+    }
+  }
+}
+
+document.getElementById("frameSelect").addEventListener("change",()=>{ syncFrameUI(true); updatePreview(); });
+["frameTextOnInput","frameTextInput","frameSubInput"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener("input",updatePreview); el.addEventListener("change",updatePreview);
+});
+
+function updateFramePreview(screenW,screenH){
+  const fk=document.getElementById("frameSelect").value;
+  const wrap=document.getElementById("preview-frame");
+  const photoEl=document.getElementById("preview-photo");
+  const shadowEl=document.getElementById("preview-shadow");
+  const plateEl=document.getElementById("preview-plate-anchor");
+  if(fk==="none"||!FRAME_HEX[fk]){
+    wrap.style.display="none";
+    return false;
+  }
+  photoEl.style.display="none"; shadowEl.style.display="none"; plateEl.style.display="none";
+  const fw=screenW*0.74, fh=fw*4/3;
+  wrap.style.display="block";
+  wrap.style.width=fw+"px"; wrap.style.height=fh+"px";
+  wrap.style.left=((screenW-fw)/2)+"px"; wrap.style.top=((screenH-fh)/2)+"px";
+  const col=FRAME_HEX[fk][frameColorKey]?frameColorKey:"base";
+  const base=`assets/frames/${fk}/${col}/`;
+  const set=(id,name,sc)=>{const e=document.getElementById(id);const u=base+name+".webp"; if(e.getAttribute("data-src")!==u){e.src=u;e.setAttribute("data-src",u);} e.style.transform=sc?`scale(${sc})`:"";};
+  set("pf-back","back",1.06); set("pf-mid","mid",0); set("pf-front","front",0.95);
+  const win=document.getElementById("pf-win");
+  win.style.left=(110/900*fw)+"px"; win.style.top=(130/1200*fh)+"px";
+  win.style.width=(680/900*fw)+"px"; win.style.height=(940/1200*fh)+"px";
+  const ph=document.getElementById("pf-photo");
+  if(imagesBase64.length>0){ ph.src=imagesBase64[0]; ph.style.display="block"; } else { ph.style.display="none"; }
+  const k=fw/900;
+  const textOn=document.getElementById("frameTextOnInput").checked;
+  const defs=FRAME_TEXT_DEFS[fk];
+  const hex=FRAME_HEX[fk][col];
+  const place=(id,def,txt,style)=>{
+    const el=document.getElementById(id);
+    if(!def||!textOn||!String(txt).trim()){ el.style.display="none"; return; }
+    el.style.display="block";
+    el.textContent=txt;
+    el.style.left=(def.x*k)+"px"; el.style.top=(def.y*k*1)+"px";
+    el.style.fontSize=(def.size*k)+"px";
+    Object.assign(el.style,style);
+  };
+  const jp=(t)=>/[^\x00-\x7F]/.test(t);
+  const mainTxt=document.getElementById("frameTextInput").value;
+  const subTxt=document.getElementById("frameSubInput").value;
+  const serif=(t)=>jp(t)?'"Noto Sans JP",sans-serif':'"Playfair Display",Georgia,serif';
+  if(fk==="botanical"){
+    place("pf-text-main",defs.main,mainTxt,{fontFamily:serif(mainTxt),fontWeight:700,fontStyle:jp(mainTxt)?"normal":"italic",letterSpacing:(2*k)+"px",color:mixHex(hex,"#3A1424",0.4),webkitTextStroke:(3*k)+"px #fff",paintOrder:"stroke fill",background:"none",webkitBackgroundClip:"initial"});
+    place("pf-text-sub",null,"",{});
+  }else{
+    place("pf-text-main",defs.main,mainTxt,{fontFamily:serif(mainTxt),fontWeight:700,fontStyle:"normal",letterSpacing:(14*k)+"px",color:"transparent",background:"linear-gradient(135deg,#F6E3A8,#C9A24A 35%,#FBEFC4 60%,#A9822F)",webkitBackgroundClip:"text",backgroundClip:"text",webkitTextStroke:"0"});
+    place("pf-text-sub",defs.sub,subTxt,{fontFamily:serif(subTxt),fontWeight:500,fontStyle:jp(subTxt)?"normal":"italic",letterSpacing:(7*k)+"px",color:"#E6C77A",background:"none",webkitTextStroke:"0"});
+  }
+  return true;
+}
+
 function updatePreview() {
   const screen = document.getElementById("preview-camera-bg");
   if (!screen) return;
@@ -1536,6 +1694,8 @@ function updatePreview() {
   jobEl.style.color      = jobColor;
   jobEl.style.fontFamily = `"${fontVal}", sans-serif`;
   jobEl.style.fontSize   = jobFontSize + "px";
+
+  updateFramePreview(screenW, screenH);
 }
 
 /* 起動時：URLパラメータ ?id= を markerId に反映し、
@@ -1566,6 +1726,16 @@ async function loadExistingData(markerId) {
       effectColorInput.value = effect?.color || FX_TEMPLATES[effectTemplateId]?.color || "#FFFFFF";
     }
 
+    {
+      const fk = (data.frame === "botanical" || data.frame === "gold") ? data.frame : "none";
+      document.getElementById("frameSelect").value = fk;
+      frameColorKey = data.frameColor || "base";
+      document.getElementById("frameTextOnInput").checked = data.frameTextOn !== false;
+      document.getElementById("frameTextInput").value = data.frameText ?? "";
+      document.getElementById("frameSubInput").value = data.frameSub ?? "";
+      syncFrameUI(false);
+    }
+
     document.getElementById("instagramInput").value        = data.instagram ?? "";
     document.getElementById("xInput").value                  = data.x         ?? "";
     document.getElementById("HPInput").value                  = data.hp        ?? "";
@@ -1576,6 +1746,11 @@ async function loadExistingData(markerId) {
       imageRatios  = data.ratios || [];
       document.getElementById("fileList").innerText = imagesBase64.length + "枚（保存済み）";
     }
+
+    document.getElementById("mediaTypeSelect").value = data.mediaType === "video" ? "video" : "photo";
+    document.getElementById("videoUrlInput").value = data.videoUrl ?? "";
+    videoRatio = data.videoRatio ?? null;
+    syncMediaUI();
 
     updateDisplayValue("fontSizeInput");
   } catch (e) {
@@ -1638,6 +1813,86 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+/* 保存まわりの補助関数（写真読み込み処理の内側にあって保存時に見つからなかったため外に移動） */
+
+function getUtf8ByteLength(value){
+  return new TextEncoder().encode(value).length;
+}
+
+function formatBytes(bytes){
+  return `${(bytes/1024).toFixed(1)}KB`;
+}
+
+function showSaveMessage(message,type){
+  const el=document.getElementById("saveMessage");
+  el.textContent=message;
+  el.className=type;
+  el.style.display="block";
+}
+
+function isFirestoreSizeError(error){
+  const message=String(error?.message||error||"").toLowerCase();
+  return error?.code==="resource-exhausted"
+    || message.includes("1 mib")
+    || message.includes("maximum allowed size")
+    || message.includes("too large")
+    || message.includes("document size");
+}
+
+/* 写真 / 動画の切り替え */
+
+function syncMediaUI() {
+  const isVideo = document.getElementById("mediaTypeSelect").value === "video";
+  document.getElementById("imageGroup").style.display = isVideo ? "none" : "";
+  document.getElementById("videoGroup").style.display = isVideo ? "" : "none";
+  const preview = document.getElementById("videoPreview");
+  if (isVideo) {
+    loadVideoPreview();
+  } else {
+    preview.pause();
+  }
+}
+
+function loadVideoPreview() {
+  const url = document.getElementById("videoUrlInput").value.trim();
+  const preview = document.getElementById("videoPreview");
+  const info = document.getElementById("videoInfo");
+  if (!url) {
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+    info.textContent = "未設定";
+    videoRatio = null;
+    return;
+  }
+  if (preview.getAttribute("src") === url && preview.readyState >= 1) {
+    preview.style.display = "block";
+    preview.play().catch(() => {});
+    return;
+  }
+  info.textContent = "読み込み中...";
+  preview.style.display = "block";
+  preview.setAttribute("src", url);
+  preview.load();
+}
+
+document.getElementById("videoPreview").addEventListener("loadedmetadata", (e) => {
+  const v = e.target;
+  videoRatio = v.videoHeight / v.videoWidth;
+  const shape = videoRatio > 1.05 ? "縦長" : (videoRatio < 0.95 ? "横長" : "正方形");
+  document.getElementById("videoInfo").textContent =
+    `${v.videoWidth}×${v.videoHeight}（${shape}）・${v.duration.toFixed(1)}秒`;
+  v.play().catch(() => {});
+});
+
+document.getElementById("videoPreview").addEventListener("error", () => {
+  videoRatio = null;
+  document.getElementById("videoInfo").textContent =
+    "動画を読み込めません。URLと、ファイルを assets/videos に入れてプッシュ済みかを確認してください。";
+});
+
+document.getElementById("mediaTypeSelect").addEventListener("change", syncMediaUI);
+document.getElementById("videoUrlInput").addEventListener("change", loadVideoPreview);
+
 document.getElementById("saveBtn").onclick = async() => {
 
   const markerId = document.getElementById("markerId").value;
@@ -1659,6 +1914,12 @@ document.getElementById("saveBtn").onclick = async() => {
       throw new Error("MindARターゲットURL（.mind）を入力してください。エフェクトだけを変更する場合も必要です。");
     }
 
+    const mediaType = document.getElementById("mediaTypeSelect").value;
+    const videoUrl = document.getElementById("videoUrlInput").value.trim();
+    if (mediaType === "video" && !videoUrl) {
+      throw new Error("動画のURLを入力してください。");
+    }
+
     const payload = {
 
       name: document.getElementById("nameInput").value,
@@ -1677,10 +1938,20 @@ document.getElementById("saveBtn").onclick = async() => {
         color: document.getElementById("effectColorInput").value
       },
 
+      frame: document.getElementById("frameSelect").value,
+      frameColor: frameColorKey,
+      frameTextOn: document.getElementById("frameTextOnInput").checked,
+      frameText: document.getElementById("frameTextInput").value,
+      frameSub: document.getElementById("frameSubInput").value,
+
       instagram: document.getElementById("instagramInput")?.value || "",
       x: document.getElementById("xInput")?.value || "",
       hp: document.getElementById("HPInput")?.value || "",
-      line: document.getElementById("lineInput")?.value || ""
+      line: document.getElementById("lineInput")?.value || "",
+
+      mediaType,
+      videoUrl,
+      videoRatio: mediaType === "video" ? videoRatio : null
 
     };
 

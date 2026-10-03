@@ -16,7 +16,7 @@ window.location.href = '/index.html' + window.location.search;
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500&family=Playfair+Display:wght@700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500&family=Playfair+Display:ital,wght@0,700;1,500;1,700&family=Caveat:wght@700&family=Aloha:wght@400&display=swap" rel="stylesheet">
 
 <style>
 
@@ -794,6 +794,118 @@ function roundRect(ctx,x,y,w,h,r){
 
 /* MindAR シーン初期化 */
 
+/* ===== フォトフレーム（Botanical / Gold） =====
+   画像は assets/frames/<種類>/<色>/{back,mid,front}.webp（背面・枠・前面の3層）
+   窓（写真が入る場所）は 900x1200 キャンバス上の (110,130,680,940) */
+const FRAME_BASE="assets/frames/";
+const FRAME_HEX={
+  botanical:{base:"#E9A6B5",pink:"#FF6FAE",red:"#FF4B5C",orange:"#FF9A3C",yellow:"#FFD23F",green:"#3CC47C",cyan:"#4FC3F7",blue:"#3D6BFF",purple:"#9B6BFF"},
+  gold:{base:"#7FB8E6",pink:"#FF6FAE",red:"#FF4B5C",orange:"#FF9A3C",yellow:"#FFD23F",green:"#3CC47C",cyan:"#4FC3F7",blue:"#3D6BFF",purple:"#9B6BFF"}
+};
+const FRAME_DEFS={
+  botanical:{texts:[{key:"main",x:450,y:1140,size:56,maxW:330,italic:true,weight:700,ls:2,stroke:3}]},
+  gold:{texts:[
+    {key:"main",x:450,y:1126,size:56,maxW:600,italic:false,weight:700,ls:14,gold:true},
+    {key:"sub",x:450,y:1178,size:32,maxW:520,italic:true,weight:500,ls:7,fill:"#E6C77A"}
+  ]}
+};
+const FRAME_WIN={x:110,y:130,w:680,h:940};
+const FRAME_W=1.3*900/FRAME_WIN.w;          // 枠平面の幅（窓の幅が1.3になる大きさ）
+const FRAME_H=FRAME_W*1200/900;
+const FRAME_U=FRAME_W/900;                  // キャンバス1px = AR単位
+const FRAME_WIN_H=1.3*FRAME_WIN.h/FRAME_WIN.w;
+
+let frameParts=[];        // 入場アニメ用に各スライドの部品を保持
+let frameIntroDone=false; // 入場は最初に認識されたときの1回だけ
+
+function mixHex(a,b,t){
+  const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);
+  const m=(sh)=>Math.round(((pa>>sh)&255)*t+((pb>>sh)&255)*(1-t));
+  return "#"+((1<<24)|(m(16)<<16)|(m(8)<<8)|m(0)).toString(16).slice(1);
+}
+
+/* フレーム下部の文字（日本語OK・長いときは自動で縮める） */
+async function createFrameTextTexture(frameKey,t,text,hex){
+  const S=1.5,padX=24;
+  const pw=t.maxW+padX*2,ph=Math.round(t.size*1.7);
+  const cv=document.createElement("canvas");
+  cv.width=Math.round(pw*S);cv.height=Math.round(ph*S);
+  const ctx=cv.getContext("2d");
+  const jp=/[^\x00-\x7F]/.test(text);
+  const fam=jp?'"Noto Sans JP",sans-serif':'"Playfair Display",Georgia,serif';
+  const fstyle=(t.italic&&!jp)?"italic ":"";
+  const font=(sz)=>`${fstyle}${t.weight} ${sz*S}px ${fam}`;
+  try{await document.fonts.load(font(t.size),text);}catch(e){}
+  const chars=[...text];
+  let size=t.size,ls=t.ls,total=0;
+  for(let k=0;k<40;k++){
+    ctx.font=font(size);
+    total=chars.reduce((a,c)=>a+ctx.measureText(c).width,0)+ls*S*(chars.length-1);
+    if(total/S<=t.maxW) break;
+    size*=0.94;ls*=0.94;
+  }
+  ctx.font=font(size);
+  ctx.textBaseline="middle";ctx.textAlign="left";
+  let x0=cv.width/2-total/2;
+  let fill=t.fill||"#fff";
+  if(frameKey==="botanical") fill=mixHex(hex,"#3A1424",0.4);
+  if(t.gold){
+    const g=ctx.createLinearGradient(x0,0,x0+total,cv.height);
+    g.addColorStop(0,"#F6E3A8");g.addColorStop(.35,"#C9A24A");g.addColorStop(.6,"#FBEFC4");g.addColorStop(1,"#A9822F");
+    fill=g;
+  }
+  let x=x0;
+  chars.forEach(c=>{
+    if(t.stroke){
+      ctx.lineJoin="round";ctx.lineWidth=t.stroke*S*2;ctx.strokeStyle="#fff";
+      ctx.strokeText(c,x,cv.height/2);
+    }
+    ctx.fillStyle=fill;
+    ctx.fillText(c,x,cv.height/2);
+    x+=ctx.measureText(c).width+ls*S;
+  });
+  return {src:cv.toDataURL(),w:pw,h:ph};
+}
+
+/* 光がすっと横切る（Goldの仕上げ） */
+function createSweepTexture(){
+  const cv=document.createElement("canvas");cv.width=128;cv.height=8;
+  const ctx=cv.getContext("2d");
+  const g=ctx.createLinearGradient(0,0,128,0);
+  g.addColorStop(0,"rgba(255,255,255,0)");g.addColorStop(.5,"rgba(255,251,232,1)");g.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.fillStyle=g;ctx.fillRect(0,0,128,8);
+  return cv.toDataURL();
+}
+
+/* 入場アニメ：奥から背景→枠・写真が下から→手前の飾り、最後に仕上げ。1回だけ */
+function runFrameIntro(){
+  if(frameIntroDone||frameParts.length===0) return;
+  frameIntroDone=true;
+  const ease="easeOutQuart";
+  frameParts.forEach(P=>{
+    const mv=(el,from,to,delay,dur)=>el.setAttribute("animation__intro",`property:position;from:${from};to:${to};dur:${dur};delay:${delay};easing:${ease}`);
+    const fd=(el,delay,dur)=>el.setAttribute("animation__fade",`property:material.opacity;from:0;to:1;dur:${dur};delay:${delay};easing:easeOutQuad`);
+    mv(P.back,"0 0 -0.35","0 0 -0.12",0,900);fd(P.back,0,500);
+    mv(P.mid,"0 -0.12 0.02","0 0 0.02",120,900);fd(P.mid,120,500);
+    mv(P.photo,"0 -0.22 0.01","0 0 0.01",240,900);fd(P.photo,240,500);
+    mv(P.front,"0 0 0.45","0 0 0.12",360,900);fd(P.front,360,500);
+    P.texts.forEach(t=>fd(t,800,500));
+    setTimeout(()=>{
+      if(P.kind==="botanical"){
+        P.front.setAttribute("animation__pop","property:scale;from:0.95 0.95 1;to:0.985 0.985 1;dir:alternate;loop:2;dur:220;easing:easeOutQuad");
+      }else{
+        const sw=document.createElement("a-plane");
+        sw.setAttribute("width","0.45");sw.setAttribute("height",(FRAME_WIN_H*1.05).toFixed(3));
+        sw.setAttribute("position","-1.1 0 0.13");
+        sw.setAttribute("material",{src:createSweepTexture(),transparent:true,shader:"flat",blending:"additive",opacity:0.9,depthWrite:false});
+        sw.setAttribute("animation","property:position;from:-1.1 0 0.13;to:1.1 0 0.13;dur:900;easing:easeInOutQuad");
+        P.container.appendChild(sw);
+        setTimeout(()=>{if(sw.parentNode)sw.parentNode.removeChild(sw);},1100);
+      }
+    },1250);
+  });
+}
+
 function initARScene(mindUrl){
 
   const scene=document.createElement("a-scene");
@@ -831,11 +943,16 @@ function initARScene(mindUrl){
   arTarget.addEventListener("targetFound",()=>{
     hudScan.style.display="none";
     hudLocked.style.display="flex";
+    targetVisible=true;
+    playArVideo();
+    runFrameIntro();
   });
 
   arTarget.addEventListener("targetLost",()=>{
     hudScan.style.display="flex";
     hudLocked.style.display="none";
+    targetVisible=false;
+    pauseArVideo();
   });
 
   document.body.appendChild(scene);
@@ -858,14 +975,64 @@ async function ensureMindTargetAvailable(mindUrl){
 }
 
 
+/* AR内の動画（1カード1本・ループ・音なし） */
+
+let arVideoEl=null;
+let targetVisible=false;
+
+// 動画要素を用意して、縦横比（高さ÷幅）を返す。読み込めなければ null
+async function prepareVideo(url){
+  if(!arVideoEl){
+    arVideoEl=document.createElement("video");
+    arVideoEl.id="arVideo";
+    arVideoEl.muted=true;
+    arVideoEl.loop=true;
+    arVideoEl.playsInline=true;
+    arVideoEl.setAttribute("muted","");
+    arVideoEl.setAttribute("playsinline","");
+    arVideoEl.setAttribute("webkit-playsinline","");
+    arVideoEl.setAttribute("crossorigin","anonymous");
+    arVideoEl.preload="auto";
+    arVideoEl.style.cssText="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+    document.body.appendChild(arVideoEl);
+  }
+  if(arVideoEl.getAttribute("src")!==url){
+    arVideoEl.setAttribute("src",url);
+    arVideoEl.load();
+  }
+  if(arVideoEl.readyState<1){
+    await new Promise((resolve)=>{
+      const timer=setTimeout(resolve,5000);
+      const done=()=>{ clearTimeout(timer); resolve(); };
+      arVideoEl.addEventListener("loadedmetadata",done,{once:true});
+      arVideoEl.addEventListener("error",done,{once:true});
+    });
+  }
+  if(arVideoEl.error||!arVideoEl.videoWidth) return null;
+  return arVideoEl.videoHeight/arVideoEl.videoWidth;
+}
+
+function playArVideo(){
+  if(arVideoEl&&arVideoEl.paused&&targetVisible&&arVideoEl.getAttribute("src")){
+    arVideoEl.play().catch(()=>{});
+  }
+}
+
+function pauseArVideo(){
+  if(arVideoEl&&!arVideoEl.paused) arVideoEl.pause();
+}
+
+
 /* カルーセル更新 */
+
+let carouselGap=1.5;
 
 function updateCarousel(){
 
   items.forEach((item,index)=>{
 
     const isCenter=(index===currentIndex);
-    const offset=(index-currentIndex)*1.5; // 画像幅1.3+余白0.2
+    const offset=(index-currentIndex)*carouselGap; // 画像幅1.3+余白0.2（フレーム時は広め）
 
     item.setAttribute("visible",Math.abs(index-currentIndex)<=1?"true":"false");
     item.setAttribute("position",`${offset} 0 0`);
@@ -934,6 +1101,7 @@ document.querySelectorAll(".sns-container a").forEach(btn=>{
 /* クリック操作 */
 
 window.addEventListener("click",()=>{
+  playArVideo();
   if(items.length===0) return;
   currentIndex=(currentIndex+1)%items.length;
   updateCarousel();
@@ -949,6 +1117,7 @@ window.addEventListener("touchstart",(e)=>{
 });
 
 window.addEventListener("touchend",(e)=>{
+  playArVideo();
   const diff=e.changedTouches[0].clientX-startX;
   if(Math.abs(diff)>50){
     currentIndex=diff>0
@@ -995,6 +1164,18 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
   const images=data.images||[];
   const ratios=data.ratios||[];
 
+  // 表示するスライド：動画モードなら動画1本、それ以外は写真
+  let slides=images.map((url,i)=>({type:"image",url,ratio:ratios[i]||1}));
+  if(data.mediaType==="video"&&data.videoUrl){
+    const videoRatio=await prepareVideo(data.videoUrl);
+    if(videoRatio){
+      slides=[{type:"video",ratio:videoRatio}];
+    }else{
+      console.warn("動画を読み込めなかったため、写真を表示します:",data.videoUrl);
+    }
+  }
+  if(!slides.some(s=>s.type==="video")) pauseArVideo();
+
   // ARコンテンツをリセット
   while(arTarget.firstChild){
     arTarget.removeChild(arTarget.firstChild);
@@ -1002,9 +1183,15 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
   items=[];
   currentIndex=0;
   effectLayer=null;
+  frameParts=[];
 
   const baseW=1.3;
-  const maxRatio=ratios.length>0?Math.max(...ratios):1;
+  const frameKey=(data.frame&&FRAME_DEFS[data.frame])?data.frame:null;
+  const frameHexMap=frameKey?FRAME_HEX[frameKey]:null;
+  const frameColor=(frameHexMap&&frameHexMap[data.frameColor])?data.frameColor:"base";
+  const frameTextOn=data.frameTextOn!==false;
+  carouselGap=frameKey?1.95:1.5;
+  const maxRatio=slides.length>0?Math.max(...slides.map(s=>s.ratio)):1;
 
   const nameFontFamily=data.font||"sans-serif";
   const nameFontSize=data.fontSize?`${data.fontSize}px`:"56px";
@@ -1017,23 +1204,80 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
   dotsPlane=null;
 
   // 各画像スライド（写真の上に浮く名札）
-  for(let i=0;i<images.length;i++){
+  for(let i=0;i<slides.length;i++){
 
-    const url=images[i];
-    const ratio=ratios[i]||1;
-    const imgH=baseW*ratio;
+    const slide=slides[i];
+    const ratio=slide.ratio;
+    const imgH=frameKey?FRAME_WIN_H:baseW*ratio;
 
     const container=document.createElement("a-entity");
     container.setAttribute("visible","false");
 
-    const aImg=document.createElement("a-image");
-    aImg.setAttribute("src",url);
-    aImg.setAttribute("material","shader:flat;transparent:true;side:double");
+    let aImg;
+    if(slide.type==="video"){
+      aImg=document.createElement("a-video");
+      aImg.setAttribute("src","#arVideo");
+      aImg.setAttribute("material","shader:flat;side:double");
+    }else{
+      aImg=document.createElement("a-image");
+      aImg.setAttribute("src",slide.url);
+      aImg.setAttribute("material","shader:flat;transparent:true;side:double");
+    }
+    if(frameKey){
+      // 窓の形に中央トリミング（引き伸ばさない）
+      const wr=FRAME_WIN_H/baseW;
+      let rx=1,ry=1,ox=0,oy=0;
+      if(ratio>wr){ry=wr/ratio;oy=(1-ry)/2;}else{rx=ratio/wr;ox=(1-rx)/2;}
+      aImg.setAttribute("material",{shader:"flat",transparent:true,side:"double",repeat:`${rx.toFixed(4)} ${ry.toFixed(4)}`,offset:`${ox.toFixed(4)} ${oy.toFixed(4)}`});
+    }
     aImg.setAttribute("width",baseW);
     aImg.setAttribute("height",imgH.toFixed(3));
     aImg.setAttribute("position","0 0 0.01");
     container.appendChild(aImg);
 
+    if(frameKey){
+      // フレーム：名札・影は出さず、背面/枠/前面の3層と下部の文字を重ねる
+      const hex=frameHexMap[frameColor];
+      const mkLayer=(name,z,sc)=>{
+        const pl=document.createElement("a-plane");
+        pl.setAttribute("width",FRAME_W.toFixed(4));
+        pl.setAttribute("height",FRAME_H.toFixed(4));
+        pl.setAttribute("position",`0 0 ${z}`);
+        if(sc!==1) pl.setAttribute("scale",`${sc} ${sc} 1`);
+        pl.setAttribute("material",{src:`${FRAME_BASE}${frameKey}/${frameColor}/${name}.webp`,transparent:true,shader:"flat",depthWrite:false,side:"double"});
+        container.appendChild(pl);
+        return pl;
+      };
+      const P={kind:frameKey,container,photo:aImg,texts:[]};
+      P.back=mkLayer("back",-0.12,1.06);
+      P.mid=mkLayer("mid",0.02,1);
+      P.front=mkLayer("front",0.12,0.95);
+      if(frameTextOn){
+        for(const t of FRAME_DEFS[frameKey].texts){
+          const txt=t.key==="main"
+            ?(data.frameText!=null?data.frameText:(data.name||""))
+            :(data.frameSub!=null?data.frameSub:(data.job||""));
+          if(!String(txt).trim()) continue;
+          const tex=await createFrameTextTexture(frameKey,t,String(txt),hex);
+          const tp=document.createElement("a-plane");
+          tp.setAttribute("width",(tex.w*FRAME_U).toFixed(4));
+          tp.setAttribute("height",(tex.h*FRAME_U).toFixed(4));
+          tp.setAttribute("position",`0 ${(-(t.y-600)*FRAME_U).toFixed(4)} 0.125`);
+          tp.setAttribute("material",{src:tex.src,transparent:true,shader:"flat",depthWrite:false});
+          container.appendChild(tp);
+          P.texts.push(tp);
+        }
+      }
+      if(!frameIntroDone){
+        // 入場前は見えない状態にしておく（最初の認識で1回だけ再生）
+        P.back.setAttribute("position","0 0 -0.35");P.back.setAttribute("material","opacity",0);
+        P.mid.setAttribute("position","0 -0.12 0.02");P.mid.setAttribute("material","opacity",0);
+        aImg.setAttribute("position","0 -0.22 0.01");aImg.setAttribute("material","opacity",0);
+        P.front.setAttribute("position","0 0 0.45");P.front.setAttribute("material","opacity",0);
+        P.texts.forEach(t=>t.setAttribute("material","opacity",0));
+      }
+      frameParts.push(P);
+    }else{
     // 写真上部に落ちる影（名札が浮いていることを示す）
     const shadow=document.createElement("a-plane");
     shadow.setAttribute("width",(baseW*0.55).toFixed(3));
@@ -1069,18 +1313,20 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
     jPlane.setAttribute("material",{src:jobSrc,transparent:true,shader:"flat"});
     plateGroup.appendChild(jPlane);
 
+    }
+
     items.push(container);
     arTarget.appendChild(container);
 
   }
 
   // カルーセル位置インジケータ（写真が複数あるときのみ）
-  if(images.length>1){
+  if(slides.length>1){
     dotsPlane=document.createElement("a-plane");
     dotsPlane.setAttribute("width",(baseW*0.5).toFixed(3));
     dotsPlane.setAttribute("height","0.05");
-    dotsPlane.setAttribute("position",`0 ${((baseW*maxRatio)/2-0.12).toFixed(3)} 0.02`);
-    dotsPlane.setAttribute("material",{src:createDotsTexture(images.length,currentIndex),transparent:true,shader:"flat"});
+    dotsPlane.setAttribute("position",`0 ${((frameKey?FRAME_WIN_H:baseW*maxRatio)/2-0.12).toFixed(3)} 0.02`);
+    dotsPlane.setAttribute("material",{src:createDotsTexture(slides.length,currentIndex),transparent:true,shader:"flat"});
     arTarget.appendChild(dotsPlane);
   }
 
@@ -1093,6 +1339,7 @@ onSnapshot(doc(db,"arUsers",markerId),async(docSnap)=>{
   if (effectLayer && effectLayer.parentNode !== arTarget) arTarget.appendChild(effectLayer);
 
   updateCarousel();
+  playArVideo();
 
 },(error)=>{
   console.error("Firestoreの読み込みに失敗しました:",error);
